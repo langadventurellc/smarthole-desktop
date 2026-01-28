@@ -1,0 +1,45 @@
+#:schema https://mise.jdx.dev/schema/mise.json
+
+[tools]
+node = "24.13.0"
+
+[env]
+NODE_ENV = "development"
+_.path = ["{{config_root}}/node_modules/.bin"]
+
+[tasks.build]
+description = "Build the application"
+run = "electron-forge make"
+
+[tasks.dev]
+description = "Start the application in development mode"
+run = "electron-forge start"
+
+[tasks.package]
+description = "Package the application"
+run = "electron-forge package"
+
+[tasks.lint]
+description = "Run ESLint"
+run = "eslint --fix 'src/**/*.{ts,tsx,js,jsx}'"
+
+[tasks.format]
+description = "Format code with Prettier"
+run = "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md}'"
+
+[tasks."type-check"]
+description = "Run TypeScript type checking"
+run = "tsc --noEmit"
+
+[tasks.quality]
+description = "Run all quality checks (lint, format, type-check)"
+depends = ["lint", "format", "type-check"]
+run = "echo 'All quality checks passed'"
+
+[tasks.test]
+description = "Run tests"
+run = "vitest run"
+
+[tasks."test:watch"]
+description = "Run tests in watch mode"
+run = "vitest"
