@@ -42,6 +42,5 @@ mise run test       # Run tests
 ## Guidelines
 
 - When adding libraries, use `npm install <package>` to get the latest version
-- Run `mise run quality` before committing to ensure code passes all checks
 - The app primarily runs as a tray application - dock/taskbar visibility is hidden on macOS
 - For IPC between main and renderer, use contextBridge in preload.ts
