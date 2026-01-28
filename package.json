@@ -23,8 +23,7 @@
   },
   "keywords": [],
   "author": "Lang Adventure LLC",
-  "license": "UNLICENSED",
-  "private": true,
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/langadventurellc/smarthole-desktop/issues"
   },
