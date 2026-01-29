@@ -1,4 +1,14 @@
 import { app, Tray, Menu, nativeImage, dialog } from "electron";
+import { registerProcessErrorHandlers } from "./utils/process-error-handlers";
+
+// Register error handlers early, before any async operations
+registerProcessErrorHandlers({
+  // logger: mainLogger,  // Add when logging system is implemented
+  onFatalError: (error) => {
+    // Could save state, show dialog, etc.
+    console.error("Fatal error:", error.message);
+  },
+});
 
 let tray: Tray | null = null;
 
