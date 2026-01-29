@@ -1,0 +1,416 @@
+/**
+ * IPC (Inter-Process Communication) channel definitions and types.
+ * These types provide type-safe communication between Electron's main process
+ * and renderer process.
+ *
+ * @see Electron IPC documentation
+ */
+
+import { LogLevel, AppConfig, PartialAppConfig } from "./config";
+
+// ============================================================================
+// IPC Channel Definitions
+// ============================================================================
+
+/**
+ * IPC channel constants using const assertion for type safety.
+ * Naming convention: {domain}:{action}
+ *
+ * Channels are organized by domain:
+ * - log: Logging-related operations
+ * - notify: System notification operations
+ * - config: Configuration get/set operations
+ * - app: Application lifecycle operations
+ */
+export const IPC_CHANNELS = {
+  // Logging channels
+  LOG_MESSAGE: "log:message",
+
+  // Notification channels
+  NOTIFY_SHOW: "notify:show",
+
+  // Configuration channels
+  CONFIG_GET: "config:get",
+  CONFIG_SET: "config:set",
+  CONFIG_CHANGED: "config:changed", // Main -> Renderer broadcast
+
+  // App lifecycle channels
+  APP_QUIT: "app:quit",
+  APP_VERSION: "app:version",
+} as const;
+
+/**
+ * Union type of all valid IPC channel names.
+ * Derived from IPC_CHANNELS constant for type safety.
+ */
+export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
+
+// ============================================================================
+// Logging IPC Types
+// ============================================================================
+
+/**
+ * Payload for log message IPC channel.
+ * Renderer sends logs to main process for centralized logging.
+ */
+export interface LogMessagePayload {
+  /** Log level for this message */
+  level: LogLevel;
+  /** The log message text */
+  message: string;
+  /** Optional context data for structured logging */
+  context?: Record<string, unknown>;
+  /** ISO 8601 timestamp, auto-generated if not provided */
+  timestamp?: string;
+}
+
+// ============================================================================
+// Notification IPC Types
+// ============================================================================
+
+/**
+ * Type of notification to display.
+ * Affects visual styling and icon.
+ */
+export type NotificationType = "info" | "warning" | "error" | "success";
+
+/**
+ * Priority level for notifications.
+ * May affect notification behavior (e.g., persistence, sound).
+ */
+export type NotificationPriority = "low" | "medium" | "high";
+
+/**
+ * An action button that can be displayed on a notification.
+ */
+export interface NotificationAction {
+  /** Display text for the action button */
+  label: string;
+  /** Identifier returned when this action is clicked */
+  actionId: string;
+}
+
+/**
+ * Payload for showing a system notification.
+ */
+export interface NotifyShowPayload {
+  /** Notification title */
+  title: string;
+  /** Notification body text */
+  body: string;
+  /** Type affects visual styling */
+  type: NotificationType;
+  /** Priority affects notification behavior */
+  priority: NotificationPriority;
+  /** Optional action buttons */
+  actions?: NotificationAction[];
+  /** Auto-dismiss timeout in milliseconds (undefined = no auto-dismiss) */
+  timeout?: number;
+}
+
+/**
+ * Payload returned when a notification is clicked.
+ */
+export interface NotificationClickedPayload {
+  /** The actionId of the clicked action button, undefined if notification body was clicked */
+  actionId?: string;
+}
+
+// ============================================================================
+// Configuration IPC Types
+// ============================================================================
+
+/**
+ * Response payload for config:get channel.
+ */
+export interface ConfigGetResponse {
+  /** The current application configuration */
+  config: AppConfig;
+}
+
+/**
+ * Payload for config:set channel.
+ * Uses partial config to allow updating specific settings.
+ */
+export interface ConfigSetPayload {
+  /** Partial configuration with values to update */
+  updates: PartialAppConfig;
+}
+
+/**
+ * Payload broadcast when configuration changes.
+ * Sent from main process to all renderer processes.
+ */
+export interface ConfigChangedPayload {
+  /** The updated full configuration */
+  config: AppConfig;
+  /** Dot-notation paths that changed (e.g., "stt.backend", "logLevel") */
+  changedKeys: string[];
+}
+
+// ============================================================================
+// App Lifecycle IPC Types
+// ============================================================================
+
+/**
+ * Response payload for app:version channel.
+ * Provides version information about the application and runtime.
+ */
+export interface AppVersionResponse {
+  /** Application version from package.json */
+  version: string;
+  /** Electron version */
+  electronVersion: string;
+  /** Node.js version */
+  nodeVersion: string;
+}
+
+// ============================================================================
+// IPC Type Maps (for type-safe handlers)
+// ============================================================================
+
+/**
+ * Maps IPC channels to their payload types.
+ * Used for type-safe IPC handler registration and send operations.
+ *
+ * - void indicates no payload is needed for that channel
+ * - Payload interfaces define the expected data structure
+ */
+export interface IpcPayloadMap {
+  [IPC_CHANNELS.LOG_MESSAGE]: LogMessagePayload;
+  [IPC_CHANNELS.NOTIFY_SHOW]: NotifyShowPayload;
+  [IPC_CHANNELS.CONFIG_GET]: void; // No payload needed
+  [IPC_CHANNELS.CONFIG_SET]: ConfigSetPayload;
+  [IPC_CHANNELS.CONFIG_CHANGED]: ConfigChangedPayload;
+  [IPC_CHANNELS.APP_QUIT]: void; // No payload needed
+  [IPC_CHANNELS.APP_VERSION]: void; // No payload needed
+}
+
+/**
+ * Maps IPC channels to their response types.
+ * For invoke-style IPC that returns data to the renderer.
+ *
+ * Only channels that return data are included.
+ * Channels like LOG_MESSAGE and APP_QUIT don't return responses.
+ */
+export interface IpcResponseMap {
+  [IPC_CHANNELS.CONFIG_GET]: ConfigGetResponse;
+  [IPC_CHANNELS.APP_VERSION]: AppVersionResponse;
+}
+
+// ============================================================================
+// Type Guards
+// ============================================================================
+
+/**
+ * Valid IPC channel values for runtime validation.
+ */
+const IPC_CHANNEL_VALUES: ReadonlySet<string> = new Set(Object.values(IPC_CHANNELS));
+
+/**
+ * Checks if a value is a valid IpcChannel.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid IPC channel
+ */
+export function isIpcChannel(value: unknown): value is IpcChannel {
+  return typeof value === "string" && IPC_CHANNEL_VALUES.has(value);
+}
+
+/**
+ * Valid notification type values for runtime validation.
+ */
+const NOTIFICATION_TYPE_VALUES: ReadonlySet<string> = new Set([
+  "info",
+  "warning",
+  "error",
+  "success",
+]);
+
+/**
+ * Checks if a value is a valid NotificationType.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid notification type
+ */
+export function isNotificationType(value: unknown): value is NotificationType {
+  return typeof value === "string" && NOTIFICATION_TYPE_VALUES.has(value);
+}
+
+/**
+ * Valid notification priority values for runtime validation.
+ */
+const NOTIFICATION_PRIORITY_VALUES: ReadonlySet<string> = new Set(["low", "medium", "high"]);
+
+/**
+ * Checks if a value is a valid NotificationPriority.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid notification priority
+ */
+export function isNotificationPriority(value: unknown): value is NotificationPriority {
+  return typeof value === "string" && NOTIFICATION_PRIORITY_VALUES.has(value);
+}
+
+/**
+ * Checks if a value is a valid LogMessagePayload.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid log message payload
+ */
+export function isLogMessagePayload(value: unknown): value is LogMessagePayload {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // Required fields
+  if (typeof obj.level !== "string" || typeof obj.message !== "string") {
+    return false;
+  }
+
+  // Validate log level (import from config would create circular dependency risk)
+  const validLogLevels = new Set(["error", "warn", "info", "debug", "trace"]);
+  if (!validLogLevels.has(obj.level)) {
+    return false;
+  }
+
+  // Optional context must be an object if present
+  if (obj.context !== undefined && (typeof obj.context !== "object" || obj.context === null)) {
+    return false;
+  }
+
+  // Optional timestamp must be a string if present
+  if (obj.timestamp !== undefined && typeof obj.timestamp !== "string") {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Checks if a value is a valid NotificationAction.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid notification action
+ */
+export function isNotificationAction(value: unknown): value is NotificationAction {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+  return typeof obj.label === "string" && typeof obj.actionId === "string";
+}
+
+/**
+ * Checks if a value is a valid NotifyShowPayload.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid notify show payload
+ */
+export function isNotifyShowPayload(value: unknown): value is NotifyShowPayload {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // Required fields
+  if (
+    typeof obj.title !== "string" ||
+    typeof obj.body !== "string" ||
+    !isNotificationType(obj.type) ||
+    !isNotificationPriority(obj.priority)
+  ) {
+    return false;
+  }
+
+  // Optional actions must be an array of valid NotificationActions if present
+  if (obj.actions !== undefined) {
+    if (!Array.isArray(obj.actions)) {
+      return false;
+    }
+    for (const action of obj.actions) {
+      if (!isNotificationAction(action)) {
+        return false;
+      }
+    }
+  }
+
+  // Optional timeout must be a number if present
+  if (obj.timeout !== undefined && typeof obj.timeout !== "number") {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Checks if a value is a valid ConfigSetPayload.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid config set payload
+ */
+export function isConfigSetPayload(value: unknown): value is ConfigSetPayload {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // updates must be an object
+  return typeof obj.updates === "object" && obj.updates !== null;
+}
+
+/**
+ * Checks if a value is a valid ConfigChangedPayload.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid config changed payload
+ */
+export function isConfigChangedPayload(value: unknown): value is ConfigChangedPayload {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // config must be an object and changedKeys must be an array of strings
+  if (typeof obj.config !== "object" || obj.config === null) {
+    return false;
+  }
+
+  if (!Array.isArray(obj.changedKeys)) {
+    return false;
+  }
+
+  for (const key of obj.changedKeys) {
+    if (typeof key !== "string") {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Checks if a value is a valid AppVersionResponse.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid app version response
+ */
+export function isAppVersionResponse(value: unknown): value is AppVersionResponse {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  return (
+    typeof obj.version === "string" &&
+    typeof obj.electronVersion === "string" &&
+    typeof obj.nodeVersion === "string"
+  );
+}

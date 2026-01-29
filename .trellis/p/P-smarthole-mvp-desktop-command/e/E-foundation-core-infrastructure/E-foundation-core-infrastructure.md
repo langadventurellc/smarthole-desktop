@@ -1,14 +1,70 @@
 ---
 id: E-foundation-core-infrastructure
 title: Foundation & Core Infrastructure
-status: open
+status: in-progress
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites: []
-affectedFiles: {}
+affectedFiles:
+  src/types/common.ts: Created core utility types including Result<T,E>,
+    Brand<T,B>, MessageId, ClientId, ISOTimestamp, NonEmptyString with factory
+    functions (createMessageId, createClientId, createTimestamp,
+    createNonEmptyString), type guards (isMessageId, isClientId, isISOTimestamp,
+    isNonEmptyString), and helpers (ok, err, parseTimestamp)
+  src/types/index.ts: Created barrel export file re-exporting all types from
+    common.ts; Updated barrel export to include config types export; Updated
+    barrel export to include messages module; Updated barrel export to include
+    IPC types; Updated barrel export to include guards module; Added ElectronAPI
+    type export from preload module
+  src/types/common.test.ts: Created comprehensive unit tests for all types and
+    functions (37 tests) including type-level constraint verification
+  src/types/config.ts: Created configuration type definitions including LogLevel,
+    VoiceInputMode, SttBackend, LlmProvider, SttConfig, LlmConfig, HotkeyConfig,
+    AppConfig interfaces plus DEFAULT_CONFIG values and type guards
+  src/types/config.test.ts: Created comprehensive unit tests for configuration
+    types (44 tests) covering type guards, DEFAULT_CONFIG values, interface
+    validation, and type-level constraints
+  src/types/messages.ts: Created WebSocket message type definitions including
+    ClientRegistration, RegisteredClient, MessageMetadata, RoutedMessage,
+    ClientResponse types, response payload types (RejectPayload,
+    NotificationPayload, AckPayload), WebSocketMessage discriminated union, and
+    type guards for all message and response types
+  src/types/messages.test.ts: Created comprehensive unit tests (61 tests) covering
+    all interfaces, type guards, discriminated union behavior, and type-level
+    constraints using @ts-expect-error
+  src/types/ipc.ts: Created IPC channel definitions and types including
+    IPC_CHANNELS constant, IpcChannel type, all payload interfaces
+    (LogMessagePayload, NotifyShowPayload, etc.), type maps (IpcPayloadMap,
+    IpcResponseMap), and comprehensive type guards
+  src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
+    type guards, interface structures, type maps, and type-level constraints
+    using @ts-expect-error
+  src/types/guards.ts: Created type guards and validation utilities module with
+    generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
+    isBoolean, isArray, isArrayOf, isOptional), validation result types
+    (ValidationError, ValidationResult), helper functions (validationOk,
+    validationErr, makeError), and detailed validation functions
+    (validateClientRegistration, validateMessageMetadata, validateRoutedMessage,
+    validateClientResponse, validateWebSocketMessage)
+  src/types/guards.test.ts: Created comprehensive unit tests (72 tests) covering
+    all generic helpers, validation result helpers, and detailed validation
+    functions including edge cases, nested validation, and error path
+    verification
+  src/preload.ts: Updated with fully-typed electronAPI object containing logging,
+    notification, configuration, and app lifecycle methods using
+    ipcRenderer.send and ipcRenderer.invoke patterns
+  src/types/electron.d.ts: Created global Window interface augmentation declaring
+    electronAPI property with ElectronAPI type
+  src/preload.test.ts: Created comprehensive unit tests (29 tests) mocking
+    ipcRenderer to verify IPC channels, payload structures, convenience methods,
+    and onConfigChanged unsubscribe functionality
 log: []
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - F-core-types-ipc-architecture
+  - F-error-handling-framework
+  - F-logging-system
+  - F-system-notifications
 created: 2026-01-29T01:44:00.864Z
 updated: 2026-01-29T01:44:00.864Z
 ---
