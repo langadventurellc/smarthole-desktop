@@ -1,13 +1,64 @@
 ---
 id: T-create-websocket-message-types
 title: Create WebSocket message types
-status: open
+status: done
 priority: high
 parent: F-core-types-ipc-architecture
 prerequisites:
   - T-create-core-common-types-and
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/messages.ts: Created WebSocket message type definitions including
+    ClientRegistration, RegisteredClient, MessageMetadata, RoutedMessage,
+    ClientResponse types, response payload types (RejectPayload,
+    NotificationPayload, AckPayload), WebSocketMessage discriminated union, and
+    type guards for all message and response types
+  src/types/messages.test.ts: Created comprehensive unit tests (61 tests) covering
+    all interfaces, type guards, discriminated union behavior, and type-level
+    constraints using @ts-expect-error
+  src/types/index.ts: Updated barrel export to include messages module
+log:
+  - >-
+    Starting implementation. Verified:
+
+    - common.ts exists with MessageId, ClientId, ISOTimestamp branded types
+
+    - Test patterns established in common.test.ts (using vitest with
+    @ts-expect-error for type constraints)
+
+    - MVP requirements reviewed for WebSocket message protocol details
+
+    - index.ts barrel export exists and needs to be updated
+  - >-
+    Created comprehensive WebSocket message type definitions for the SmartHole
+    plugin communication protocol. Implemented all required types including:
+
+
+    **Client Registration**: `ClientRegistration` and `RegisteredClient`
+    interfaces for plugin connection lifecycle.
+
+
+    **Message Routing**: `InputMethod`, `MessageMetadata`, and `RoutedMessage`
+    types for message delivery to clients.
+
+
+    **Client Responses**: `ClientResponseType`, `ClientNotificationPriority`,
+    `RejectPayload`, `NotificationPayload`, `AckPayload`, and `ClientResponse`
+    for handling client replies.
+
+
+    **Type Guards**: `isRejectResponse`, `isNotificationResponse`,
+    `isAckResponse` for response type narrowing with runtime validation.
+
+
+    **Wire Format**: `WebSocketMessage` discriminated union with
+    `WebSocketRegistrationMessage`, `WebSocketRoutedMessage`, and
+    `WebSocketResponseMessage` variants, plus type guards `isWebSocketMessage`,
+    `isRegistrationMessage`, `isRoutedMessage`, and `isResponseMessage`.
+
+
+    All types use branded types from common.ts (MessageId, ClientId,
+    ISOTimestamp) ensuring type safety. 61 unit tests verify runtime behavior
+    and type constraints.
 schema: v1.0
 childrenIds: []
 created: 2026-01-29T02:36:08.392Z

@@ -1,14 +1,91 @@
 ---
 id: T-create-type-guards-and
 title: Create type guards and validation utilities
-status: open
+status: done
 priority: high
 parent: F-core-types-ipc-architecture
 prerequisites:
   - T-create-ipc-channel-definitions
   - T-create-websocket-message-types
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/guards.ts: Created type guards and validation utilities module with
+    generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
+    isBoolean, isArray, isArrayOf, isOptional), validation result types
+    (ValidationError, ValidationResult), helper functions (validationOk,
+    validationErr, makeError), and detailed validation functions
+    (validateClientRegistration, validateMessageMetadata, validateRoutedMessage,
+    validateClientResponse, validateWebSocketMessage)
+  src/types/guards.test.ts: Created comprehensive unit tests (72 tests) covering
+    all generic helpers, validation result helpers, and detailed validation
+    functions including edge cases, nested validation, and error path
+    verification
+  src/types/index.ts: Updated barrel export to include guards module
+log:
+  - >-
+    Research phase complete. Reviewed all existing type files:
+
+    - common.ts: Has isObject-like patterns via isNonEmptyString, isMessageId,
+    etc.
+
+    - config.ts: Has isLogLevel, isVoiceInputMode, isSttBackend, isLlmProvider
+
+    - messages.ts: Has isWebSocketMessage, isRejectResponse,
+    isNotificationResponse, isAckResponse, isRegistrationMessage,
+    isRoutedMessage, isResponseMessage
+
+    - ipc.ts: Has isIpcChannel, isNotificationType, isNotificationPriority,
+    isLogMessagePayload, isNotificationAction, isNotifyShowPayload,
+    isConfigSetPayload, isConfigChangedPayload, isAppVersionResponse
+
+
+    Key observations:
+
+    1. Many type guards already exist in individual files
+
+    2. guards.ts should provide centralized/unified guards and more
+    comprehensive validation utilities
+
+    3. Need to implement generic helpers (isObject, isOneOf) that can be shared
+
+    4. Need to implement ValidationResult/ValidationError types with detailed
+    error reporting
+
+    5. Need to implement validate* functions that return detailed error
+    information
+
+
+    Will now implement src/types/guards.ts following the task specification.
+  - >-
+    Created comprehensive type guards and validation utilities in
+    src/types/guards.ts. The module provides:
+
+
+    1. Generic validation helpers: isObject, isOneOf, isString,
+    isNonEmptyStringRaw, isNumber, isBoolean, isArray, isArrayOf, isOptional -
+    building blocks for creating type guards
+
+    2. Validation result types: ValidationError and ValidationResult<T>
+    interfaces for detailed error reporting
+
+    3. Validation helper functions: validationOk, validationErr, makeError - for
+    creating validation results
+
+    4. Detailed validation functions with error reporting:
+       - validateClientRegistration - validates ClientRegistration with field-by-field error details
+       - validateMessageMetadata - validates MessageMetadata with path prefix support for nesting
+       - validateRoutedMessage - validates RoutedMessage including nested metadata
+       - validateClientResponse - validates ClientResponse
+       - validateWebSocketMessage - validates the discriminated union with nested payload validation
+
+    The module avoids duplicate exports of type guards already defined in
+    ipc.ts, messages.ts, and config.ts. Instead, it focuses on providing generic
+    utilities and detailed validation functions that return specific error
+    information for each invalid field.
+
+
+    Updated barrel export in src/types/index.ts to include the guards module.
+    All 72 new tests pass, along with all 301 total tests across the codebase.
+    Quality checks (lint, format, type-check) all pass.
 schema: v1.0
 childrenIds: []
 created: 2026-01-29T02:36:36.244Z

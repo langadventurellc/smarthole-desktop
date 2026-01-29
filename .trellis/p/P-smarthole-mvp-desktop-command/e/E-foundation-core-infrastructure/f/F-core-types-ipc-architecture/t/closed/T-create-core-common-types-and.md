@@ -1,12 +1,35 @@
 ---
 id: T-create-core-common-types-and
 title: Create core common types and utilities
-status: open
+status: done
 priority: high
 parent: F-core-types-ipc-architecture
 prerequisites: []
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/common.ts: Created core utility types including Result<T,E>,
+    Brand<T,B>, MessageId, ClientId, ISOTimestamp, NonEmptyString with factory
+    functions (createMessageId, createClientId, createTimestamp,
+    createNonEmptyString), type guards (isMessageId, isClientId, isISOTimestamp,
+    isNonEmptyString), and helpers (ok, err, parseTimestamp)
+  src/types/index.ts: Created barrel export file re-exporting all types from common.ts
+  src/types/common.test.ts: Created comprehensive unit tests for all types and
+    functions (37 tests) including type-level constraint verification
+log:
+  - Research complete. Verified project structure, TypeScript config (strict
+    mode enabled), test setup (Vitest with globals). Starting implementation of
+    src/types/common.ts and src/types/index.ts.
+  - Implementation complete. Created src/types/common.ts with all required types
+    (Result, Brand, MessageId, ClientId, ISOTimestamp, NonEmptyString) and
+    factory functions. Created src/types/index.ts barrel export. All 38 tests
+    pass. Quality checks pass (lint, format, type-check).
+  - Created the core common types and utilities foundation for the SmartHole
+    application. Implemented Result type with ok/err helpers for type-safe error
+    handling, Brand utility type for nominal typing, branded ID types
+    (MessageId, ClientId) with factory functions and type guards, ISOTimestamp
+    for validated timestamp strings, and NonEmptyString for validated non-empty
+    strings. All types use strict TypeScript with no `any` types. Includes
+    comprehensive unit tests (37 tests) covering factory functions, type guards,
+    and type-level constraints using @ts-expect-error comments.
 schema: v1.0
 childrenIds: []
 created: 2026-01-29T02:34:56.515Z

@@ -1,13 +1,34 @@
 ---
 id: T-extend-preload-bridge-with
 title: Extend preload bridge with typed method stubs
-status: open
+status: done
 priority: high
 parent: F-core-types-ipc-architecture
 prerequisites:
   - T-create-type-guards-and
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/preload.ts: Updated with fully-typed electronAPI object containing logging,
+    notification, configuration, and app lifecycle methods using
+    ipcRenderer.send and ipcRenderer.invoke patterns
+  src/types/electron.d.ts: Created global Window interface augmentation declaring
+    electronAPI property with ElectronAPI type
+  src/types/index.ts: Added ElectronAPI type export from preload module
+  src/preload.test.ts: Created comprehensive unit tests (29 tests) mocking
+    ipcRenderer to verify IPC channels, payload structures, convenience methods,
+    and onConfigChanged unsubscribe functionality
+log:
+  - "Starting implementation. Verified existing files: src/preload.ts (empty
+    API), src/types/index.ts (barrel export), src/types/ipc.ts (has IPC_CHANNELS
+    and types), src/types/config.ts (has LogLevel). Will implement preload.ts,
+    create electron.d.ts, update barrel export, and add tests."
+  - Extended preload bridge with fully-typed electronAPI methods for IPC
+    communication between renderer and main processes. Implemented logging
+    methods (log, logError, logWarn, logInfo, logDebug, logTrace), notification
+    methods (notify, notifyInfo, notifyWarning, notifyError, notifySuccess),
+    configuration methods (getConfig, setConfig, onConfigChanged with proper
+    unsubscribe), and app lifecycle methods (getVersion, quit). Created Window
+    type augmentation for renderer TypeScript support. All 29 new tests passing,
+    total 330 tests passing.
 schema: v1.0
 childrenIds: []
 created: 2026-01-29T02:37:05.367Z

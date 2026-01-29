@@ -1,13 +1,90 @@
 ---
 id: T-create-configuration-types
 title: Create configuration types
-status: open
+status: done
 priority: high
 parent: F-core-types-ipc-architecture
 prerequisites:
   - T-create-core-common-types-and
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/config.ts: Created configuration type definitions including LogLevel,
+    VoiceInputMode, SttBackend, LlmProvider, SttConfig, LlmConfig, HotkeyConfig,
+    AppConfig interfaces plus DEFAULT_CONFIG values and type guards
+  src/types/config.test.ts: Created comprehensive unit tests for configuration
+    types (44 tests) covering type guards, DEFAULT_CONFIG values, interface
+    validation, and type-level constraints
+  src/types/index.ts: Updated barrel export to include config types export
+log:
+  - >-
+    Starting implementation. Reviewed:
+
+    - Task requirements and acceptance criteria
+
+    - Parent feature F-core-types-ipc-architecture context
+
+    - Prerequisites (src/types/common.ts) - DeepPartial already exists there
+
+    - MVP requirements (docs/requirements/smarthole-mvp.md) for configuration
+    settings
+
+    - Test patterns from common.test.ts
+
+
+    Key findings:
+
+    1. DeepPartial already exists in common.ts - will not duplicate
+
+    2. common.ts does not export NonEmptyString import from task spec - will
+    reference common.ts note but not use NonEmptyString in config (not needed
+    for these types)
+
+    3. MVP settings table provides defaults: push-to-talk, cloud STT, Info log
+    level, port 9473
+
+
+    Proceeding with implementation.
+  - >-
+    Created comprehensive configuration types for SmartHole application in
+    src/types/config.ts. Implemented:
+
+
+    1. LogLevel const + type with all 5 levels (error, warn, info, debug, trace)
+
+    2. VoiceInputMode type ('push-to-talk' | 'toggle')
+
+    3. SttBackend type ('local' | 'cloud')
+
+    4. SttConfig interface with backend, apiKey, and localWhisperPath
+
+    5. LlmProvider type ('anthropic' - MVP only)
+
+    6. LlmConfig interface with provider, apiKey, and model
+
+    7. HotkeyConfig interface with voiceInput and optional textInput
+
+    8. AppConfig main interface with all settings from requirements
+
+    9. DEFAULT_CONFIG with sensible defaults matching MVP requirements
+
+    10. PartialAppConfig using DeepPartial from common.ts for partial updates
+
+    11. Type guards: isLogLevel, isVoiceInputMode, isSttBackend, isLlmProvider
+
+
+    Added comprehensive unit tests (44 tests) covering:
+
+    - LogLevel values and type guard
+
+    - All type guards for runtime validation
+
+    - DEFAULT_CONFIG structure verification
+
+    - Type interface validation
+
+    - Type-level constraint tests using @ts-expect-error
+
+
+    All quality checks pass: TypeScript, ESLint, and 82 total tests passing.
 schema: v1.0
 childrenIds: []
 created: 2026-01-29T02:35:19.665Z

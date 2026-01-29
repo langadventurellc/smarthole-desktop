@@ -1,13 +1,54 @@
 ---
 id: T-create-ipc-channel-definitions
 title: Create IPC channel definitions and types
-status: open
+status: done
 priority: high
 parent: F-core-types-ipc-architecture
 prerequisites:
   - T-create-configuration-types
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/ipc.ts: Created IPC channel definitions and types including
+    IPC_CHANNELS constant, IpcChannel type, all payload interfaces
+    (LogMessagePayload, NotifyShowPayload, etc.), type maps (IpcPayloadMap,
+    IpcResponseMap), and comprehensive type guards
+  src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
+    type guards, interface structures, type maps, and type-level constraints
+    using @ts-expect-error
+  src/types/index.ts: Updated barrel export to include IPC types
+log:
+  - "Starting implementation. Verified dependencies: config.ts has LogLevel,
+    AppConfig, PartialAppConfig. Reviewed existing patterns in common.ts,
+    config.ts, and test files."
+  - >-
+    Created IPC channel definitions and types in src/types/ipc.ts. Implemented:
+
+    - IPC_CHANNELS const object with 7 channels (log:message, notify:show,
+    config:get, config:set, config:changed, app:quit, app:version) following
+    domain:action naming convention
+
+    - IpcChannel union type derived from channel constants
+
+    - LogMessagePayload interface with level, message, context, and timestamp
+    fields
+
+    - Notification types: NotificationType, NotificationPriority,
+    NotificationAction, NotifyShowPayload, NotificationClickedPayload
+
+    - Configuration IPC types: ConfigGetResponse, ConfigSetPayload,
+    ConfigChangedPayload
+
+    - App lifecycle types: AppVersionResponse
+
+    - Type maps: IpcPayloadMap (maps channels to payloads) and IpcResponseMap
+    (maps invoke channels to responses)
+
+    - Type guards: isIpcChannel, isNotificationType, isNotificationPriority,
+    isLogMessagePayload, isNotificationAction, isNotifyShowPayload,
+    isConfigSetPayload, isConfigChangedPayload, isAppVersionResponse
+
+    - 86 tests covering all types, type guards, and type-level constraints
+
+    - Updated barrel export to include IPC types
 schema: v1.0
 childrenIds: []
 created: 2026-01-29T02:35:41.297Z
