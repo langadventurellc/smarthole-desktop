@@ -1,13 +1,39 @@
 ---
 id: T-register-uncaught-exception
 title: Register Uncaught Exception Handlers in Main Process
-status: open
+status: done
 priority: high
 parent: F-error-handling-framework
 prerequisites:
   - T-create-error-wrapping-utility
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/utils/process-error-handlers.ts: Created new module with
+    registerProcessErrorHandlers() and unregisterProcessErrorHandlers()
+    functions, ErrorLogger and ProcessErrorHandlerOptions interfaces, and
+    isDev() helper
+  src/utils/process-error-handlers.test.ts: Created comprehensive test suite with
+    36 tests covering handler registration, unregistration, uncaughtException
+    handling, unhandledRejection handling, render-process-gone,
+    child-process-gone, options handling, and error wrapping
+  src/utils/index.ts: Added export for process-error-handlers module
+  src/main.ts: Added import and early registration of process error handlers with
+    onFatalError callback
+log:
+  - Starting implementation. Verified prerequisite
+    T-create-error-wrapping-utility is complete. Found wrapError function in
+    src/utils/error-utils.ts and AppError class in src/utils/errors.ts. Reviewed
+    existing test patterns in error-utils.test.ts. Will now create
+    process-error-handlers.ts with registerProcessErrorHandlers() and
+    unregisterProcessErrorHandlers() functions.
+  - Implemented global process error handlers for the Electron main process.
+    Created `registerProcessErrorHandlers()` function that registers handlers
+    for `uncaughtException`, `unhandledRejection`, `render-process-gone`, and
+    `child-process-gone` events. Errors are wrapped as AppError instances with
+    appropriate severity and recoverability flags. The function supports
+    dependency injection for logging and configurable exit behavior. Added
+    `unregisterProcessErrorHandlers()` for testing cleanup. Integrated handlers
+    early in main.ts startup. All 36 tests pass and all acceptance criteria are
+    met.
 schema: v1.0
 childrenIds: []
 created: 2026-01-29T04:32:57.632Z

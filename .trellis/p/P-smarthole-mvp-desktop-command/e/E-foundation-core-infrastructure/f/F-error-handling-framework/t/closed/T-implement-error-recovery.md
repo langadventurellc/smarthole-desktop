@@ -1,13 +1,76 @@
 ---
 id: T-implement-error-recovery
 title: Implement Error Recovery Strategies
-status: open
+status: done
 priority: high
 parent: F-error-handling-framework
 prerequisites:
   - T-create-error-wrapping-utility
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/utils/error-recovery.ts: Created error recovery utilities with
+    retryWithBackoff(), withFallback(), withFallbackSync(),
+    getRecoveryStrategy(), and isRetryable() functions
+  src/utils/error-recovery.test.ts: Created comprehensive test suite with 59 tests
+    covering all acceptance criteria
+  src/utils/index.ts: Added export for error-recovery module
+log:
+  - "Starting implementation. Verified prerequisite files exist:
+    src/utils/error-utils.ts, src/utils/errors.ts, src/types/errors.ts,
+    src/types/common.ts. All dependencies are in place. Creating
+    src/utils/error-recovery.ts with retry with backoff, fallback patterns, and
+    recovery strategy determination."
+  - >-
+    Implemented error recovery utilities including:
+
+
+    1. **retryWithBackoff()** - Async retry with exponential backoff, jitter
+    support, maxDelayMs cap, and returns Result<T, AppError>
+
+    2. **withFallback()** - Async operation with fallback value on failure,
+    optional onError callback
+
+    3. **withFallbackSync()** - Synchronous version of withFallback
+
+    4. **getRecoveryStrategy()** - Determines appropriate recovery strategy
+    (retry/fallback/notify/shutdown) based on error properties
+
+    5. **isRetryable()** - Checks if an error is retryable based on its code and
+    recoverability
+
+
+    All acceptance criteria met:
+
+    - retryWithBackoff() retries up to maxAttempts with exponential backoff
+
+    - Jitter applied to prevent thundering herd
+
+    - maxDelayMs cap respected
+
+    - Result<T, AppError> return type
+
+    - withFallback() returns fallback on error and calls onError callback
+
+    - withFallbackSync() works for synchronous operations
+
+    - getRecoveryStrategy() returns appropriate strategy based on error
+    properties
+
+    - isRetryable() checks error against retryable codes
+
+    - Export added to src/utils/index.ts
+
+
+    59 tests passing covering all specified test scenarios including:
+
+    - Retry success/failure cases
+
+    - Backoff delay calculations
+
+    - Jitter variations
+
+    - Fallback behavior (sync and async)
+
+    - Recovery strategy determination for all error types
 schema: v1.0
 childrenIds: []
 created: 2026-01-29T04:31:56.064Z

@@ -10,6 +10,7 @@
 
 export * from "./common";
 export * from "./config";
+export * from "./errors";
 export * from "./ipc";
 export * from "./messages";
 export * from "./guards";

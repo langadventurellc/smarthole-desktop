@@ -1,12 +1,53 @@
 ---
 id: T-create-error-types-and-error
 title: Create Error Types and Error Codes Enum
-status: open
+status: done
 priority: high
 parent: F-error-handling-framework
 prerequisites: []
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/errors.ts: Created ErrorCode enum with all error codes, ErrorSeverity
+    type, ERROR_SEVERITIES constant, and type guards (isErrorSeverity,
+    isErrorCode)
+  src/utils/errors.ts: "Created AppError base class with toJSON/fromJSON methods,
+    SerializedAppError interface, and subclasses: ConfigurationError,
+    NetworkError, IpcError, ServiceError"
+  src/utils/index.ts: Created barrel export for utils module
+  src/types/index.ts: Added export for errors.ts to barrel export
+  src/utils/errors.test.ts: Created comprehensive test suite with 40 tests
+    covering all error classes, serialization, prototype chain, and error cause
+    chaining
+log:
+  - |-
+    Starting implementation. Reviewed existing codebase patterns:
+    - src/types/common.ts for type patterns (branded types, type guards)
+    - src/types/index.ts for barrel export pattern
+    - src/types/common.test.ts for testing patterns (vitest, describe/it/expect)
+    - tsconfig.json confirms ES2022 target (supports Error.cause)
+    - src/utils/ directory does not exist yet - will create it
+  - >-
+    Created the error type hierarchy and error codes enum for the SmartHole
+    application. Implemented:
+
+    - ErrorCode enum with 18 error codes organized by domain (general,
+    configuration, network, IPC, service, STT, LLM)
+
+    - ErrorSeverity type with four levels (low, medium, high, critical) plus
+    type guards
+
+    - AppError base class with code, userMessage, recoverable, severity, and
+    cause properties
+
+    - toJSON() method for IPC serialization and fromJSON() static method for
+    deserialization
+
+    - ConfigurationError, NetworkError, IpcError, and ServiceError subclasses
+    with sensible defaults
+
+    - SerializedAppError interface for type-safe IPC transport
+
+    - Comprehensive test suite with 40 tests covering construction, prototype
+    chain, serialization, and error chaining
 schema: v1.0
 childrenIds: []
 created: 2026-01-29T04:30:35.956Z

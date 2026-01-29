@@ -1,14 +1,49 @@
 ---
 id: T-create-error-wrapping-utility
 title: Create Error Wrapping Utility
-status: open
+status: done
 priority: high
 parent: F-error-handling-framework
 prerequisites:
   - T-create-error-types-and-error
   - T-create-user-facing-error
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/utils/error-utils.ts: Created error wrapping utility with wrapError(),
+    isAppError(), isErrorOfType(), and getRootCause() functions
+  src/utils/index.ts: Added export for error-utils module
+  src/utils/error-utils.test.ts: Created comprehensive test suite with 56 tests
+    covering all error wrapping scenarios
+log:
+  - "Starting implementation. Verified prerequisites: src/types/errors.ts
+    (ErrorCode, ErrorSeverity), src/utils/errors.ts (AppError and subclasses),
+    src/utils/error-messages.ts (getUserMessage). Will create error-utils.ts
+    with wrapError, isAppError, isErrorOfType, and getRootCause functions."
+  - >-
+    Implemented error wrapping utilities in src/utils/error-utils.ts with
+    comprehensive functionality:
+
+
+    1. **wrapError()** - Converts any caught value to a typed AppError:
+       - Returns AppError as-is when no options provided
+       - Creates new AppError with option overrides when options specified
+       - Wraps standard Error instances with cause chain
+       - Handles strings, null, undefined, and other unknown values
+       - Uses ErrorCode.UNKNOWN as default, getUserMessage() for user messages
+       - Defaults to recoverable=true and severity="medium"
+
+    2. **isAppError()** - Type guard to check if value is an AppError
+
+
+    3. **isErrorOfType()** - Generic type guard to check for specific AppError
+    subclasses (NetworkError, ConfigurationError, etc.)
+
+
+    4. **getRootCause()** - Traverses error cause chain to find the original
+    error
+
+
+    Created 56 tests covering all acceptance criteria including edge cases
+    (null, undefined, objects, numbers, deep cause chains).
 schema: v1.0
 childrenIds: []
 created: 2026-01-29T04:31:25.660Z

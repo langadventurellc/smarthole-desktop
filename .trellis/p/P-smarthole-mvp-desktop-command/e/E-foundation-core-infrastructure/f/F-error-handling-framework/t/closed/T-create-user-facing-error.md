@@ -1,13 +1,76 @@
 ---
 id: T-create-user-facing-error
 title: Create User-Facing Error Message Mapping
-status: open
+status: done
 priority: high
 parent: F-error-handling-framework
 prerequisites:
   - T-create-error-types-and-error
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/utils/error-messages.ts: Created ERROR_MESSAGES constant mapping all
+    ErrorCode values to user-friendly messages, getUserMessage() and
+    getUserMessageSafe() helper functions, and re-exported isErrorCode type
+    guard
+  src/utils/error-messages.test.ts: Created comprehensive test suite with 26 tests
+    covering message completeness, quality (no jargon, actionable, concise),
+    getUserMessage, getUserMessageSafe, and isErrorCode
+  src/utils/index.ts: Added export for error-messages module
+log:
+  - >-
+    Starting implementation. Research complete:
+
+    - ErrorCode enum exists in src/types/errors.ts with 18 error codes
+
+    - isErrorCode type guard already exists in src/types/errors.ts (will
+    re-export for convenience)
+
+    - src/utils/index.ts needs to be updated to export from error-messages
+
+    - Test pattern follows Vitest with describe/it/expect blocks
+
+    - Will create src/utils/error-messages.ts and
+    src/utils/error-messages.test.ts
+  - >-
+    Created user-facing error message mapping system with:
+
+
+    1. **ERROR_MESSAGES constant** - Maps all 18 ErrorCode values to clear,
+    actionable user messages that avoid technical jargon
+
+    2. **getUserMessage()** - Returns the user message for an ErrorCode, with
+    fallback to UNKNOWN message
+
+    3. **getUserMessageSafe()** - Bonus function that safely handles unknown
+    values at runtime
+
+    4. **isErrorCode re-export** - Re-exported from types/errors.ts for
+    convenience
+
+
+    All messages follow the guidelines:
+
+    - Actionable (contain "try again", "please check", "restart", etc.)
+
+    - No technical jargon (IPC, API, STT, LLM, etc. are avoided)
+
+    - Concise (max 2 sentences)
+
+    - No sensitive information exposure (file paths, stack traces, etc.)
+
+
+    Test coverage includes 26 tests verifying:
+
+    - All error codes have messages
+
+    - Messages are actionable
+
+    - Messages avoid jargon
+
+    - Messages are concise
+
+    - getUserMessage/getUserMessageSafe work correctly
+
+    - isErrorCode type guard works
 schema: v1.0
 childrenIds: []
 created: 2026-01-29T04:30:59.417Z

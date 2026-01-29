@@ -15,7 +15,7 @@ affectedFiles:
     common.ts; Updated barrel export to include config types export; Updated
     barrel export to include messages module; Updated barrel export to include
     IPC types; Updated barrel export to include guards module; Added ElectronAPI
-    type export from preload module
+    type export from preload module; Added export for errors.ts to barrel export
   src/types/common.test.ts: Created comprehensive unit tests for all types and
     functions (37 tests) including type-level constraint verification
   src/types/config.ts: Created configuration type definitions including LogLevel,
@@ -58,6 +58,54 @@ affectedFiles:
   src/preload.test.ts: Created comprehensive unit tests (29 tests) mocking
     ipcRenderer to verify IPC channels, payload structures, convenience methods,
     and onConfigChanged unsubscribe functionality
+  src/types/errors.ts: Created ErrorCode enum with all error codes, ErrorSeverity
+    type, ERROR_SEVERITIES constant, and type guards (isErrorSeverity,
+    isErrorCode)
+  src/utils/errors.ts: "Created AppError base class with toJSON/fromJSON methods,
+    SerializedAppError interface, and subclasses: ConfigurationError,
+    NetworkError, IpcError, ServiceError"
+  src/utils/index.ts: Created barrel export for utils module; Added export for
+    error-messages module; Added export for error-utils module; Added export for
+    error-recovery module; Added export for process-error-handlers module
+  src/utils/errors.test.ts: Created comprehensive test suite with 40 tests
+    covering all error classes, serialization, prototype chain, and error cause
+    chaining
+  src/utils/error-messages.ts: Created ERROR_MESSAGES constant mapping all
+    ErrorCode values to user-friendly messages, getUserMessage() and
+    getUserMessageSafe() helper functions, and re-exported isErrorCode type
+    guard
+  src/utils/error-messages.test.ts: Created comprehensive test suite with 26 tests
+    covering message completeness, quality (no jargon, actionable, concise),
+    getUserMessage, getUserMessageSafe, and isErrorCode
+  src/utils/error-utils.ts: Created error wrapping utility with wrapError(),
+    isAppError(), isErrorOfType(), and getRootCause() functions
+  src/utils/error-utils.test.ts: Created comprehensive test suite with 56 tests
+    covering all error wrapping scenarios
+  src/components/ErrorBoundary.tsx: Created Error Boundary component with
+    getDerivedStateFromError, componentDidCatch, reset functionality, IPC
+    reporting, and support for custom fallback UI
+  src/components/ErrorBoundary.test.tsx: Created comprehensive test suite with 25
+    tests covering all acceptance criteria
+  src/components/index.ts: Created barrel export for components module
+  src/test-setup.ts: Created vitest setup file for jest-dom matchers
+  vitest.config.ts: Updated to use jsdom environment, added React plugin, and setup file
+  package.json: Added @testing-library/react, @testing-library/jest-dom, and jsdom
+    dev dependencies
+  src/utils/error-recovery.ts: Created error recovery utilities with
+    retryWithBackoff(), withFallback(), withFallbackSync(),
+    getRecoveryStrategy(), and isRetryable() functions
+  src/utils/error-recovery.test.ts: Created comprehensive test suite with 59 tests
+    covering all acceptance criteria
+  src/utils/process-error-handlers.ts: Created new module with
+    registerProcessErrorHandlers() and unregisterProcessErrorHandlers()
+    functions, ErrorLogger and ProcessErrorHandlerOptions interfaces, and
+    isDev() helper
+  src/utils/process-error-handlers.test.ts: Created comprehensive test suite with
+    36 tests covering handler registration, unregistration, uncaughtException
+    handling, unhandledRejection handling, render-process-gone,
+    child-process-gone, options handling, and error wrapping
+  src/main.ts: Added import and early registration of process error handlers with
+    onFatalError callback
 log: []
 schema: v1.0
 childrenIds:
