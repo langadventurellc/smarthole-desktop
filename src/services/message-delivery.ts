@@ -81,6 +81,8 @@ export interface DeliveryStatus {
 export interface MessageDeliveryConfig {
   /** Maximum number of delivery statuses to keep in history (default: 100) */
   maxHistorySize?: number;
+  /** Timeout in milliseconds for client responses before implicit rejection (default: 30000) */
+  responseTimeoutMs?: number;
 }
 
 /**
@@ -194,6 +196,7 @@ export interface MessageDeliveryService {
 // ============================================================================
 
 const DEFAULT_MAX_HISTORY_SIZE = 100;
+const DEFAULT_RESPONSE_TIMEOUT_MS = 30000; // 30 seconds
 
 // ============================================================================
 // Helper Functions
@@ -250,15 +253,20 @@ class MessageDeliveryImpl implements MessageDeliveryService {
   private readonly logger: Logger;
   private readonly registry: ClientRegistryService;
   private readonly maxHistorySize: number;
+  private readonly responseTimeoutMs: number;
   private readonly emitter: EventEmitter;
 
   /** Delivery history, newest entries at the end */
   private readonly deliveryHistory: DeliveryStatus[] = [];
 
+  /** Pending response timers, keyed by `${messageId}:${clientName}` */
+  private readonly pendingResponses: Map<string, NodeJS.Timeout> = new Map();
+
   constructor(config: MessageDeliveryConfig = {}) {
     this.logger = getLogger().child({ component: "MessageDelivery" });
     this.registry = getClientRegistry();
     this.maxHistorySize = config.maxHistorySize ?? DEFAULT_MAX_HISTORY_SIZE;
+    this.responseTimeoutMs = config.responseTimeoutMs ?? DEFAULT_RESPONSE_TIMEOUT_MS;
     this.emitter = new EventEmitter();
   }
 
@@ -279,6 +287,11 @@ class MessageDeliveryImpl implements MessageDeliveryService {
 
     // Log the delivery attempt
     this.logDelivery(message.id, clientName, result);
+
+    // Start response timeout timer for successful deliveries
+    if (result.success) {
+      this.startResponseTimer(message.id, clientName);
+    }
 
     return result;
   }
@@ -327,6 +340,7 @@ class MessageDeliveryImpl implements MessageDeliveryService {
    */
   clearDeliveryHistory(): void {
     this.deliveryHistory.length = 0;
+    this.clearAllPendingTimers();
     this.logger.debug("Delivery history cleared");
   }
 
@@ -447,6 +461,9 @@ class MessageDeliveryImpl implements MessageDeliveryService {
     const client = this.registry.getClientById(context.connectionId);
     const clientName = client?.name ?? "unknown";
 
+    // Cancel the response timeout timer since we received a response
+    this.cancelResponseTimer(messageId, clientName);
+
     // Find the delivery status for this message
     const status = this.findDeliveryStatusForUpdate(messageId, clientName);
 
@@ -538,6 +555,77 @@ class MessageDeliveryImpl implements MessageDeliveryService {
       }
     }
     return undefined;
+  }
+
+  // ==========================================================================
+  // Response Timeout Management
+  // ==========================================================================
+
+  /**
+   * Create a unique key for tracking pending responses.
+   */
+  private createPendingKey(messageId: MessageId, clientName: string): string {
+    return `${messageId}:${clientName}`;
+  }
+
+  /**
+   * Start a response timeout timer for a delivered message.
+   */
+  private startResponseTimer(messageId: MessageId, clientName: string): void {
+    const key = this.createPendingKey(messageId, clientName);
+
+    // Clear any existing timer for this key (shouldn't happen, but be safe)
+    this.cancelResponseTimer(messageId, clientName);
+
+    const timer = setTimeout(() => {
+      this.handleTimeout(messageId, clientName);
+    }, this.responseTimeoutMs);
+
+    this.pendingResponses.set(key, timer);
+  }
+
+  /**
+   * Cancel a response timeout timer if one exists.
+   */
+  private cancelResponseTimer(messageId: MessageId, clientName: string): void {
+    const key = this.createPendingKey(messageId, clientName);
+    const timer = this.pendingResponses.get(key);
+    if (timer) {
+      clearTimeout(timer);
+      this.pendingResponses.delete(key);
+    }
+  }
+
+  /**
+   * Clear all pending response timers.
+   * Called during service reset/shutdown.
+   */
+  private clearAllPendingTimers(): void {
+    for (const timer of this.pendingResponses.values()) {
+      clearTimeout(timer);
+    }
+    this.pendingResponses.clear();
+  }
+
+  /**
+   * Handle a response timeout by treating it as an implicit rejection.
+   */
+  private handleTimeout(messageId: MessageId, clientName: string): void {
+    const key = this.createPendingKey(messageId, clientName);
+    this.pendingResponses.delete(key);
+
+    // Update delivery status with timeout response
+    const status = this.findDeliveryStatusForUpdate(messageId, clientName);
+    if (status) {
+      status.response = {
+        type: "reject",
+        receivedAt: createTimestamp(),
+        payload: { reason: "Response timeout" },
+      };
+    }
+
+    this.logger.warn("Response timeout", { messageId, clientName });
+    this.emitter.emit("response:reject", messageId, clientName, "Response timeout");
   }
 }
 

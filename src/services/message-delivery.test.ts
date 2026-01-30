@@ -548,4 +548,175 @@ describe("MessageDelivery", () => {
       delivery.off("response:notification", notifyHandler);
     });
   });
+
+  describe("response timeout", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("uses default timeout of 30 seconds", () => {
+      registerTestClient("notebook");
+      const message = createTestMessage();
+      const rejectHandler = vi.fn();
+      delivery.on("response:reject", rejectHandler);
+
+      delivery.sendToClient("notebook", message);
+
+      // Advance time just under 30 seconds - no timeout yet
+      vi.advanceTimersByTime(29999);
+      expect(rejectHandler).not.toHaveBeenCalled();
+
+      // Advance to exactly 30 seconds - timeout should fire
+      vi.advanceTimersByTime(1);
+      expect(rejectHandler).toHaveBeenCalledWith(message.id, "notebook", "Response timeout");
+
+      delivery.off("response:reject", rejectHandler);
+    });
+
+    it("uses custom timeout from config", () => {
+      resetMessageDelivery();
+      delivery = initializeMessageDelivery({ responseTimeoutMs: 5000 });
+
+      registerTestClient("notebook");
+      const message = createTestMessage();
+      const rejectHandler = vi.fn();
+      delivery.on("response:reject", rejectHandler);
+
+      delivery.sendToClient("notebook", message);
+
+      // Advance time just under 5 seconds - no timeout yet
+      vi.advanceTimersByTime(4999);
+      expect(rejectHandler).not.toHaveBeenCalled();
+
+      // Advance to exactly 5 seconds - timeout should fire
+      vi.advanceTimersByTime(1);
+      expect(rejectHandler).toHaveBeenCalledWith(message.id, "notebook", "Response timeout");
+
+      delivery.off("response:reject", rejectHandler);
+    });
+
+    it("updates delivery status on timeout", () => {
+      resetMessageDelivery();
+      delivery = initializeMessageDelivery({ responseTimeoutMs: 1000 });
+
+      registerTestClient("notebook");
+      const message = createTestMessage();
+
+      delivery.sendToClient("notebook", message);
+
+      // Trigger timeout
+      vi.advanceTimersByTime(1000);
+
+      const status = delivery.getDeliveryStatus(message.id);
+      expect(status?.response).toBeDefined();
+      expect(status?.response?.type).toBe("reject");
+      expect(status?.response?.payload).toEqual({ reason: "Response timeout" });
+    });
+
+    it("cancels timeout when response is received", () => {
+      resetMessageDelivery();
+      delivery = initializeMessageDelivery({ responseTimeoutMs: 1000 });
+
+      const connectionId = "client-notebook";
+      registerTestClient("notebook");
+      const message = createTestMessage();
+      const rejectHandler = vi.fn();
+      delivery.on("response:reject", rejectHandler);
+
+      delivery.sendToClient("notebook", message);
+
+      // Receive response before timeout
+      const responseData = Buffer.from(
+        JSON.stringify({
+          type: "response",
+          payload: {
+            messageId: message.id,
+            type: "ack",
+            payload: {},
+          },
+        })
+      );
+
+      delivery.handleResponse(responseData, {
+        connectionId: createClientId(connectionId),
+      });
+
+      // Advance past the timeout - should not trigger since response was received
+      vi.advanceTimersByTime(2000);
+      expect(rejectHandler).not.toHaveBeenCalled();
+
+      delivery.off("response:reject", rejectHandler);
+    });
+
+    it("does not start timer for failed deliveries", () => {
+      resetMessageDelivery();
+      delivery = initializeMessageDelivery({ responseTimeoutMs: 1000 });
+
+      // Don't register client - delivery will fail
+      const message = createTestMessage();
+      const rejectHandler = vi.fn();
+      delivery.on("response:reject", rejectHandler);
+
+      delivery.sendToClient("nonexistent", message);
+
+      // Advance past the timeout - should not trigger since delivery failed
+      vi.advanceTimersByTime(2000);
+      expect(rejectHandler).not.toHaveBeenCalled();
+
+      delivery.off("response:reject", rejectHandler);
+    });
+
+    it("handles multiple concurrent timeouts independently", () => {
+      resetMessageDelivery();
+      delivery = initializeMessageDelivery({ responseTimeoutMs: 1000 });
+
+      registerTestClient("notebook");
+      registerTestClient("terminal");
+      const message = createTestMessage();
+      const rejectHandler = vi.fn();
+      delivery.on("response:reject", rejectHandler);
+
+      // Send to both clients
+      delivery.sendToClients(["notebook", "terminal"], message);
+
+      // Trigger timeout
+      vi.advanceTimersByTime(1000);
+
+      // Both should have timed out
+      expect(rejectHandler).toHaveBeenCalledTimes(2);
+      expect(rejectHandler).toHaveBeenCalledWith(message.id, "notebook", "Response timeout");
+      expect(rejectHandler).toHaveBeenCalledWith(message.id, "terminal", "Response timeout");
+
+      delivery.off("response:reject", rejectHandler);
+    });
+
+    it("clears timers on service reset", () => {
+      resetMessageDelivery();
+      delivery = initializeMessageDelivery({ responseTimeoutMs: 1000 });
+
+      registerTestClient("notebook");
+      const message = createTestMessage();
+      const rejectHandler = vi.fn();
+      delivery.on("response:reject", rejectHandler);
+
+      delivery.sendToClient("notebook", message);
+
+      // Reset the service (clears timers)
+      resetMessageDelivery();
+
+      // Re-initialize to set up the listener again
+      delivery = initializeMessageDelivery({ responseTimeoutMs: 1000 });
+      delivery.on("response:reject", rejectHandler);
+
+      // Advance past the timeout - should not trigger since service was reset
+      vi.advanceTimersByTime(2000);
+      expect(rejectHandler).not.toHaveBeenCalled();
+
+      delivery.off("response:reject", rejectHandler);
+    });
+  });
 });
