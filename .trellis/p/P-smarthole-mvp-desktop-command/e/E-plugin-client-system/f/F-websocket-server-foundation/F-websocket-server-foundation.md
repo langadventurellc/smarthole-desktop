@@ -1,64 +1,74 @@
 ---
 id: F-websocket-server-foundation
 title: WebSocket Server Foundation
-status: open
+status: in-progress
 priority: high
 parent: E-plugin-client-system
 prerequisites: []
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/services/websocket-server.ts: Created new WebSocket server service with
+    singleton pattern, localhost-only binding, connection validation, lifecycle
+    management, and error handling
+  src/services/websocket-server.test.ts: Added focused unit tests for
+    initialization, lifecycle, and localhost validation
+  src/main.ts: Integrated WebSocket server initialization in app.whenReady() and
+    shutdown in will-quit event
+  package.json: Added @types/ws as a dev dependency (ws was already installed)
+log:
+  - "Started implementation. Created feature branch
+    feature/F-websocket-server-foundation. Execution order:
+    T-implement-websocket-server → T-implement-connection-handling →
+    T-expose-websocket-server"
 schema: v1.0
-childrenIds: []
-created: 2026-01-30T05:15:28.223Z
-updated: 2026-01-30T05:15:28.223Z
+childrenIds:
+  - T-expose-websocket-server
+  - T-implement-connection-handling
+  - T-implement-websocket-server
+created: 2026-01-30T06:24:55.210Z
+updated: 2026-01-30T06:24:55.210Z
 ---
 
 # WebSocket Server Foundation
 
 ## Purpose
 
-Implement the core WebSocket server that plugins connect to, including server lifecycle management, connection handling, and localhost-only security restrictions.
+Implement the core WebSocket server that enables plugins to connect to SmartHole. This is the foundational networking layer for the entire plugin client system.
 
 ## Requirements
 
+### Server Configuration
+
+- Local WebSocket server bound to 127.0.0.1 (localhost only)
+- Default port: 9473
+- Configurable port via settings
+- Security: reject connections from non-localhost origins
+
 ### Server Lifecycle
 
-- Start WebSocket server on `127.0.0.1:9473` (localhost only)
-- Server starts automatically when app is ready (inside `app.whenReady()`)
-- Server shuts down gracefully when app quits
-- Configurable port via settings (default 9473)
+- Start server on app launch (inside `app.whenReady()`)
+- Stop server gracefully on app quit
+- Handle server errors (port in use, bind failures)
+- Log server state changes
 
 ### Connection Handling
 
 - Accept incoming WebSocket connections
 - Track active connections
-- Properly close connections on server shutdown
-- Handle connection errors gracefully
+- Handle connection close events
+- Implement heartbeat/ping-pong for connection health detection
 
-### Security
+## Technical Approach
 
-- Bind exclusively to `127.0.0.1` (not `0.0.0.0`)
-- Reject connections from non-localhost origins
-- Validate origin header on connection upgrade
-
-## Technical Notes
-
-- Use `ws` npm package for WebSocket implementation
-- Create `src/services/websocket-server.ts` for server management
-- Follow existing service patterns (initialize/get pattern like logger)
-- Log server lifecycle events using centralized logger
+- Use `ws` npm package for WebSocket server
+- Integrate with existing logging service
+- Expose server status for tray menu display
 
 ## Acceptance Criteria
 
-1. [ ] WebSocket server starts on 127.0.0.1:9473 during app startup
+1. [ ] WebSocket server starts on 127.0.0.1:9473
 2. [ ] Server rejects non-localhost connection attempts
-3. [ ] Server port is configurable (default 9473)
-4. [ ] Server shuts down cleanly when app quits
-5. [ ] Connection events are logged appropriately
-6. [ ] Connection errors are handled without crashing
-7. [ ] Server supports at least 20 concurrent client connections
-
-## Dependencies
-
-- Logger service (existing)
-- Error handling framework (existing)
+3. [ ] Server starts automatically with app
+4. [ ] Server stops gracefully on app quit
+5. [ ] Port conflicts handled with clear error messages
+6. [ ] Connection health monitored via ping-pong
+7. [ ] Server status exposed for UI layer

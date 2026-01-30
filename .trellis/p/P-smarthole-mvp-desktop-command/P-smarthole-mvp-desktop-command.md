@@ -90,7 +90,8 @@ affectedFiles:
   src/test-setup.ts: Created vitest setup file for jest-dom matchers
   vitest.config.ts: Updated to use jsdom environment, added React plugin, and setup file
   package.json: Added @testing-library/react, @testing-library/jest-dom, and jsdom
-    dev dependencies; Added pino and pino-pretty dependencies
+    dev dependencies; Added pino and pino-pretty dependencies; Added @types/ws
+    as a dev dependency (ws was already installed)
   src/utils/error-recovery.ts: Created error recovery utilities with
     retryWithBackoff(), withFallback(), withFallbackSync(),
     getRecoveryStrategy(), and isRetryable() functions
@@ -111,7 +112,8 @@ affectedFiles:
     for NotificationService, NotificationQueue, and notification handler;
     initialization of notification service and queue after logger; child logger
     for notification IPC; IPC handler registration for NOTIFY_SHOW channel;
-    cleanup on will-quit event to destroy the queue"
+    cleanup on will-quit event to destroy the queue; Integrated WebSocket server
+    initialization in app.whenReady() and shutdown in will-quit event"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -170,6 +172,11 @@ affectedFiles:
     invalid payload rejection, graceful degradation when notifications not
     supported, coalescing integration, content sanitization, and queue overflow
     handling."
+  src/services/websocket-server.ts: Created new WebSocket server service with
+    singleton pattern, localhost-only binding, connection validation, lifecycle
+    management, and error handling
+  src/services/websocket-server.test.ts: Added focused unit tests for
+    initialization, lifecycle, and localhost validation
 log: []
 schema: v1.0
 childrenIds:

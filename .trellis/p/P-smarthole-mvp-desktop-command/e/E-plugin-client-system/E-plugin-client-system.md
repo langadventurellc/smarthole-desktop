@@ -1,15 +1,28 @@
 ---
 id: E-plugin-client-system
 title: Plugin Client System
-status: open
+status: in-progress
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
   - E-foundation-core-infrastructure
-affectedFiles: {}
+affectedFiles:
+  src/services/websocket-server.ts: Created new WebSocket server service with
+    singleton pattern, localhost-only binding, connection validation, lifecycle
+    management, and error handling
+  src/services/websocket-server.test.ts: Added focused unit tests for
+    initialization, lifecycle, and localhost validation
+  src/main.ts: Integrated WebSocket server initialization in app.whenReady() and
+    shutdown in will-quit event
+  package.json: Added @types/ws as a dev dependency (ws was already installed)
 log: []
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - F-client-registration-registry
+  - F-client-response-handling
+  - F-connection-health-ui
+  - F-message-delivery-to-clients
+  - F-websocket-server-foundation
 created: 2026-01-29T01:45:03.912Z
 updated: 2026-01-29T01:45:03.912Z
 ---

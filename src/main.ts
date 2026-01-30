@@ -3,6 +3,7 @@ import { registerProcessErrorHandlers } from "./utils/process-error-handlers";
 import { initializeLogger, Logger } from "./services/logger";
 import { initializeNotificationService } from "./services/notifications";
 import { initializeNotificationQueue, getNotificationQueue } from "./services/notification-queue";
+import { initializeWebSocketServer, shutdownWebSocketServer } from "./services/websocket-server";
 import { IPC_CHANNELS, LogLevel } from "./types";
 import { createLogMessageHandler } from "./ipc/log-handler";
 import { createNotificationHandler } from "./ipc/notification-handler";
@@ -68,7 +69,7 @@ function createTray(): void {
   tray.setContextMenu(contextMenu);
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // ============================================================================
   // Initialize all services AFTER Electron is ready
   // This prevents pino worker thread issues that cause 100% CPU usage
@@ -95,6 +96,25 @@ app.whenReady().then(() => {
     maxQueueDepth: 20,
     minInterval: 1000,
   });
+
+  // Initialize WebSocket server for plugin client connections
+  try {
+    const wsServer = await initializeWebSocketServer({
+      port: 9473,
+      host: "127.0.0.1",
+      maxConnections: 100,
+    });
+    logger.info("WebSocket server initialized", {
+      port: wsServer.getPort(),
+      running: wsServer.isRunning(),
+    });
+  } catch (error) {
+    logger.error("Failed to initialize WebSocket server", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // Don't crash the app if WebSocket server fails to start
+    // The app can still function without it, but plugin connections will be unavailable
+  }
 
   // Register error handlers
   registerProcessErrorHandlers({
@@ -124,7 +144,14 @@ app.on("window-all-closed", () => {
   // Don't quit when all windows are closed - this is a tray app
 });
 
-app.on("will-quit", () => {
+app.on("will-quit", async () => {
+  // Clean up WebSocket server
+  try {
+    await shutdownWebSocketServer();
+  } catch {
+    // Server may not be initialized if app quits early
+  }
+
   // Clean up notification queue timers
   try {
     getNotificationQueue()?.destroy();
