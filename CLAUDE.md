@@ -44,10 +44,13 @@ mise run test       # Run tests
 ### Services
 
 - `src/services/logger.ts` - Centralized logging service using pino
+- `src/services/notifications.ts` - Native OS notification service wrapping Electron's Notification API
+- `src/services/notification-queue.ts` - Notification queue with priority ordering, rate limiting, and coalescing
 
 ### IPC Handlers
 
 - `src/ipc/log-handler.ts` - Handles log messages from renderer process
+- `src/ipc/notification-handler.ts` - Handles notification requests from renderer process
 
 ## Logging System
 
@@ -107,6 +110,67 @@ Logs are written to:
 - Production: Platform-specific logs directory via `app.getPath('logs')`
 
 Log files rotate at 10MB, keeping the 5 most recent rotated files.
+
+## Notification System
+
+The application uses a native OS notification system built on Electron's Notification API, with a queue that provides rate limiting, priority ordering, and notification coalescing.
+
+### Notification Initialization
+
+Initialize the notification service after the logger in the main process:
+
+```typescript
+import { initializeNotificationService } from "./services/notifications";
+import { initializeNotificationQueue } from "./services/notification-queue";
+
+const notificationService = initializeNotificationService();
+const notificationQueue = initializeNotificationQueue(notificationService, {
+  maxPerMinute: 10, // Maximum notifications per minute
+  maxQueueDepth: 20, // Maximum queue size before dropping low priority
+  minInterval: 1000, // Minimum ms between notifications
+});
+```
+
+### Showing Notifications from Main Process
+
+```typescript
+import { getNotificationQueue } from "./services/notification-queue";
+
+const queue = getNotificationQueue();
+queue.enqueue({
+  title: "Notification Title",
+  body: "Notification body text",
+  type: "info", // "info" | "warning" | "error" | "success"
+  priority: "medium", // "low" | "medium" | "high"
+});
+```
+
+### Showing Notifications from Renderer Process
+
+The renderer uses the `electronAPI` exposed via preload:
+
+```typescript
+// Convenience methods
+window.electronAPI.notifyInfo("Title", "Body text");
+window.electronAPI.notifyWarning("Warning", "Something needs attention");
+window.electronAPI.notifyError("Error", "Something went wrong");
+window.electronAPI.notifySuccess("Success", "Operation completed");
+
+// Full options
+window.electronAPI.notify({
+  title: "Custom Notification",
+  body: "With all options",
+  type: "info",
+  priority: "high",
+});
+```
+
+### Queue Features
+
+- **Priority Ordering**: High priority notifications shown before medium/low
+- **Rate Limiting**: Configurable max per minute and minimum interval
+- **Coalescing**: Similar notifications combined (e.g., "3 occurrences")
+- **Queue Overflow**: Low priority dropped first when queue is full
 
 ## Guidelines
 

@@ -1,7 +1,7 @@
 ---
 id: E-foundation-core-infrastructure
 title: Foundation & Core Infrastructure
-status: in-progress
+status: done
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites: []
@@ -104,10 +104,14 @@ affectedFiles:
     36 tests covering handler registration, unregistration, uncaughtException
     handling, unhandledRejection handling, render-process-gone,
     child-process-gone, options handling, and error wrapping
-  src/main.ts: Added import and early registration of process error handlers with
+  src/main.ts: "Added import and early registration of process error handlers with
     onFatalError callback; Added logger initialization early in startup, created
     IPC child logger, registered IPC handler for LOG_MESSAGE channel, added
-    application startup logging
+    application startup logging; Added notification system integration: imports
+    for NotificationService, NotificationQueue, and notification handler;
+    initialization of notification service and queue after logger; child logger
+    for notification IPC; IPC handler registration for NOTIFY_SHOW channel;
+    cleanup on will-quit event to destroy the queue"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -117,7 +121,8 @@ affectedFiles:
     LoggerWrapper to accept logMessageContent flag and apply sanitization to all
     log context. Updated initializeLogger() and createLogger() to pass
     logMessageContent to LoggerWrapper.
-  src/services/index.ts: Created barrel export for services module
+  src/services/index.ts: Created barrel export for services module; Added export
+    for notifications module; Added export for notification-queue module
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -128,14 +133,45 @@ affectedFiles:
   src/ipc/log-handler.ts: Created new module with createLogMessageHandler() and
     processLogMessage() functions for handling renderer log messages with
     payload validation and context enrichment
-  src/ipc/index.ts: Created barrel export for IPC module
+  src/ipc/index.ts: Created barrel export for IPC module; Added export for
+    notification-handler module to barrel export file.
   src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
     covering handler creation, payload validation, log level mapping, context
     enrichment, and edge cases
   src/services/logger.integration.test.ts: Created new integration test file with
     21 tests covering file writing, log rotation, IPC flow, log level filtering,
     and privacy features
-log: []
+  src/services/notifications.ts: Created new NotificationService with singleton
+    pattern, Electron Notification API wrapper, content sanitization, and
+    graceful degradation
+  src/services/notifications.test.ts: Created comprehensive unit tests (33 tests)
+    for NotificationService including singleton pattern, all methods, content
+    sanitization, and graceful degradation
+  src/services/notification-queue.ts: Created NotificationQueue class with
+    priority ordering, rate limiting (sliding window), notification coalescing,
+    queue overflow handling, and singleton pattern
+  src/services/notification-queue.test.ts: Created comprehensive unit tests (34
+    tests) covering singleton pattern, priority ordering, rate limiting,
+    coalescing, queue overflow, clear/destroy methods, and edge cases
+  src/ipc/notification-handler.ts: Created IPC notification handler with
+    createNotificationHandler() factory function and processNotification() for
+    testing. Validates payloads using isNotifyShowPayload(), logs invalid
+    payloads as warnings, converts valid payloads to NotificationOptions, and
+    enqueues via NotificationQueue.
+  src/ipc/notification-handler.test.ts: Created comprehensive unit tests (31
+    tests) covering payload validation (missing title/body/type/priority,
+    invalid types), valid payload processing, notification enqueuing, error
+    handling when queue throws, and edge cases (empty strings, long content,
+    special characters).
+  src/services/notifications.integration.test.ts: "Created new integration test
+    file with 28 tests covering full notification system flow: IPC handler ->
+    NotificationQueue -> NotificationService. Tests include full flow
+    validation, high priority immediate display, rate limiting integration,
+    invalid payload rejection, graceful degradation when notifications not
+    supported, coalescing integration, content sanitization, and queue overflow
+    handling."
+log:
+  - "Auto-completed: All child features are complete"
 schema: v1.0
 childrenIds:
   - F-core-types-ipc-architecture

@@ -1,8 +1,11 @@
 import { app, Tray, Menu, nativeImage, dialog, ipcMain } from "electron";
 import { registerProcessErrorHandlers } from "./utils/process-error-handlers";
 import { initializeLogger } from "./services/logger";
+import { initializeNotificationService } from "./services/notifications";
+import { initializeNotificationQueue, getNotificationQueue } from "./services/notification-queue";
 import { IPC_CHANNELS, LogLevel } from "./types";
 import { createLogMessageHandler } from "./ipc/log-handler";
+import { createNotificationHandler } from "./ipc/notification-handler";
 
 // ============================================================================
 // Logger Initialization (early, before other operations)
@@ -23,6 +26,33 @@ const logger = initializeLogger({
  */
 const ipcLogger = logger.child({ component: "IPC" });
 
+/**
+ * Child logger for notification IPC logging.
+ */
+const notifyLogger = logger.child({ component: "NotificationIPC" });
+
+// ============================================================================
+// Notification Service Initialization
+// ============================================================================
+
+/**
+ * Initialize the notification service after logger.
+ * This provides native OS notification capabilities.
+ */
+const notificationService = initializeNotificationService();
+logger.info("Notification service initialized", {
+  supported: notificationService.isSupported(),
+});
+
+/**
+ * Initialize the notification queue with rate limiting and priority ordering.
+ */
+const notificationQueue = initializeNotificationQueue(notificationService, {
+  maxPerMinute: 10,
+  maxQueueDepth: 20,
+  minInterval: 1000,
+});
+
 // Register error handlers early, before any async operations
 registerProcessErrorHandlers({
   logger, // Now using the initialized logger
@@ -41,6 +71,12 @@ registerProcessErrorHandlers({
  * Validates payload and forwards to the main process logger with enriched context.
  */
 ipcMain.on(IPC_CHANNELS.LOG_MESSAGE, createLogMessageHandler(logger, ipcLogger));
+
+/**
+ * Handle notification requests from the renderer process.
+ * Validates payload and forwards to the notification queue for display.
+ */
+ipcMain.on(IPC_CHANNELS.NOTIFY_SHOW, createNotificationHandler(notificationQueue, notifyLogger));
 
 let tray: Tray | null = null;
 
@@ -116,4 +152,13 @@ app.whenReady().then(() => {
 
 app.on("window-all-closed", () => {
   // Don't quit when all windows are closed - this is a tray app
+});
+
+app.on("will-quit", () => {
+  // Clean up notification queue timers
+  try {
+    getNotificationQueue()?.destroy();
+  } catch {
+    // Queue may not be initialized if app quits early
+  }
 });

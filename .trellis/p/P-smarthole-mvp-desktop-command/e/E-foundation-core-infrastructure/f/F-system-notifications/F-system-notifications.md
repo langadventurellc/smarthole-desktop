@@ -1,16 +1,83 @@
 ---
 id: F-system-notifications
 title: System Notifications
-status: open
+status: done
 priority: medium
 parent: E-foundation-core-infrastructure
 prerequisites:
   - F-core-types-ipc-architecture
   - F-error-handling-framework
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/services/notifications.ts: Created new NotificationService with singleton
+    pattern, Electron Notification API wrapper, content sanitization, and
+    graceful degradation
+  src/services/notifications.test.ts: Created comprehensive unit tests (33 tests)
+    for NotificationService including singleton pattern, all methods, content
+    sanitization, and graceful degradation
+  src/services/index.ts: Added export for notifications module; Added export for
+    notification-queue module
+  src/services/notification-queue.ts: Created NotificationQueue class with
+    priority ordering, rate limiting (sliding window), notification coalescing,
+    queue overflow handling, and singleton pattern
+  src/services/notification-queue.test.ts: Created comprehensive unit tests (34
+    tests) covering singleton pattern, priority ordering, rate limiting,
+    coalescing, queue overflow, clear/destroy methods, and edge cases
+  src/ipc/notification-handler.ts: Created IPC notification handler with
+    createNotificationHandler() factory function and processNotification() for
+    testing. Validates payloads using isNotifyShowPayload(), logs invalid
+    payloads as warnings, converts valid payloads to NotificationOptions, and
+    enqueues via NotificationQueue.
+  src/ipc/notification-handler.test.ts: Created comprehensive unit tests (31
+    tests) covering payload validation (missing title/body/type/priority,
+    invalid types), valid payload processing, notification enqueuing, error
+    handling when queue throws, and edge cases (empty strings, long content,
+    special characters).
+  src/ipc/index.ts: Added export for notification-handler module to barrel export file.
+  src/main.ts: "Added notification system integration: imports for
+    NotificationService, NotificationQueue, and notification handler;
+    initialization of notification service and queue after logger; child logger
+    for notification IPC; IPC handler registration for NOTIFY_SHOW channel;
+    cleanup on will-quit event to destroy the queue"
+  src/services/notifications.integration.test.ts: "Created new integration test
+    file with 28 tests covering full notification system flow: IPC handler ->
+    NotificationQueue -> NotificationService. Tests include full flow
+    validation, high priority immediate display, rate limiting integration,
+    invalid payload rejection, graceful degradation when notifications not
+    supported, coalescing integration, content sanitization, and queue overflow
+    handling."
+log:
+  - "Starting feature implementation. Created feature branch
+    feature/F-system-notifications. All 5 tasks verified with correct
+    dependencies. Execution order: T-create-notificationservice →
+    T-implement-notificationqueue → T-create-notification-ipc →
+    T-integrate-notification-system → T-add-integration-tests-for"
+  - Completed T-create-notificationservice. Created
+    src/services/notifications.ts with singleton NotificationService, show()
+    method, convenience methods (showInfo, showWarning, showError, showSuccess),
+    content sanitization, and graceful degradation. 33 tests passing. Committed
+    as 75b58da. Proceeding to T-implement-notificationqueue.
+  - Completed T-implement-notificationqueue. Created
+    src/services/notification-queue.ts with priority ordering, rate limiting,
+    notification coalescing, queue overflow handling, and singleton pattern. 34
+    tests passing. Committed as bc2a8aa. Proceeding to
+    T-create-notification-ipc.
+  - Completed T-create-notification-ipc. Created src/ipc/notification-handler.ts
+    with createNotificationHandler() factory and processNotification() for
+    testing. Uses isNotifyShowPayload() type guard, logs invalid payloads as
+    warnings. 31 tests passing. Committed as adc7605. Proceeding to
+    T-integrate-notification-system.
+  - Completed T-integrate-notification-system. Updated src/main.ts to initialize
+    and wire up NotificationService, NotificationQueue, and IPC handler. Added
+    cleanup on will-quit. Committed as 6232f86. Proceeding to final task
+    T-add-integration-tests-for.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-add-integration-tests-for
+  - T-create-notification-ipc
+  - T-create-notificationservice
+  - T-implement-notificationqueue
+  - T-integrate-notification-system
 created: 2026-01-29T02:21:31.116Z
 updated: 2026-01-29T02:21:31.116Z
 ---
