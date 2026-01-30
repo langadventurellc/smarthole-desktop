@@ -29,7 +29,10 @@ affectedFiles:
     transitions, event emission, mode changes, and getStateInfo
   src/types/ipc.ts: Added 4 new IPC channels (HOTKEY_ACTIVATED, HOTKEY_RELEASED,
     INPUT_STATE_CHANGED, INPUT_GET_STATE), imported and re-exported hotkey and
-    input state types, updated IpcPayloadMap and IpcResponseMap
+    input state types, updated IpcPayloadMap and IpcResponseMap; Added 5 text
+    input popup IPC channels, TextInputSubmitPayload and TextInputOpenPayload
+    interfaces, updated IpcPayloadMap with new channel mappings, added
+    isTextInputSubmitPayload type guard
   src/ipc/hotkey-handler.ts: Created new IPC handler with
     broadcastHotkeyActivated, broadcastHotkeyReleased, and
     wireHotkeyManagerToIpc functions
@@ -43,7 +46,10 @@ affectedFiles:
     and input state service, wired events to IPC broadcasts and state
     transitions, added cleanup in will-quit handler
   src/types/ipc.test.ts: Updated channel count test from 17 to 21, added tests for
-    new hotkey and input state channels
+    new hotkey and input state channels; Added tests for new text input popup
+    channels, TextInputSubmitPayload type guard tests, TextInputOpenPayload
+    interface tests, updated channel count test from 21 to 26, updated naming
+    convention regex to allow camelCase domains
   src/types/hotkey.ts: Created new types file for hotkey event types (HotkeyType,
     HotkeyActivatedEvent, HotkeyReleasedEvent, HotkeyErrorCode,
     HotkeyErrorEvent) to avoid circular dependency between types and services

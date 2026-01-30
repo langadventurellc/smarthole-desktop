@@ -50,7 +50,10 @@ affectedFiles:
     ClientStatusChangedPayload types, plus payload/response map entries; Added 4
     new IPC channels (HOTKEY_ACTIVATED, HOTKEY_RELEASED, INPUT_STATE_CHANGED,
     INPUT_GET_STATE), imported and re-exported hotkey and input state types,
-    updated IpcPayloadMap and IpcResponseMap
+    updated IpcPayloadMap and IpcResponseMap; Added 5 text input popup IPC
+    channels, TextInputSubmitPayload and TextInputOpenPayload interfaces,
+    updated IpcPayloadMap with new channel mappings, added
+    isTextInputSubmitPayload type guard
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -59,7 +62,10 @@ affectedFiles:
     updated naming convention regex to allow camelCase actions, added test for
     new message delivery channels.; Updated channel count test and added tests
     for new client status channels; Updated channel count test from 17 to 21,
-    added tests for new hotkey and input state channels
+    added tests for new hotkey and input state channels; Added tests for new
+    text input popup channels, TextInputSubmitPayload type guard tests,
+    TextInputOpenPayload interface tests, updated channel count test from 21 to
+    26, updated naming convention regex to allow camelCase domains
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
