@@ -69,5 +69,6 @@ src/
 - [Notification System](docs/notifications.md) - queue, rate limiting, coalescing
 - [WebSocket Server](docs/websocket-server.md) - plugin connections, heartbeat, events
 - [Client Registration](docs/client-registration.md) - protocol, validation, registry API
+- [Client Status IPC](docs/client-status.md) - renderer API, tray menu integration, status events
 - [Message Delivery](docs/message-delivery.md) - routing messages to clients, response handling
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements

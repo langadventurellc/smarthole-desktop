@@ -35,6 +35,10 @@ log:
     functions, preload API extensions, and 14 tests. Review passed with no
     blocking issues.
   - "Auto-completed: All child tasks are complete"
+  - Completed T-integrate-client-connection. Committed as d94d2c8.
+    Implementation adds buildTrayMenu() and updateTrayMenu() functions, displays
+    client count with proper pluralization, shows Connected Clients submenu, and
+    subscribes to registry events for real-time updates. Review passed.
 schema: v1.0
 childrenIds:
   - T-implement-client-status-ipc

@@ -75,6 +75,10 @@ registry.on("registered", (event) => console.log(`Registered: ${event.client.nam
 registry.on("unregistered", (event) => console.log(`Unregistered: ${event.client.name}`));
 ```
 
+## Renderer Access
+
+For accessing client information from the renderer process or system tray, see [Client Status IPC](client-status.md).
+
 ## Disconnection Handling
 
 When a WebSocket connection closes, the registration handler automatically:
