@@ -6,78 +6,66 @@ priority: medium
 parent: E-plugin-client-system
 prerequisites:
   - F-client-registration-registry
-  - F-client-response-handling
 affectedFiles: {}
 log: []
 schema: v1.0
 childrenIds: []
-created: 2026-01-30T05:15:28.477Z
-updated: 2026-01-30T05:15:28.477Z
+created: 2026-01-30T06:24:55.457Z
+updated: 2026-01-30T06:24:55.457Z
 ---
 
 # Connection Health & UI Integration
 
 ## Purpose
 
-Implement connection health monitoring (disconnection detection, heartbeat), message rate limiting, and expose client connection status to the UI layer for tray menu display.
+Expose plugin connection status to the UI layer and implement connection health monitoring for the tray menu display.
 
 ## Requirements
 
-### Disconnection Detection
+### Connection Status API
 
-- Detect client disconnections (WebSocket close event, network failure)
-- Clean up client from registry on disconnect
-- Log disconnection events with client info
-- Emit events for routing agent to rebuild tool definitions
-- Detection within 5 seconds of actual disconnection
+- Get count of connected clients
+- Get list of connected client names and descriptions
+- Get detailed client info (registration time, capabilities)
+- Real-time status updates via IPC
 
-### Heartbeat/Ping-Pong
+### IPC Integration
 
-- Implement ping-pong for connection health monitoring
-- Configurable ping interval (default 15 seconds)
-- Consider client as disconnected if pong not received within timeout
-- Use WebSocket protocol-level ping/pong when available
+- Expose connection status via preload API
+- IPC handlers for:
+  - `clients:getCount` - Returns number of connected clients
+  - `clients:getList` - Returns array of client summaries
+  - `clients:getDetails` - Returns detailed info for specific client
 
-### Message Rate Limiting
+### Tray Menu Integration
 
-- Optional rate limiting for message throughput per client
-- Configurable messages-per-second threshold (default: 10/second)
-- Queue or reject excess messages based on configuration
-- Notify user if messages are being rate limited
-- Use token bucket or sliding window algorithm
+- Show connection status in tray menu (e.g., "2 clients connected")
+- Update tray menu when clients connect/disconnect
+- Optional: submenu showing connected client names
 
-### UI Integration
+### Health Monitoring
 
-- Expose connection status to UI layer via IPC
-- Provide: total connected client count, list of client names
-- IPC channel: `clients:status` for status queries
-- IPC channel: `clients:status-changed` for status updates (push)
-- Enable tray menu to show "X clients connected"
+- Client disconnection detected within 5 seconds
+- Ping-pong heartbeat for connection validation
+- Configurable heartbeat interval
+- Dead connection cleanup
 
-## Technical Notes
+## Technical Approach
 
-- Extend `src/services/websocket-server.ts` for heartbeat
-- Extend `src/services/client-registry.ts` for rate limiting
-- Create `src/ipc/client-status-handler.ts` for IPC
-- Update preload.ts to expose client status methods
-
-## Acceptance Criteria
-
-1. [ ] Disconnected clients are detected within 5 seconds
-2. [ ] Disconnected clients are removed from registry
-3. [ ] Disconnection events are logged with client info
-4. [ ] Events emitted on disconnect for routing agent
-5. [ ] Heartbeat ping-pong keeps connections healthy
-6. [ ] Rate limiting prevents message flooding (configurable)
-7. [ ] Rate limited messages are queued or rejected per config
-8. [ ] User notified when rate limiting is active
-9. [ ] Client count available via IPC
-10. [ ] Client names list available via IPC
-11. [ ] UI receives push updates when client status changes
-12. [ ] Tray menu can display "X clients connected"
+- IPC handlers in main process
+- Preload API extensions
+- Integration with tray service
+- EventEmitter subscription for real-time updates
 
 ## Dependencies
 
-- F-client-registration-registry (registry must exist)
-- F-client-response-handling (for full message flow)
-- Notification service (existing)
+- Client Registration & Registry (F-client-registration-registry)
+
+## Acceptance Criteria
+
+1. [ ] Client connection status exposed via IPC
+2. [ ] Renderer can query client count and list
+3. [ ] Tray menu shows connection status
+4. [ ] Tray updates in real-time on connect/disconnect
+5. [ ] Client disconnection detected within 5 seconds
+6. [ ] Dead connections cleaned up automatically

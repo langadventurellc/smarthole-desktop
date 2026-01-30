@@ -1,15 +1,53 @@
 ---
 id: E-plugin-client-system
 title: Plugin Client System
-status: open
+status: in-progress
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
   - E-foundation-core-infrastructure
-affectedFiles: {}
+affectedFiles:
+  src/services/websocket-server.ts: Created new WebSocket server service with
+    singleton pattern, localhost-only binding, connection validation, lifecycle
+    management, and error handling; Added connection tracking with Map<ClientId,
+    ConnectionInfo>, heartbeat monitoring with configurable interval/timeout,
+    event emitters for connection/disconnection/error events, TrackedWebSocket
+    interface for isAlive flag pattern, getActiveConnections() and
+    getConnection() APIs, startHeartbeat/stopHeartbeat/performHeartbeat private
+    methods
+  src/services/websocket-server.test.ts: Added focused unit tests for
+    initialization, lifecycle, and localhost validation; Added 9 new tests for
+    connection tracking (track connections, remove on disconnect, emit events,
+    get by ID) and heartbeat monitoring (lastActivity updates, event
+    unsubscription)
+  src/main.ts: Integrated WebSocket server initialization in app.whenReady() and
+    shutdown in will-quit event; Added WebSocket state tracking with wsState
+    object, status change broadcasting on connection events, and registered
+    WebSocket status IPC handler with ipcMain.handle()
+  package.json: Added @types/ws as a dev dependency (ws was already installed)
+  src/types/ipc.ts: Added WEBSOCKET_STATUS_GET and WEBSOCKET_STATUS_CHANGED IPC
+    channels, WebSocketServerState type, WebSocketServerStatus interface,
+    isWebSocketServerState and isWebSocketServerStatus type guards, and updated
+    IpcPayloadMap/IpcResponseMap
+  src/ipc/websocket-status-handler.ts: Created new IPC handler with
+    buildWebSocketStatus helper function, createWebSocketStatusHandler factory
+    function, and broadcastWebSocketStatusChange for pushing status updates to
+    renderer windows
+  src/ipc/websocket-status-handler.test.ts: Added 9 unit tests covering
+    buildWebSocketStatus state mapping and createWebSocketStatusHandler behavior
+  src/preload.ts: Added getWebSocketStatus() and onWebSocketStatusChange(callback)
+    methods to the electronAPI
+  src/types/ipc.test.ts: Updated tests to include new WebSocket channels,
+    increased channel count from 7 to 9, and updated naming convention regex to
+    allow domain:action:sub pattern
 log: []
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - F-client-registration-registry
+  - F-client-response-handling
+  - F-connection-health-ui
+  - F-message-delivery-to-clients
+  - F-websocket-server-foundation
 created: 2026-01-29T01:45:03.912Z
 updated: 2026-01-29T01:45:03.912Z
 ---

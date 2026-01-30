@@ -10,73 +10,66 @@ affectedFiles: {}
 log: []
 schema: v1.0
 childrenIds: []
-created: 2026-01-30T05:15:28.357Z
-updated: 2026-01-30T05:15:28.357Z
+created: 2026-01-30T06:24:55.339Z
+updated: 2026-01-30T06:24:55.339Z
 ---
 
 # Message Delivery to Clients
 
 ## Purpose
 
-Implement the message delivery system that sends routed messages to connected plugin clients, supporting single and multi-client delivery with delivery status tracking.
+Implement the message delivery system that routes messages from SmartHole to connected plugin clients.
 
 ## Requirements
 
-### Message Delivery
+### Message Format
 
-- Deliver RoutedMessage to specified client(s) by name
+- Deliver RoutedMessage to specified client(s)
 - Message format:
-  ```json
+  ```typescript
   {
-    "type": "message",
-    "id": "uuid",
-    "text": "user input text",
-    "timestamp": "ISO timestamp",
-    "metadata": {
-      "confidence": 0.95,
-      "routingReason": "User mentioned email keywords",
-      "inputMethod": "keyboard",
-      "directRouted": false
+    id: string,           // Unique message ID
+    text: string,         // The message content
+    timestamp: number,    // Unix timestamp
+    metadata: {
+      confidence: number,      // Routing confidence score
+      routingReason: string,   // Why this client was chosen
+      inputMethod: string,     // How input was captured
+      directRouted: boolean    // Was this a direct route command
     }
   }
   ```
 
-### Multi-Client Routing
+### Delivery Capabilities
 
-- Support delivering same message to multiple clients
-- Each client receives its own copy of the message
-- Track delivery status per client
-
-### Delivery Status Tracking
-
-- Track which messages have been sent to which clients
-- Track delivery success/failure per client
-- Provide delivery status lookup by message ID
-
-### Failure Handling
-
+- Deliver message to single client by name
+- Deliver same message to multiple clients (multi-routing)
+- Track message delivery status per client
 - Handle delivery failures (client disconnected mid-delivery)
-- Log delivery failures with relevant context
-- Return delivery status indicating which clients received the message
 
-## Technical Notes
+### Rate Limiting (Optional)
 
-- Create `src/services/message-delivery.ts` for delivery logic
-- Integrate with client registry for client lookup
-- Message IDs should be UUIDs for uniqueness
-- Consider async delivery with Promise.allSettled for multi-client
+- Configurable messages-per-second threshold
+- Queue or reject excess messages
+- Notify user when rate limiting is active
+- Token bucket or sliding window algorithm
 
-## Acceptance Criteria
+## Technical Approach
 
-1. [ ] Messages can be delivered to a client by name
-2. [ ] Messages are delivered in the correct JSON format
-3. [ ] Multi-client routing delivers to all specified clients
-4. [ ] Delivery status tracks success/failure per client
-5. [ ] Delivery failures are logged appropriately
-6. [ ] Disconnected clients during delivery are handled gracefully
-7. [ ] Delivery function returns status indicating results
-8. [ ] Message delivery latency is under 50ms from delivery call to WebSocket send
+- Message queue for pending deliveries
+- Delivery status tracking
+- Integration with logging for delivery audit trail
 
 ## Dependencies
 
-- F-client-registration-registry (client registry must exist)
+- Client Registration & Registry (F-client-registration-registry)
+
+## Acceptance Criteria
+
+1. [ ] Messages delivered to clients in correct format
+2. [ ] Single client delivery works correctly
+3. [ ] Multi-client routing delivers to all specified clients
+4. [ ] Delivery status tracked per message/client
+5. [ ] Delivery failures handled gracefully
+6. [ ] Rate limiting configurable and functional
+7. [ ] Delivery events logged for audit trail

@@ -10,15 +10,15 @@ affectedFiles: {}
 log: []
 schema: v1.0
 childrenIds: []
-created: 2026-01-30T05:15:28.295Z
-updated: 2026-01-30T05:15:28.295Z
+created: 2026-01-30T06:24:55.280Z
+updated: 2026-01-30T06:24:55.280Z
 ---
 
 # Client Registration & Registry
 
 ## Purpose
 
-Implement the client registration protocol and in-memory registry that tracks connected plugins, their metadata, and provides lookup capabilities for the routing system.
+Implement the registration protocol and in-memory registry that allows plugins to identify themselves and be tracked by SmartHole.
 
 ## Requirements
 
@@ -28,70 +28,48 @@ Implement the client registration protocol and in-memory registry that tracks co
 - Required fields: `name` (unique identifier), `description` (routing hint for LLM)
 - Optional fields: `version`, `capabilities` array
 - Send registration confirmation response on success
-- Send registration rejection response on failure (with reason)
+- Send rejection response with reason on failure
 
-### Name Validation
+### Registration Validation
 
+- Validate required fields are present and non-empty
 - Validate client name uniqueness
-- Reject duplicate names with clear error message
-- Names must be non-empty strings
+- Handle duplicate names (reject with clear error message)
+- Validate field formats/lengths
 
 ### Client Registry
 
 - In-memory registry of connected clients
-- Track per client:
-  - `name`: unique identifier
-  - `description`: routing hint for LLM
-  - `version`: optional version string
-  - `capabilities`: optional array of capability strings
-  - `connection`: WebSocket connection reference
-  - `registrationTime`: timestamp of registration
+- Track per client: name, description, WebSocket connection, registration time, capabilities, version
 - Client lookup by name
-- List all registered clients (for routing agent tool generation)
+- List all registered clients
+- Event emission on client register/unregister
 
-### Event Emission
+### Disconnection Handling
 
-- Emit events on client connect (after successful registration)
-- Emit events on client disconnect
-- Events should include client name and metadata for subscribers
+- Detect client disconnections (WebSocket close, network failure)
+- Clean up client from registry on disconnect
+- Log disconnection events with client details
+- Emit events for routing agent to rebuild tool definitions
 
-## Technical Notes
+## Technical Approach
 
-- Create `src/services/client-registry.ts` for registry management
-- Create types in `src/types/plugin-client.ts`
-- Use EventEmitter or similar pattern for events
-- Registration message format:
-  ```json
-  {
-    "type": "register",
-    "name": "my-plugin",
-    "description": "Handles email tasks",
-    "version": "1.0.0",
-    "capabilities": ["email", "calendar"]
-  }
-  ```
-- Response format:
-  ```json
-  {
-    "type": "register-response",
-    "success": true,
-    "message": "Registration successful"
-  }
-  ```
+- TypeScript types for registration messages and client records
+- EventEmitter pattern for registry events
+- Thread-safe registry operations (async-aware)
+
+## Dependencies
+
+- WebSocket Server Foundation (F-websocket-server-foundation)
 
 ## Acceptance Criteria
 
 1. [ ] Clients can send registration messages after connecting
 2. [ ] Registration validates required fields (name, description)
-3. [ ] Registration rejects empty or invalid names
-4. [ ] Duplicate client names are rejected with clear error
-5. [ ] Successful registration sends confirmation response
-6. [ ] Failed registration sends rejection response with reason
-7. [ ] Client registry tracks all registered clients with metadata
-8. [ ] Clients can be looked up by name
-9. [ ] All registered clients can be listed
-10. [ ] Events emitted on client connect/disconnect
-
-## Dependencies
-
-- F-websocket-server-foundation (WebSocket server must exist)
+3. [ ] Duplicate client names are rejected with clear error
+4. [ ] Registration confirmation sent on success
+5. [ ] Client registry tracks all registered clients
+6. [ ] Client lookup by name works correctly
+7. [ ] List all clients returns complete registry
+8. [ ] Disconnected clients removed from registry
+9. [ ] Events emitted on register/unregister

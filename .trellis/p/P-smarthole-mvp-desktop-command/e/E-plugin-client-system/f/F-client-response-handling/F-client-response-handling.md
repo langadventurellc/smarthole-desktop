@@ -10,79 +10,73 @@ affectedFiles: {}
 log: []
 schema: v1.0
 childrenIds: []
-created: 2026-01-30T05:15:28.415Z
-updated: 2026-01-30T05:15:28.415Z
+created: 2026-01-30T06:24:55.395Z
+updated: 2026-01-30T06:24:55.395Z
 ---
 
 # Client Response Handling
 
 ## Purpose
 
-Implement the system for parsing and handling client responses to delivered messages, including acknowledgments, rejections, and notification requests.
+Implement the response handling system that processes responses from plugin clients after they receive messages.
 
 ## Requirements
 
 ### Response Types
 
-#### Acknowledgment (`ack`)
+Parse and handle three types of client responses:
 
-- Client confirms message was accepted and will be processed
-- Format: `{ "type": "ack", "messageId": "uuid" }`
-- Action: Log success
+1. **ack (Acknowledge)**
+   - Message accepted by client
+   - Log success with message ID and client name
+   - Update delivery status to "delivered"
 
-#### Rejection (`reject`)
+2. **reject**
+   - Message rejected by client
+   - Includes reason for rejection
+   - Trigger re-routing flow (notify routing system)
+   - Log rejection with reason
 
-- Client rejects the message with a reason
-- Format: `{ "type": "reject", "messageId": "uuid", "reason": "Not my domain" }`
-- Action: Emit event for re-routing flow (to be handled by routing system)
+3. **notification**
+   - Client wants to show system notification
+   - Fields: title, body, priority (optional)
+   - Route to existing notification service
+   - Validate notification content
 
-#### Notification (`notification`)
+### Response Format
 
-- Client requests a system notification be displayed
-- Format:
-  ```json
-  {
-    "type": "notification",
-    "title": "Task Complete",
-    "body": "Email sent successfully",
-    "priority": "medium"
-  }
-  ```
-- Action: Display notification via notification service
-- Priority maps to notification priority: "low" | "medium" | "high"
+```typescript
+{
+  type: 'ack' | 'reject' | 'notification',
+  messageId: string,      // For ack/reject - references original message
+  reason?: string,        // For reject - why message was rejected
+  title?: string,         // For notification
+  body?: string,          // For notification
+  priority?: 'low' | 'medium' | 'high'  // For notification
+}
+```
 
-### Response Timeout
+### Timeout Handling
 
-- Configure timeout for expected responses
-- Default timeout: 30 seconds
-- Emit timeout event if client doesn't respond in time
-- Log timeout occurrences
+- Configurable response timeout (default: 30 seconds)
+- Handle timeout as implicit rejection
+- Log timeout events
 
-### Response Validation
+## Technical Approach
 
-- Validate response format matches expected schema
-- Log malformed responses
-- Handle unknown response types gracefully
-
-## Technical Notes
-
-- Create `src/services/response-handler.ts` for response processing
-- Integrate with existing notification service for `notification` responses
-- Use EventEmitter pattern for rejection events (routing agent subscribes)
-- Store pending message expectations with timeout timers
-
-## Acceptance Criteria
-
-1. [ ] `ack` responses are parsed and logged
-2. [ ] `reject` responses are parsed and emit re-routing event
-3. [ ] `notification` responses trigger system notifications
-4. [ ] Notification priority is respected
-5. [ ] Response timeout is configurable (default 30s)
-6. [ ] Timeout events are emitted when clients don't respond
-7. [ ] Malformed responses are logged but don't crash
-8. [ ] Unknown response types are handled gracefully
+- Response parser with validation
+- Integration with notification queue service
+- Event emission for routing system integration
 
 ## Dependencies
 
-- F-message-delivery-to-clients (message delivery must exist)
-- Notification service (existing)
+- Message Delivery to Clients (F-message-delivery-to-clients)
+
+## Acceptance Criteria
+
+1. [ ] Client `ack` responses logged appropriately
+2. [ ] Client `reject` responses trigger re-routing flow
+3. [ ] Client `notification` responses displayed as system notifications
+4. [ ] Response timeout handled as implicit rejection
+5. [ ] Invalid responses handled gracefully with logging
+6. [ ] Response events emitted for routing system

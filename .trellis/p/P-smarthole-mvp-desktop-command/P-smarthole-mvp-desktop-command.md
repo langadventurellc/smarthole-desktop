@@ -35,10 +35,16 @@ affectedFiles:
   src/types/ipc.ts: Created IPC channel definitions and types including
     IPC_CHANNELS constant, IpcChannel type, all payload interfaces
     (LogMessagePayload, NotifyShowPayload, etc.), type maps (IpcPayloadMap,
-    IpcResponseMap), and comprehensive type guards
+    IpcResponseMap), and comprehensive type guards; Added WEBSOCKET_STATUS_GET
+    and WEBSOCKET_STATUS_CHANGED IPC channels, WebSocketServerState type,
+    WebSocketServerStatus interface, isWebSocketServerState and
+    isWebSocketServerStatus type guards, and updated
+    IpcPayloadMap/IpcResponseMap
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
-    using @ts-expect-error
+    using @ts-expect-error; Updated tests to include new WebSocket channels,
+    increased channel count from 7 to 9, and updated naming convention regex to
+    allow domain:action:sub pattern
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -52,7 +58,8 @@ affectedFiles:
     verification
   src/preload.ts: Updated with fully-typed electronAPI object containing logging,
     notification, configuration, and app lifecycle methods using
-    ipcRenderer.send and ipcRenderer.invoke patterns
+    ipcRenderer.send and ipcRenderer.invoke patterns; Added getWebSocketStatus()
+    and onWebSocketStatusChange(callback) methods to the electronAPI
   src/types/electron.d.ts: Created global Window interface augmentation declaring
     electronAPI property with ElectronAPI type
   src/preload.test.ts: Created comprehensive unit tests (29 tests) mocking
@@ -90,7 +97,8 @@ affectedFiles:
   src/test-setup.ts: Created vitest setup file for jest-dom matchers
   vitest.config.ts: Updated to use jsdom environment, added React plugin, and setup file
   package.json: Added @testing-library/react, @testing-library/jest-dom, and jsdom
-    dev dependencies; Added pino and pino-pretty dependencies
+    dev dependencies; Added pino and pino-pretty dependencies; Added @types/ws
+    as a dev dependency (ws was already installed)
   src/utils/error-recovery.ts: Created error recovery utilities with
     retryWithBackoff(), withFallback(), withFallbackSync(),
     getRecoveryStrategy(), and isRetryable() functions
@@ -111,7 +119,11 @@ affectedFiles:
     for NotificationService, NotificationQueue, and notification handler;
     initialization of notification service and queue after logger; child logger
     for notification IPC; IPC handler registration for NOTIFY_SHOW channel;
-    cleanup on will-quit event to destroy the queue"
+    cleanup on will-quit event to destroy the queue; Integrated WebSocket server
+    initialization in app.whenReady() and shutdown in will-quit event; Added
+    WebSocket state tracking with wsState object, status change broadcasting on
+    connection events, and registered WebSocket status IPC handler with
+    ipcMain.handle()"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -170,6 +182,25 @@ affectedFiles:
     invalid payload rejection, graceful degradation when notifications not
     supported, coalescing integration, content sanitization, and queue overflow
     handling."
+  src/services/websocket-server.ts: Created new WebSocket server service with
+    singleton pattern, localhost-only binding, connection validation, lifecycle
+    management, and error handling; Added connection tracking with Map<ClientId,
+    ConnectionInfo>, heartbeat monitoring with configurable interval/timeout,
+    event emitters for connection/disconnection/error events, TrackedWebSocket
+    interface for isAlive flag pattern, getActiveConnections() and
+    getConnection() APIs, startHeartbeat/stopHeartbeat/performHeartbeat private
+    methods
+  src/services/websocket-server.test.ts: Added focused unit tests for
+    initialization, lifecycle, and localhost validation; Added 9 new tests for
+    connection tracking (track connections, remove on disconnect, emit events,
+    get by ID) and heartbeat monitoring (lastActivity updates, event
+    unsubscription)
+  src/ipc/websocket-status-handler.ts: Created new IPC handler with
+    buildWebSocketStatus helper function, createWebSocketStatusHandler factory
+    function, and broadcastWebSocketStatusChange for pushing status updates to
+    renderer windows
+  src/ipc/websocket-status-handler.test.ts: Added 9 unit tests covering
+    buildWebSocketStatus state mapping and createWebSocketStatusHandler behavior
 log: []
 schema: v1.0
 childrenIds:

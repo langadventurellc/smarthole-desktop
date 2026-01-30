@@ -51,13 +51,19 @@ describe("IPC_CHANNELS", () => {
       expect(IPC_CHANNELS.APP_VERSION).toBe("app:version");
     });
 
-    it("should have exactly 7 channels", () => {
-      expect(Object.keys(IPC_CHANNELS)).toHaveLength(7);
+    it("should have all expected websocket channels", () => {
+      expect(IPC_CHANNELS.WEBSOCKET_STATUS_GET).toBe("websocket:status:get");
+      expect(IPC_CHANNELS.WEBSOCKET_STATUS_CHANGED).toBe("websocket:status:changed");
+    });
+
+    it("should have exactly 9 channels", () => {
+      expect(Object.keys(IPC_CHANNELS)).toHaveLength(9);
     });
 
     it("should follow the domain:action naming convention", () => {
       for (const channel of Object.values(IPC_CHANNELS)) {
-        expect(channel).toMatch(/^[a-z]+:[a-z]+$/);
+        // Allows domain:action or domain:action:sub patterns
+        expect(channel).toMatch(/^[a-z]+:[a-z]+(:[a-z]+)?$/);
       }
     });
   });
@@ -72,6 +78,8 @@ describe("isIpcChannel type guard", () => {
     expect(isIpcChannel("config:changed")).toBe(true);
     expect(isIpcChannel("app:quit")).toBe(true);
     expect(isIpcChannel("app:version")).toBe(true);
+    expect(isIpcChannel("websocket:status:get")).toBe(true);
+    expect(isIpcChannel("websocket:status:changed")).toBe(true);
   });
 
   it("should return false for invalid channels", () => {

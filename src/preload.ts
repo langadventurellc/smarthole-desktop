@@ -13,6 +13,7 @@ import type {
   ConfigSetPayload,
   ConfigGetResponse,
   AppVersionResponse,
+  WebSocketServerStatus,
 } from "./types";
 import { IPC_CHANNELS } from "./types";
 import type { LogLevel, AppConfig } from "./types";
@@ -195,6 +196,38 @@ const electronAPI = {
    */
   quit: (): void => {
     ipcRenderer.send(IPC_CHANNELS.APP_QUIT);
+  },
+
+  // ============================================
+  // WebSocket Server Status
+  // ============================================
+
+  /**
+   * Get the current WebSocket server status.
+   *
+   * @returns Promise resolving to the current WebSocket server status
+   */
+  getWebSocketStatus: (): Promise<WebSocketServerStatus> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.WEBSOCKET_STATUS_GET);
+  },
+
+  /**
+   * Listen for WebSocket server status changes.
+   * Called whenever the server status changes (connections, errors, etc.).
+   *
+   * @param callback - Function called with the updated status
+   * @returns Unsubscribe function to stop listening
+   */
+  onWebSocketStatusChange: (callback: (status: WebSocketServerStatus) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, status: WebSocketServerStatus): void => {
+      callback(status);
+    };
+    ipcRenderer.on(IPC_CHANNELS.WEBSOCKET_STATUS_CHANGED, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.WEBSOCKET_STATUS_CHANGED, handler);
+    };
   },
 };
 
