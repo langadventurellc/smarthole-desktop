@@ -14,6 +14,17 @@ affectedFiles:
     TextInputSubmitPayload type guard tests, TextInputOpenPayload interface
     tests, updated channel count test from 21 to 26, updated naming convention
     regex to allow camelCase domains
+  src/windows/text-input-popup.ts: Created singleton service with
+    TextInputPopupService interface, show/hide methods, screen positioning via
+    calculateCenteredPosition(), focus management, EventEmitter for callbacks,
+    path resolution for preload/popup URL, and app cleanup handlers
+  src/windows/index.ts: Created module exports for TextInputPopupService,
+    functions (initialize, get, reset, getImpl), calculateCenteredPosition, and
+    event types
+  src/windows/text-input-popup.test.ts: Added 20 unit tests covering singleton
+    lifecycle, show (positioning, focus, placeholder, events), hide (window,
+    input clearing, focus restoration), isVisible, event
+    subscription/unsubscription, and getWindow accessor
 log:
   - >-
     Started feature implementation. Created feature branch
@@ -31,13 +42,64 @@ log:
     4. T-add-text-input-ipc-handlers (depends on #1, #2)
 
     5. T-update-build-configuration (depends on #3)
+  - >-
+    Completed T-add-text-input-popup-ipc:
+
+    - Added 5 IPC channels (TEXT_INPUT_OPEN, TEXT_INPUT_CLOSE,
+    TEXT_INPUT_SUBMIT, TEXT_INPUT_FOCUSED, TEXT_INPUT_DISMISSED)
+
+    - Added TextInputSubmitPayload and TextInputOpenPayload types
+
+    - Added isTextInputSubmitPayload type guard
+
+    - Updated IpcPayloadMap with new channels
+
+    - Added comprehensive tests, updated channel count from 21 to 26
+
+
+    Commit created. Moving to next task: T-create-text-input-popup
+  - >-
+    Implementation plan created. All 5 child tasks have been updated with
+    detailed implementation specifications:
+
+
+    1. T-add-text-input-popup-ipc - Define 5 IPC channels and types (DONE -
+    status shows completed)
+
+    2. T-create-text-input-popup - Window management service with singleton
+    pattern
+
+    3. T-create-popup-preload-script - Preload script and React UI
+
+    4. T-add-text-input-ipc-handlers - IPC handlers and hotkey integration
+
+    5. T-update-build-configuration - Vite and Forge config updates
+
+
+    Key patterns identified from codebase analysis:
+
+    - IPC channels follow `{domain}:{action}` naming (e.g., `textInput:submit`)
+
+    - Services use singleton pattern with `initializeX()` and `getX()` functions
+
+    - IPC handlers use factory functions (e.g., `createXHandler()`)
+
+    - Preload scripts use `contextBridge.exposeInMainWorld` for security
+
+
+    Files to create: 9 new files
+
+    Files to modify: 4 existing files
+
+
+    Ready for implementation in dependency order.
 schema: v1.0
 childrenIds:
   - T-add-text-input-ipc-handlers
-  - T-add-text-input-popup-ipc
   - T-create-popup-preload-script
   - T-create-text-input-popup
   - T-update-build-configuration
+  - T-add-text-input-popup-ipc
 created: 2026-01-30T22:15:30.255Z
 updated: 2026-01-30T22:15:30.255Z
 ---

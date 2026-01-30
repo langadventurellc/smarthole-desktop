@@ -351,6 +351,17 @@ affectedFiles:
     hotkey system covering architecture, services (HotkeyManager, InputState),
     IPC channels, renderer API, types, configuration, platform notes, and error
     handling
+  src/windows/text-input-popup.ts: Created singleton service with
+    TextInputPopupService interface, show/hide methods, screen positioning via
+    calculateCenteredPosition(), focus management, EventEmitter for callbacks,
+    path resolution for preload/popup URL, and app cleanup handlers
+  src/windows/index.ts: Created module exports for TextInputPopupService,
+    functions (initialize, get, reset, getImpl), calculateCenteredPosition, and
+    event types
+  src/windows/text-input-popup.test.ts: Added 20 unit tests covering singleton
+    lifecycle, show (positioning, focus, placeholder, events), hide (window,
+    input clearing, focus restoration), isVisible, event
+    subscription/unsubscription, and getWindow accessor
 log: []
 schema: v1.0
 childrenIds:

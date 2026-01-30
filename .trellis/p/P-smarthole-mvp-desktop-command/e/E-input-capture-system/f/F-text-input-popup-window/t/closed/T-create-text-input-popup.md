@@ -1,13 +1,122 @@
 ---
 id: T-create-text-input-popup
 title: Create text input popup window management service
-status: open
+status: done
 priority: high
 parent: F-text-input-popup-window
 prerequisites:
   - T-add-text-input-popup-ipc
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/windows/text-input-popup.ts: Created singleton service with
+    TextInputPopupService interface, show/hide methods, screen positioning via
+    calculateCenteredPosition(), focus management, EventEmitter for callbacks,
+    path resolution for preload/popup URL, and app cleanup handlers
+  src/windows/index.ts: Created module exports for TextInputPopupService,
+    functions (initialize, get, reset, getImpl), calculateCenteredPosition, and
+    event types
+  src/windows/text-input-popup.test.ts: Added 20 unit tests covering singleton
+    lifecycle, show (positioning, focus, placeholder, events), hide (window,
+    input clearing, focus restoration), isVisible, event
+    subscription/unsubscription, and getWindow accessor
+log:
+  - >-
+    Starting implementation. Analysis complete:
+
+
+    1. Following singleton pattern from hotkey-manager.ts
+
+    2. Using EventEmitter pattern from input-state.ts
+
+    3. Types TextInputSubmitPayload and TextInputOpenPayload already exist in
+    src/types/ipc.ts
+
+    4. Need to create src/windows/ directory
+
+    5. BrowserWindow configuration with frame:false, transparent:true,
+    alwaysOnTop:true
+
+
+    Files to create:
+
+    - src/windows/text-input-popup.ts - Main service implementation
+
+    - src/windows/index.ts - Module exports
+
+    - src/windows/text-input-popup.test.ts - Unit tests
+
+
+    Key patterns to follow:
+
+    - Module-level instance variable for singleton
+
+    - initializeX(), getX(), resetX() functions
+
+    - EventEmitter for callbacks
+
+    - Logger child with component name
+
+    - app.on('will-quit') cleanup
+  - >-
+    Implementation complete:
+
+
+    Created files:
+
+    - src/windows/text-input-popup.ts - Main service with singleton pattern
+
+    - src/windows/index.ts - Module exports
+
+    - src/windows/text-input-popup.test.ts - Unit tests (20 tests)
+
+
+    Key implementation details:
+
+    1. Singleton pattern with initializeTextInputPopup(), getTextInputPopup(),
+    resetTextInputPopup()
+
+    2. BrowserWindow with frame:false, transparent:true, alwaysOnTop:true,
+    show:false
+
+    3. Screen positioning using screen.getCursorScreenPoint() and
+    getDisplayNearestPoint()
+
+    4. Focus management - stores previous window and restores focus on hide
+
+    5. EventEmitter for submitted, dismissed, focused events
+
+    6. Blur event triggers dismiss
+
+    7. Path resolution for preload and popup URL (dev vs prod)
+
+    8. app.on('will-quit') cleanup
+
+
+    Tests cover:
+
+    - Singleton lifecycle (initialize, get, reset)
+
+    - show() positioning, focusing, placeholder sending
+
+    - hide() window hiding, input clearing, focus restoration
+
+    - isVisible() state tracking
+
+    - Event subscription/unsubscription
+
+    - getWindow() accessor
+
+
+    Quality checks pass: lint, format, type-check
+
+    All 649 tests pass (20 new tests added)
+  - Created the text input popup window management service following the
+    singleton pattern. The service provides show/hide functionality with screen
+    positioning (centered on active display), focus management (stores and
+    restores previous window focus), and event emission (submitted, dismissed,
+    focused). Includes BrowserWindow configuration for frameless transparent
+    overlay, path resolution for dev/prod environments, and cleanup on app quit.
+    Added 20 unit tests covering singleton lifecycle, window operations, and
+    event handling.
 schema: v1.0
 childrenIds: []
 created: 2026-01-30T23:41:53.885Z

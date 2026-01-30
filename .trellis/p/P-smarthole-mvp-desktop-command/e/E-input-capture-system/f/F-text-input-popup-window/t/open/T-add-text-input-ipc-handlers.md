@@ -17,127 +17,326 @@ updated: 2026-01-30T23:42:28.512Z
 
 # Add Text Input IPC Handlers and Hotkey Integration
 
-## Context
+## Goal
 
-This task implements the IPC handlers for text input popup communication and wires up the text input hotkey to trigger the popup. This connects the popup window service to the IPC layer and hotkey system.
+Create IPC handlers for text input popup channels and wire the textInput hotkey to open the popup.
 
-**Reference**:
+## Key Files to Create/Modify
 
-- Feature spec: F-text-input-popup-window
-- IPC patterns: `src/ipc/hotkey-handler.ts`, `src/ipc/input-state-handler.ts`
-- Hotkey system: `src/services/hotkey-manager.ts`
+| File                                                               | Purpose                                    |
+| ------------------------------------------------------------------ | ------------------------------------------ |
+| `/Users/zach/code/smarthole-desktop/src/ipc/text-input-handler.ts` | Create - IPC handlers for popup            |
+| `/Users/zach/code/smarthole-desktop/src/ipc/index.ts`              | Modify - Export new handler                |
+| `/Users/zach/code/smarthole-desktop/src/main.ts`                   | Modify - Register handlers and wire hotkey |
 
-## Implementation Requirements
+## Patterns to Follow
 
-### 1. Create IPC Handler Module
+Follow `src/ipc/input-state-handler.ts` pattern:
 
-Create `src/ipc/text-input-handler.ts`:
+- Factory functions for handlers
+- `wireXToIpc()` function for event bridging
+- Logger integration
+- Typed event handlers
+
+## Implementation Details
+
+### 1. text-input-handler.ts
 
 ```typescript
-import { ipcMain, IpcMainEvent } from "electron";
-import { IPC_CHANNELS, TextInputSubmitPayload } from "../types";
+/**
+ * IPC handlers for text input popup communication.
+ * Bridges the TextInputPopupService to IPC channels.
+ *
+ * @see F-text-input-popup-window feature specification
+ */
+
+import { IpcMainEvent } from "electron";
+import { IPC_CHANNELS, TextInputSubmitPayload, isTextInputSubmitPayload } from "../types";
 import { TextInputPopupService } from "../windows/text-input-popup";
+import { HotkeyManagerService } from "../services/hotkey-manager";
 import { Logger } from "../services/logger";
 
 /**
- * Creates handler for text input submit events from popup.
+ * Creates handler for TEXT_INPUT_SUBMIT channel.
+ * Handles text submission from the popup, hides it, and emits event.
+ *
+ * @param popupGetter - Function to get the popup service
+ * @param logger - Logger for debug output
+ * @returns Handler function compatible with ipcMain.on()
  */
 export function createTextInputSubmitHandler(
   popupGetter: () => TextInputPopupService,
   logger: Logger
-): (event: IpcMainEvent, payload: TextInputSubmitPayload) => void {
-  return (_event, payload) => {
-    logger.debug("Text input submitted", { textLength: payload.text.length });
-    popupGetter().hide();
-    // Emit event or pass to downstream processing (future task)
+): (event: IpcMainEvent, payload: unknown) => void {
+  return (_event: IpcMainEvent, payload: unknown): void => {
+    // Validate payload
+    if (!isTextInputSubmitPayload(payload)) {
+      logger.warn("Invalid text input submit payload received", { payload });
+      return;
+    }
+
+    const popup = popupGetter();
+
+    logger.info("Text input submitted", {
+      textLength: payload.text.length,
+      submittedAt: payload.submittedAt,
+    });
+
+    // Hide the popup
+    popup.hide();
+
+    // The popup service will emit the 'submitted' event for downstream processing
   };
 }
 
 /**
- * Creates handler for popup dismissed events.
+ * Creates handler for TEXT_INPUT_DISMISSED channel.
+ * Handles popup dismissal (user pressed Escape or clicked outside).
+ *
+ * @param popupGetter - Function to get the popup service
+ * @param logger - Logger for debug output
+ * @returns Handler function compatible with ipcMain.on()
  */
 export function createTextInputDismissedHandler(
   popupGetter: () => TextInputPopupService,
   logger: Logger
 ): (event: IpcMainEvent) => void {
-  return () => {
+  return (_event: IpcMainEvent): void => {
     logger.debug("Text input dismissed");
-    popupGetter().hide();
+
+    const popup = popupGetter();
+    popup.hide();
   };
 }
 
 /**
- * Creates handler for popup focused events.
+ * Creates handler for TEXT_INPUT_FOCUSED channel.
+ * Logs when the popup gains focus (for analytics/debugging).
+ *
+ * @param logger - Logger for debug output
+ * @returns Handler function compatible with ipcMain.on()
  */
 export function createTextInputFocusedHandler(logger: Logger): (event: IpcMainEvent) => void {
-  return () => {
+  return (_event: IpcMainEvent): void => {
     logger.debug("Text input popup focused");
   };
 }
 
 /**
- * Registers all text input IPC handlers.
+ * Wires the text input popup to the hotkey manager.
+ * Opens the popup when the textInput hotkey is activated.
+ *
+ * @param hotkeyManager - The hotkey manager service
+ * @param popupGetter - Function to get the popup service
+ * @param logger - Logger for debug output
+ */
+export function wireTextInputToHotkey(
+  hotkeyManager: HotkeyManagerService,
+  popupGetter: () => TextInputPopupService,
+  logger: Logger
+): void {
+  hotkeyManager.on("hotkey:activated", (event) => {
+    if (event.hotkeyType === "textInput") {
+      const popup = popupGetter();
+
+      if (!popup.isVisible()) {
+        popup.show();
+        logger.debug("Text input popup opened via hotkey", {
+          accelerator: event.accelerator,
+        });
+      } else {
+        // If already visible, just ensure focus
+        popup.getWindow()?.focus();
+        logger.debug("Text input popup already visible, focused", {
+          accelerator: event.accelerator,
+        });
+      }
+    }
+  });
+
+  logger.info("Text input popup wired to hotkey manager");
+}
+
+/**
+ * Registers all text input IPC handlers with ipcMain.
+ * Call this after initializing the popup service.
+ *
+ * @param ipcMain - The Electron ipcMain module
+ * @param popupGetter - Function to get the popup service
+ * @param logger - Logger for debug output
  */
 export function registerTextInputHandlers(
+  ipcMain: Electron.IpcMain,
   popupGetter: () => TextInputPopupService,
   logger: Logger
 ): void {
   ipcMain.on(IPC_CHANNELS.TEXT_INPUT_SUBMIT, createTextInputSubmitHandler(popupGetter, logger));
+
   ipcMain.on(
     IPC_CHANNELS.TEXT_INPUT_DISMISSED,
     createTextInputDismissedHandler(popupGetter, logger)
   );
+
   ipcMain.on(IPC_CHANNELS.TEXT_INPUT_FOCUSED, createTextInputFocusedHandler(logger));
+
+  logger.info("Text input IPC handlers registered");
 }
 ```
 
-### 2. Wire Hotkey to Popup
+### 2. Update ipc/index.ts
 
-In main.ts, add handler for textInput hotkey:
+Add export for the new handler module:
 
 ```typescript
-inputState.hotkeyManager.on("hotkey:activated", (event) => {
-  if (event.hotkeyType === "textInput") {
-    const popup = getTextInputPopup();
-    popup.show();
-    logger.debug("Text input hotkey activated, showing popup");
-  }
-  // existing voiceInput handling...
+export * from "./text-input-handler";
+```
+
+### 3. Update main.ts
+
+Add imports and initialization:
+
+```typescript
+// Add to imports
+import {
+  initializeTextInputPopup,
+  getTextInputPopup,
+  TextInputPopupService,
+} from "./windows/text-input-popup";
+import { registerTextInputHandlers, wireTextInputToHotkey } from "./ipc/text-input-handler";
+
+// Add to wsState (or create new popupState object)
+const popupState: {
+  textInput: TextInputPopupService | null;
+} = {
+  textInput: null,
+};
+
+// Inside app.whenReady(), after hotkey manager initialization:
+
+// Initialize text input popup
+popupState.textInput = initializeTextInputPopup();
+logger.info("Text input popup initialized");
+
+// Register text input IPC handlers
+const textInputLogger = logger.child({ component: "TextInputIPC" });
+registerTextInputHandlers(ipcMain, () => getTextInputPopup(), textInputLogger);
+
+// Wire text input popup to hotkey manager
+wireTextInputToHotkey(inputState.hotkeyManager, () => getTextInputPopup(), textInputLogger);
+
+// Wire popup submitted event to downstream processing
+popupState.textInput.on("submitted", (payload) => {
+  logger.info("Text input ready for processing", {
+    textLength: payload.text.length,
+  });
+  // TODO: Route to message processing in future task
 });
 ```
 
-### 3. Export from IPC Index
+### 4. Create Tests
 
-Update `src/ipc/index.ts` to export the new handlers.
+Create `/Users/zach/code/smarthole-desktop/src/ipc/text-input-handler.test.ts`:
 
-## Files to Create
+```typescript
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import {
+  createTextInputSubmitHandler,
+  createTextInputDismissedHandler,
+  createTextInputFocusedHandler,
+} from "./text-input-handler";
 
-- `src/ipc/text-input-handler.ts` - IPC handlers for text input
+describe("text-input-handler", () => {
+  const mockLogger = {
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    child: vi.fn().mockReturnThis(),
+  };
 
-## Files to Modify
+  const mockPopup = {
+    show: vi.fn(),
+    hide: vi.fn(),
+    isVisible: vi.fn(),
+    getWindow: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+  };
 
-- `src/ipc/index.ts` - Export text input handlers
-- `src/main.ts` - Register handlers, wire hotkey
+  const mockEvent = {} as Electron.IpcMainEvent;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("createTextInputSubmitHandler", () => {
+    it("hides popup on valid submit", () => {
+      const handler = createTextInputSubmitHandler(() => mockPopup, mockLogger);
+
+      handler(mockEvent, {
+        text: "hello world",
+        submittedAt: "2024-01-01T00:00:00Z",
+      });
+
+      expect(mockPopup.hide).toHaveBeenCalled();
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "Text input submitted",
+        expect.objectContaining({ textLength: 11 })
+      );
+    });
+
+    it("warns on invalid payload", () => {
+      const handler = createTextInputSubmitHandler(() => mockPopup, mockLogger);
+
+      handler(mockEvent, { invalid: true });
+
+      expect(mockPopup.hide).not.toHaveBeenCalled();
+      expect(mockLogger.warn).toHaveBeenCalled();
+    });
+  });
+
+  describe("createTextInputDismissedHandler", () => {
+    it("hides popup on dismiss", () => {
+      const handler = createTextInputDismissedHandler(() => mockPopup, mockLogger);
+
+      handler(mockEvent);
+
+      expect(mockPopup.hide).toHaveBeenCalled();
+      expect(mockLogger.debug).toHaveBeenCalledWith("Text input dismissed");
+    });
+  });
+
+  describe("createTextInputFocusedHandler", () => {
+    it("logs focus event", () => {
+      const handler = createTextInputFocusedHandler(mockLogger);
+
+      handler(mockEvent);
+
+      expect(mockLogger.debug).toHaveBeenCalledWith("Text input popup focused");
+    });
+  });
+});
+```
 
 ## Acceptance Criteria
 
-- [ ] `createTextInputSubmitHandler` hides popup on submit
+- [ ] `createTextInputSubmitHandler` validates payload and hides popup
 - [ ] `createTextInputDismissedHandler` hides popup on dismiss
-- [ ] `createTextInputFocusedHandler` logs focus event
-- [ ] `registerTextInputHandlers` registers all handlers with ipcMain
-- [ ] Text input hotkey (`hotkeyType === "textInput"`) opens popup
-- [ ] Handlers follow existing patterns (factory functions, logger injection)
+- [ ] `createTextInputFocusedHandler` logs focus events
+- [ ] `wireTextInputToHotkey` opens popup on textInput hotkey
+- [ ] `registerTextInputHandlers` convenience function
+- [ ] Handlers exported from `src/ipc/index.ts`
+- [ ] Handlers registered in `src/main.ts`
+- [ ] Popup wired to hotkey manager in `src/main.ts`
 - [ ] Unit tests for all handlers
-- [ ] Passes `mise run quality`
+- [ ] Tests pass: `mise run test`
+- [ ] Quality checks pass: `mise run quality`
 
-## Testing Requirements
+## Dependencies
 
-- Unit tests for each handler function (mock popup service, verify hide called)
-- Unit tests for handler registration
+- T-add-text-input-popup-ipc (for IPC_CHANNELS, types)
+- T-create-text-input-popup (for TextInputPopupService)
 
-## Out of Scope
+## Estimated Complexity
 
-- Processing submitted text (future feature for routing)
-- Popup window management (T-create-text-input-popup)
-- Popup UI (T-create-popup-preload-script)
-- Build configuration (separate task)
+Medium - IPC handler creation, hotkey wiring, main.ts integration.

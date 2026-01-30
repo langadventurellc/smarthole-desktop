@@ -16,62 +16,48 @@ updated: 2026-01-30T23:42:43.741Z
 
 # Update Build Configuration for Popup Window
 
-## Context
+## Goal
 
-The Text Input Popup requires build configuration updates to:
+Configure Vite and Electron Forge to build the popup window's preload script and renderer, ensuring both development and production builds work correctly.
 
-1. Build the popup preload script separately
-2. Include the popup renderer as a separate entry point
-3. Ensure assets are properly bundled for distribution
+## Key Files to Create/Modify
 
-**Reference**:
+| File                                                                 | Purpose                            |
+| -------------------------------------------------------------------- | ---------------------------------- |
+| `/Users/zach/code/smarthole-desktop/vite.popup-preload.config.ts`    | Create - Preload config for popup  |
+| `/Users/zach/code/smarthole-desktop/vite.popup-renderer.config.ts`   | Create - Renderer config for popup |
+| `/Users/zach/code/smarthole-desktop/forge.config.ts`                 | Modify - Add popup build entries   |
+| `/Users/zach/code/smarthole-desktop/src/windows/text-input-popup.ts` | Modify - Correct path resolution   |
 
-- Feature spec: F-text-input-popup-window
-- Build config: `forge.config.ts`, `vite.*.config.ts`
+## Patterns to Follow
 
-## Implementation Requirements
+Follow existing Vite config patterns:
 
-### 1. Add Popup Preload Build Target
+- `vite.preload.config.ts` for preload script configuration
+- `vite.renderer.config.ts` for renderer (React) configuration
+- `forge.config.ts` VitePlugin structure for multiple entry points
 
-Update `forge.config.ts` to build the popup preload script:
+## Implementation Details
+
+### 1. vite.popup-preload.config.ts
+
+Create new file:
 
 ```typescript
-new VitePlugin({
-  build: [
-    {
-      entry: "src/main.ts",
-      config: "vite.main.config.ts",
-      target: "main",
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      external: ["electron"],
     },
-    {
-      entry: "src/preload.ts",
-      config: "vite.preload.config.ts",
-      target: "preload",
-    },
-    // Add popup preload
-    {
-      entry: "src/preload-popup.ts",
-      config: "vite.preload.config.ts", // Reuse existing preload config
-      target: "preload",
-    },
-  ],
-  renderer: [
-    {
-      name: "main_window",
-      config: "vite.renderer.config.ts",
-    },
-    // Add popup renderer
-    {
-      name: "popup_window",
-      config: "vite.popup.config.ts",
-    },
-  ],
-}),
+  },
+});
 ```
 
-### 2. Create Popup Vite Config
+### 2. vite.popup-renderer.config.ts
 
-Create `vite.popup.config.ts`:
+Create new file:
 
 ```typescript
 import { defineConfig } from "vite";
@@ -79,56 +65,235 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+});
+```
+
+### 3. Update forge.config.ts
+
+Modify the VitePlugin configuration to add popup entries:
+
+```typescript
+import type { ForgeConfig } from "@electron-forge/shared-types";
+import { MakerSquirrel } from "@electron-forge/maker-squirrel";
+import { MakerZIP } from "@electron-forge/maker-zip";
+import { MakerDMG } from "@electron-forge/maker-dmg";
+import { VitePlugin } from "@electron-forge/plugin-vite";
+import { FusesPlugin } from "@electron-forge/plugin-fuses";
+import { FuseV1Options, FuseVersion } from "@electron/fuses";
+
+const config: ForgeConfig = {
+  packagerConfig: {
+    asar: true,
+    name: "SmartHole",
+  },
+  rebuildConfig: {},
+  makers: [
+    new MakerSquirrel({}),
+    new MakerZIP({}, ["darwin"]),
+    new MakerDMG({
+      format: "ULFO",
+    }),
+  ],
+  plugins: [
+    new VitePlugin({
+      build: [
+        {
+          entry: "src/main.ts",
+          config: "vite.main.config.ts",
+          target: "main",
+        },
+        {
+          entry: "src/preload.ts",
+          config: "vite.preload.config.ts",
+          target: "preload",
+        },
+        // NEW: Add popup preload entry
+        {
+          entry: "src/preload-popup.ts",
+          config: "vite.popup-preload.config.ts",
+          target: "preload",
+        },
+      ],
+      renderer: [
+        {
+          name: "main_window",
+          config: "vite.renderer.config.ts",
+        },
+        // NEW: Add popup renderer entry
+        {
+          name: "popup_window",
+          config: "vite.popup-renderer.config.ts",
+        },
+      ],
+    }),
+    new FusesPlugin({
+      version: FuseVersion.V1,
+      [FuseV1Options.RunAsNode]: false,
+      [FuseV1Options.EnableCookieEncryption]: true,
+      [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
+      [FuseV1Options.EnableNodeCliInspectArguments]: false,
+      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
+      [FuseV1Options.OnlyLoadAppFromAsar]: true,
+    }),
+  ],
+};
+
+export default config;
+```
+
+### 4. Update text-input-popup.ts Path Resolution
+
+The Electron Forge VitePlugin provides environment variables for accessing renderer dev server URLs and preload paths. Update the path resolution:
+
+```typescript
+/**
+ * Gets the preload script path for the popup window.
+ * Uses Electron Forge VitePlugin conventions.
+ */
+function getPreloadPath(): string {
+  // In dev, Vite outputs preload to .vite/build directory
+  // In prod, it's bundled alongside main
+  // The VitePlugin handles this automatically via __dirname resolution
+  return path.join(__dirname, "preload-popup.js");
+}
+
+/**
+ * Gets the URL/path to load for the popup window.
+ * Uses Electron Forge VitePlugin environment variables.
+ */
+function getPopupUrl(): string {
+  // The VitePlugin sets POPUP_WINDOW_VITE_DEV_SERVER_URL in dev mode
+  // Format: {NAME}_VITE_DEV_SERVER_URL where NAME is uppercase renderer name
+  if (process.env.POPUP_WINDOW_VITE_DEV_SERVER_URL) {
+    return process.env.POPUP_WINDOW_VITE_DEV_SERVER_URL;
+  }
+
+  // In production, use file path
+  // VitePlugin sets POPUP_WINDOW_VITE_NAME for the renderer output directory
+  return path.join(
+    __dirname,
+    `../renderer/${process.env.POPUP_WINDOW_VITE_NAME || "popup_window"}/index.html`
+  );
+}
+```
+
+### 5. Ensure popup/index.html is the entry point
+
+The VitePlugin expects an `index.html` at the root of each renderer entry. Make sure the popup renderer config points to the right entry:
+
+In `vite.popup-renderer.config.ts`:
+
+```typescript
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+
+export default defineConfig({
+  plugins: [react()],
+  root: path.join(__dirname, "src/popup"),
   build: {
-    rollupOptions: {
-      input: "src/popup/index.html",
-    },
+    outDir: path.join(__dirname, ".vite/renderer/popup_window"),
   },
 });
 ```
 
-### 3. Update Window Service Path
+### 6. Directory Structure
 
-Ensure `src/windows/text-input-popup.ts` uses correct paths:
+After implementation, the popup-related files should be:
 
-- Preload: Use Vite's generated path for `preload-popup.js`
-- HTML: Use Vite's dev server URL in dev mode, file path in production
+```
+src/
+├── popup/
+│   ├── index.html      # Popup HTML entry
+│   ├── popup.tsx       # Popup React component
+│   └── popup.css       # Popup styles
+├── preload-popup.ts    # Popup preload script
+└── windows/
+    └── text-input-popup.ts  # Popup window management
 
-The window service should use `MAIN_WINDOW_VITE_DEV_SERVER_URL` pattern for dev/prod handling (see how main renderer handles this).
+vite.popup-preload.config.ts   # Popup preload build config
+vite.popup-renderer.config.ts  # Popup renderer build config
+forge.config.ts                # Updated with popup entries
+```
 
-### 4. Verify Build Output
+### 7. Verify Dev Mode
 
-After configuration:
+After changes, run:
 
-- `mise run build` should produce popup assets
-- Preload script should be in correct location
-- HTML and JS should be bundled
+```bash
+mise run dev
+```
 
-## Files to Create
+Verify:
 
-- `vite.popup.config.ts` - Vite config for popup renderer
+- [ ] No build errors for popup preload
+- [ ] No build errors for popup renderer
+- [ ] Vite dev servers start for both main_window and popup_window
+- [ ] Console shows POPUP_WINDOW_VITE_DEV_SERVER_URL being set
 
-## Files to Modify
+### 8. Verify Production Build
 
-- `forge.config.ts` - Add popup build targets
+After changes, run:
+
+```bash
+mise run build
+```
+
+Verify:
+
+- [ ] Build completes without errors
+- [ ] `.vite/build/preload-popup.js` exists
+- [ ] `.vite/renderer/popup_window/index.html` exists
+- [ ] Packaged app includes popup assets
+
+## TypeScript Configuration
+
+Ensure `tsconfig.json` includes the new popup files:
+
+```json
+{
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/popup/**/*.ts", "src/popup/**/*.tsx"]
+}
+```
 
 ## Acceptance Criteria
 
-- [ ] `mise run dev` serves popup renderer correctly
-- [ ] `mise run build` includes popup assets in distribution
-- [ ] Popup preload script builds to correct location
-- [ ] Window service can load popup HTML in both dev and production modes
-- [ ] No build warnings or errors
-- [ ] Passes `mise run quality`
+- [ ] `vite.popup-preload.config.ts` created
+- [ ] `vite.popup-renderer.config.ts` with React plugin and correct root
+- [ ] `forge.config.ts` updated with popup preload entry
+- [ ] `forge.config.ts` updated with popup_window renderer entry
+- [ ] `text-input-popup.ts` uses correct path resolution
+- [ ] Dev mode works (`mise run dev`) - no errors
+- [ ] Production build works (`mise run build`) - no errors
+- [ ] Path resolution works in both dev and prod
+- [ ] Popup window loads correctly in dev mode
+- [ ] Popup window loads correctly in packaged app
+- [ ] Quality checks pass: `mise run quality`
 
-## Testing Requirements
+## Dependencies
 
-- Verify `mise run dev` starts without errors
-- Verify `mise run build` completes and includes popup files
-- Manual verification that popup loads correctly
+- T-create-popup-preload-script (popup files must exist for build to succeed)
 
-## Out of Scope
+## Estimated Complexity
 
-- Window management logic (T-create-text-input-popup)
-- Popup UI implementation (T-create-popup-preload-script)
-- IPC handlers (T-add-text-input-ipc-handlers)
+Medium - Build configuration, path resolution for dev/prod environments.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"Cannot find module 'preload-popup.js'"**
+   - Check that the preload entry is in `forge.config.ts` build array
+   - Verify the path in `getPreloadPath()` is correct
+
+2. **"POPUP_WINDOW_VITE_DEV_SERVER_URL is undefined"**
+   - Ensure the renderer entry `name` is exactly `popup_window`
+   - Restart the dev server after config changes
+
+3. **"index.html not found" in production**
+   - Check `vite.popup-renderer.config.ts` has correct `root` and `outDir`
+   - Verify the renderer name matches in both config and path resolution
+
+4. **CSS not loading in popup**
+   - Ensure `popup.css` is imported in `popup.tsx`
+   - Check Vite is processing CSS (should be automatic with React plugin)
