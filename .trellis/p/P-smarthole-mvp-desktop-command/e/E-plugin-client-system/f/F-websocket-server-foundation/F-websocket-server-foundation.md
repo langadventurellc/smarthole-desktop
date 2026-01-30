@@ -1,7 +1,7 @@
 ---
 id: F-websocket-server-foundation
 title: WebSocket Server Foundation
-status: in-progress
+status: done
 priority: high
 parent: E-plugin-client-system
 prerequisites: []
@@ -20,8 +20,25 @@ affectedFiles:
     get by ID) and heartbeat monitoring (lastActivity updates, event
     unsubscription)
   src/main.ts: Integrated WebSocket server initialization in app.whenReady() and
-    shutdown in will-quit event
+    shutdown in will-quit event; Added WebSocket state tracking with wsState
+    object, status change broadcasting on connection events, and registered
+    WebSocket status IPC handler with ipcMain.handle()
   package.json: Added @types/ws as a dev dependency (ws was already installed)
+  src/types/ipc.ts: Added WEBSOCKET_STATUS_GET and WEBSOCKET_STATUS_CHANGED IPC
+    channels, WebSocketServerState type, WebSocketServerStatus interface,
+    isWebSocketServerState and isWebSocketServerStatus type guards, and updated
+    IpcPayloadMap/IpcResponseMap
+  src/ipc/websocket-status-handler.ts: Created new IPC handler with
+    buildWebSocketStatus helper function, createWebSocketStatusHandler factory
+    function, and broadcastWebSocketStatusChange for pushing status updates to
+    renderer windows
+  src/ipc/websocket-status-handler.test.ts: Added 9 unit tests covering
+    buildWebSocketStatus state mapping and createWebSocketStatusHandler behavior
+  src/preload.ts: Added getWebSocketStatus() and onWebSocketStatusChange(callback)
+    methods to the electronAPI
+  src/types/ipc.test.ts: Updated tests to include new WebSocket channels,
+    increased channel count from 7 to 9, and updated naming convention regex to
+    allow domain:action:sub pattern
 log:
   - "Started implementation. Created feature branch
     feature/F-websocket-server-foundation. Execution order:
@@ -31,6 +48,11 @@ log:
     includes WebSocket server service with localhost-only binding, lifecycle
     management, error handling, and 12 unit tests. Review passed with no
     blocking issues.
+  - Completed T-implement-connection-handling. Committed as 0c8d258.
+    Implementation includes connection tracking with unique ClientId
+    identifiers, event emitters, and heartbeat ping-pong monitoring. Review
+    passed with no blocking issues.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
   - T-expose-websocket-server

@@ -3,14 +3,46 @@ import { registerProcessErrorHandlers } from "./utils/process-error-handlers";
 import { initializeLogger, Logger } from "./services/logger";
 import { initializeNotificationService } from "./services/notifications";
 import { initializeNotificationQueue, getNotificationQueue } from "./services/notification-queue";
-import { initializeWebSocketServer, shutdownWebSocketServer } from "./services/websocket-server";
+import {
+  initializeWebSocketServer,
+  shutdownWebSocketServer,
+  WebSocketServerService,
+} from "./services/websocket-server";
 import { IPC_CHANNELS, LogLevel } from "./types";
 import { createLogMessageHandler } from "./ipc/log-handler";
 import { createNotificationHandler } from "./ipc/notification-handler";
+import {
+  createWebSocketStatusHandler,
+  broadcastWebSocketStatusChange,
+  buildWebSocketStatus,
+} from "./ipc/websocket-status-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
 let tray: Tray | null = null;
+
+// WebSocket server state tracking for IPC status reporting
+const WS_DEFAULT_PORT = 9473;
+
+/**
+ * Mutable state for WebSocket server tracking.
+ * Using an object allows mutation while satisfying const declaration.
+ */
+const wsState: {
+  server: WebSocketServerService | null;
+  lastError: string | undefined;
+} = {
+  server: null,
+  lastError: undefined,
+};
+
+/**
+ * Broadcasts the current WebSocket server status to all renderer windows.
+ */
+function notifyWebSocketStatusChange(): void {
+  const status = buildWebSocketStatus(wsState.server, wsState.lastError, WS_DEFAULT_PORT);
+  broadcastWebSocketStatusChange(status);
+}
 
 function createTrayIcon(): Electron.NativeImage {
   // Create a 16x16 black filled square as placeholder icon
@@ -98,23 +130,47 @@ app.whenReady().then(async () => {
   });
 
   // Initialize WebSocket server for plugin client connections
+  const wsLogger = logger.child({ component: "WebSocketIPC" });
   try {
-    const wsServer = await initializeWebSocketServer({
-      port: 9473,
+    wsState.server = await initializeWebSocketServer({
+      port: WS_DEFAULT_PORT,
       host: "127.0.0.1",
       maxConnections: 100,
     });
     logger.info("WebSocket server initialized", {
-      port: wsServer.getPort(),
-      running: wsServer.isRunning(),
+      port: wsState.server.getPort(),
+      running: wsState.server.isRunning(),
+    });
+
+    // Subscribe to connection events to broadcast status changes
+    wsState.server.on("connection", () => {
+      notifyWebSocketStatusChange();
+    });
+    wsState.server.on("disconnection", () => {
+      notifyWebSocketStatusChange();
+    });
+    wsState.server.on("error", () => {
+      notifyWebSocketStatusChange();
     });
   } catch (error) {
+    wsState.lastError = error instanceof Error ? error.message : String(error);
     logger.error("Failed to initialize WebSocket server", {
-      error: error instanceof Error ? error.message : String(error),
+      error: wsState.lastError,
     });
     // Don't crash the app if WebSocket server fails to start
     // The app can still function without it, but plugin connections will be unavailable
   }
+
+  // Register WebSocket status IPC handler
+  ipcMain.handle(
+    IPC_CHANNELS.WEBSOCKET_STATUS_GET,
+    createWebSocketStatusHandler(
+      () => wsState.server,
+      () => wsState.lastError,
+      WS_DEFAULT_PORT,
+      wsLogger
+    )
+  );
 
   // Register error handlers
   registerProcessErrorHandlers({

@@ -21,6 +21,7 @@ import { LogLevel, AppConfig, PartialAppConfig } from "./config";
  * - notify: System notification operations
  * - config: Configuration get/set operations
  * - app: Application lifecycle operations
+ * - websocket: WebSocket server status operations
  */
 export const IPC_CHANNELS = {
   // Logging channels
@@ -37,6 +38,10 @@ export const IPC_CHANNELS = {
   // App lifecycle channels
   APP_QUIT: "app:quit",
   APP_VERSION: "app:version",
+
+  // WebSocket server status channels
+  WEBSOCKET_STATUS_GET: "websocket:status:get", // Renderer -> Main request
+  WEBSOCKET_STATUS_CHANGED: "websocket:status:changed", // Main -> Renderer broadcast
 } as const;
 
 /**
@@ -166,6 +171,30 @@ export interface AppVersionResponse {
 }
 
 // ============================================================================
+// WebSocket Server Status Types
+// ============================================================================
+
+/**
+ * Current state of the WebSocket server.
+ */
+export type WebSocketServerState = "running" | "stopped" | "error";
+
+/**
+ * Status information about the WebSocket server.
+ * Used for UI display and health monitoring.
+ */
+export interface WebSocketServerStatus {
+  /** Current server state */
+  state: WebSocketServerState;
+  /** Port the server is listening on */
+  port: number;
+  /** Number of currently connected clients */
+  activeConnections: number;
+  /** Error message if state is 'error' */
+  error?: string;
+}
+
+// ============================================================================
 // IPC Type Maps (for type-safe handlers)
 // ============================================================================
 
@@ -184,6 +213,8 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.CONFIG_CHANGED]: ConfigChangedPayload;
   [IPC_CHANNELS.APP_QUIT]: void; // No payload needed
   [IPC_CHANNELS.APP_VERSION]: void; // No payload needed
+  [IPC_CHANNELS.WEBSOCKET_STATUS_GET]: void; // No payload needed
+  [IPC_CHANNELS.WEBSOCKET_STATUS_CHANGED]: WebSocketServerStatus;
 }
 
 /**
@@ -196,6 +227,7 @@ export interface IpcPayloadMap {
 export interface IpcResponseMap {
   [IPC_CHANNELS.CONFIG_GET]: ConfigGetResponse;
   [IPC_CHANNELS.APP_VERSION]: AppVersionResponse;
+  [IPC_CHANNELS.WEBSOCKET_STATUS_GET]: WebSocketServerStatus;
 }
 
 // ============================================================================
@@ -413,4 +445,49 @@ export function isAppVersionResponse(value: unknown): value is AppVersionRespons
     typeof obj.electronVersion === "string" &&
     typeof obj.nodeVersion === "string"
   );
+}
+
+/**
+ * Valid WebSocket server state values for runtime validation.
+ */
+const WEBSOCKET_SERVER_STATE_VALUES: ReadonlySet<string> = new Set(["running", "stopped", "error"]);
+
+/**
+ * Checks if a value is a valid WebSocketServerState.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid WebSocket server state
+ */
+export function isWebSocketServerState(value: unknown): value is WebSocketServerState {
+  return typeof value === "string" && WEBSOCKET_SERVER_STATE_VALUES.has(value);
+}
+
+/**
+ * Checks if a value is a valid WebSocketServerStatus.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid WebSocket server status
+ */
+export function isWebSocketServerStatus(value: unknown): value is WebSocketServerStatus {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // Required fields
+  if (
+    !isWebSocketServerState(obj.state) ||
+    typeof obj.port !== "number" ||
+    typeof obj.activeConnections !== "number"
+  ) {
+    return false;
+  }
+
+  // Optional error must be a string if present
+  if (obj.error !== undefined && typeof obj.error !== "string") {
+    return false;
+  }
+
+  return true;
 }
