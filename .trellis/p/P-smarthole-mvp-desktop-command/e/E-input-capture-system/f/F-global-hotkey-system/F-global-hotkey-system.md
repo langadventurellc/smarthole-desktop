@@ -1,14 +1,37 @@
 ---
 id: F-global-hotkey-system
 title: Global Hotkey System
-status: open
+status: in-progress
 priority: high
 parent: E-input-capture-system
 prerequisites: []
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/services/hotkey-manager.ts: Created hotkey manager service with singleton
+    pattern, EventEmitter for events, Electron globalShortcut integration,
+    uiohook-napi for key up detection, and macOS accessibility permission
+    handling
+  src/services/hotkey-manager.test.ts: Added unit tests for initialization,
+    registration, event emission, unregistration, and accessibility permissions
+  src/services/index.ts: Added export for hotkey-manager module
+  package.json: Added uiohook-napi dependency (via npm install)
+log:
+  - >-
+    Started feature implementation. Created feature branch
+    feature/F-global-hotkey-system.
+
+
+    Execution order:
+
+    1. T-implement-hotkey-manager (no prerequisites)
+
+    2. T-implement-input-state (no prerequisites) 
+
+    3. T-implement-hotkey-and-input (depends on #1 and #2)
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-implement-hotkey-and-input
+  - T-implement-hotkey-manager
+  - T-implement-input-state
 created: 2026-01-30T22:14:48.821Z
 updated: 2026-01-30T22:14:48.821Z
 ---

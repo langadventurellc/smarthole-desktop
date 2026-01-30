@@ -1,15 +1,27 @@
 ---
 id: E-input-capture-system
 title: Input Capture System
-status: open
+status: in-progress
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
   - E-foundation-core-infrastructure
-affectedFiles: {}
+affectedFiles:
+  src/services/hotkey-manager.ts: Created hotkey manager service with singleton
+    pattern, EventEmitter for events, Electron globalShortcut integration,
+    uiohook-napi for key up detection, and macOS accessibility permission
+    handling
+  src/services/hotkey-manager.test.ts: Added unit tests for initialization,
+    registration, event emission, unregistration, and accessibility permissions
+  src/services/index.ts: Added export for hotkey-manager module
+  package.json: Added uiohook-napi dependency (via npm install)
 log: []
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - F-global-hotkey-system
+  - F-text-input-popup-window
+  - F-tray-input-integration
+  - F-voice-recording-service
 created: 2026-01-29T01:44:22.850Z
 updated: 2026-01-29T01:44:22.850Z
 ---

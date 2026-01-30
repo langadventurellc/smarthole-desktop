@@ -112,7 +112,8 @@ affectedFiles:
   vitest.config.ts: Updated to use jsdom environment, added React plugin, and setup file
   package.json: Added @testing-library/react, @testing-library/jest-dom, and jsdom
     dev dependencies; Added pino and pino-pretty dependencies; Added @types/ws
-    as a dev dependency (ws was already installed)
+    as a dev dependency (ws was already installed); Added uiohook-napi
+    dependency (via npm install)
   src/utils/error-recovery.ts: Created error recovery utilities with
     retryWithBackoff(), withFallback(), withFallbackSync(),
     getRecoveryStrategy(), and isRetryable() functions
@@ -171,7 +172,7 @@ affectedFiles:
   src/services/index.ts: Created barrel export for services module; Added export
     for notifications module; Added export for notification-queue module; Added
     export for client-registry service; Added export for registration-handler
-    module.
+    module.; Added export for hotkey-manager module
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -303,6 +304,12 @@ affectedFiles:
     createRegisteredEventHandler, and createUnregisteredEventHandler functions
   src/ipc/client-status-handler.test.ts: Added comprehensive tests for all handler
     functions and broadcast behavior (14 tests)
+  src/services/hotkey-manager.ts: Created hotkey manager service with singleton
+    pattern, EventEmitter for events, Electron globalShortcut integration,
+    uiohook-napi for key up detection, and macOS accessibility permission
+    handling
+  src/services/hotkey-manager.test.ts: Added unit tests for initialization,
+    registration, event emission, unregistration, and accessibility permissions
 log: []
 schema: v1.0
 childrenIds:
