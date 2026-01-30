@@ -8,9 +8,17 @@ prerequisites: []
 affectedFiles:
   src/services/websocket-server.ts: Created new WebSocket server service with
     singleton pattern, localhost-only binding, connection validation, lifecycle
-    management, and error handling
+    management, and error handling; Added connection tracking with Map<ClientId,
+    ConnectionInfo>, heartbeat monitoring with configurable interval/timeout,
+    event emitters for connection/disconnection/error events, TrackedWebSocket
+    interface for isAlive flag pattern, getActiveConnections() and
+    getConnection() APIs, startHeartbeat/stopHeartbeat/performHeartbeat private
+    methods
   src/services/websocket-server.test.ts: Added focused unit tests for
-    initialization, lifecycle, and localhost validation
+    initialization, lifecycle, and localhost validation; Added 9 new tests for
+    connection tracking (track connections, remove on disconnect, emit events,
+    get by ID) and heartbeat monitoring (lastActivity updates, event
+    unsubscription)
   src/main.ts: Integrated WebSocket server initialization in app.whenReady() and
     shutdown in will-quit event
   package.json: Added @types/ws as a dev dependency (ws was already installed)
@@ -19,6 +27,10 @@ log:
     feature/F-websocket-server-foundation. Execution order:
     T-implement-websocket-server → T-implement-connection-handling →
     T-expose-websocket-server"
+  - Completed T-implement-websocket-server. Committed as b541eb6. Implementation
+    includes WebSocket server service with localhost-only binding, lifecycle
+    management, error handling, and 12 unit tests. Review passed with no
+    blocking issues.
 schema: v1.0
 childrenIds:
   - T-expose-websocket-server

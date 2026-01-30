@@ -174,9 +174,17 @@ affectedFiles:
     handling."
   src/services/websocket-server.ts: Created new WebSocket server service with
     singleton pattern, localhost-only binding, connection validation, lifecycle
-    management, and error handling
+    management, and error handling; Added connection tracking with Map<ClientId,
+    ConnectionInfo>, heartbeat monitoring with configurable interval/timeout,
+    event emitters for connection/disconnection/error events, TrackedWebSocket
+    interface for isAlive flag pattern, getActiveConnections() and
+    getConnection() APIs, startHeartbeat/stopHeartbeat/performHeartbeat private
+    methods
   src/services/websocket-server.test.ts: Added focused unit tests for
-    initialization, lifecycle, and localhost validation
+    initialization, lifecycle, and localhost validation; Added 9 new tests for
+    connection tracking (track connections, remove on disconnect, emit events,
+    get by ID) and heartbeat monitoring (lastActivity updates, event
+    unsubscription)
 log: []
 schema: v1.0
 childrenIds:

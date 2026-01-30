@@ -7,7 +7,9 @@
 
 import { WebSocketServer, WebSocket } from "ws";
 import { IncomingMessage } from "http";
+import { EventEmitter } from "events";
 import { getLogger, Logger } from "./logger";
+import { ClientId, createClientId } from "../types";
 
 // ============================================================================
 // Types
@@ -23,6 +25,46 @@ export interface WebSocketServerConfig {
   host: string;
   /** Maximum number of connections (default: 100) */
   maxConnections: number;
+  /** Heartbeat ping interval in milliseconds (default: 30000) */
+  heartbeatInterval: number;
+  /** Timeout for pong response before considering connection stale (default: 10000) */
+  heartbeatTimeout: number;
+}
+
+/**
+ * Metadata tracked for each active connection.
+ */
+export interface ConnectionInfo {
+  /** Unique identifier for this connection */
+  id: ClientId;
+  /** Timestamp when the connection was established */
+  connectedAt: Date;
+  /** Timestamp of last activity (message received or pong response) */
+  lastActivity: Date;
+  /** Remote address of the client */
+  remoteAddress: string;
+}
+
+/**
+ * Extended WebSocket with connection tracking properties.
+ */
+interface TrackedWebSocket extends WebSocket {
+  /** Whether the connection is alive (has responded to ping) */
+  isAlive: boolean;
+  /** Unique connection identifier */
+  connectionId: ClientId;
+}
+
+/**
+ * Events emitted by the WebSocket server.
+ */
+export interface WebSocketServerEvents {
+  /** Emitted when a new client connects */
+  connection: (info: ConnectionInfo) => void;
+  /** Emitted when a client disconnects */
+  disconnection: (info: ConnectionInfo, code: number, reason: string) => void;
+  /** Emitted when a client connection encounters an error */
+  error: (info: ConnectionInfo, error: Error) => void;
 }
 
 /**
@@ -32,6 +74,8 @@ const DEFAULT_CONFIG: WebSocketServerConfig = {
   port: 9473,
   host: "127.0.0.1",
   maxConnections: 100,
+  heartbeatInterval: 30000,
+  heartbeatTimeout: 10000,
 };
 
 /**
@@ -41,7 +85,7 @@ type ServerState = "stopped" | "starting" | "running" | "stopping";
 
 /**
  * WebSocket server service interface.
- * Provides methods for managing the WebSocket server lifecycle.
+ * Provides methods for managing the WebSocket server lifecycle and connections.
  */
 export interface WebSocketServerService {
   /**
@@ -71,6 +115,37 @@ export interface WebSocketServerService {
    * @returns The number of connected clients
    */
   getConnectionCount(): number;
+
+  /**
+   * Get information about all active connections.
+   *
+   * @returns Array of connection info for all active connections
+   */
+  getActiveConnections(): ConnectionInfo[];
+
+  /**
+   * Get information about a specific connection by ID.
+   *
+   * @param id - The connection ID to look up
+   * @returns The connection info, or undefined if not found
+   */
+  getConnection(id: ClientId): ConnectionInfo | undefined;
+
+  /**
+   * Subscribe to connection events.
+   *
+   * @param event - The event type to listen for
+   * @param listener - The callback function
+   */
+  on<K extends keyof WebSocketServerEvents>(event: K, listener: WebSocketServerEvents[K]): void;
+
+  /**
+   * Unsubscribe from connection events.
+   *
+   * @param event - The event type to stop listening for
+   * @param listener - The callback function to remove
+   */
+  off<K extends keyof WebSocketServerEvents>(event: K, listener: WebSocketServerEvents[K]): void;
 
   /**
    * Shut down the server gracefully.
@@ -113,13 +188,27 @@ function isLocalhostConnection(request: IncomingMessage): boolean {
 // ============================================================================
 
 /**
+ * Generates a unique connection ID using crypto.randomUUID().
+ */
+function generateConnectionId(): ClientId {
+  return createClientId(crypto.randomUUID());
+}
+
+/**
  * Internal implementation of the WebSocketServerService.
  */
 class WebSocketServerImpl implements WebSocketServerService {
   private readonly logger: Logger;
   private readonly config: WebSocketServerConfig;
+  private readonly emitter: EventEmitter;
   private server: WebSocketServer | null = null;
   private state: ServerState = "stopped";
+
+  /** Map of connection IDs to their metadata */
+  private readonly connections: Map<ClientId, ConnectionInfo> = new Map();
+
+  /** Heartbeat interval timer */
+  private heartbeatTimer: NodeJS.Timeout | null = null;
 
   /**
    * Create a new WebSocketServerImpl.
@@ -129,6 +218,7 @@ class WebSocketServerImpl implements WebSocketServerService {
   constructor(config: Partial<WebSocketServerConfig> = {}) {
     this.logger = getLogger().child({ component: "WebSocketServer" });
     this.config = { ...DEFAULT_CONFIG, ...config };
+    this.emitter = new EventEmitter();
   }
 
   /**
@@ -188,6 +278,10 @@ class WebSocketServerImpl implements WebSocketServerService {
             port: this.config.port,
             host: this.config.host,
           });
+
+          // Start heartbeat monitoring
+          this.startHeartbeat();
+
           resolve();
         });
 
@@ -247,7 +341,35 @@ class WebSocketServerImpl implements WebSocketServerService {
    * Get the current number of connected clients.
    */
   getConnectionCount(): number {
-    return this.server?.clients.size ?? 0;
+    return this.connections.size;
+  }
+
+  /**
+   * Get information about all active connections.
+   */
+  getActiveConnections(): ConnectionInfo[] {
+    return Array.from(this.connections.values());
+  }
+
+  /**
+   * Get information about a specific connection by ID.
+   */
+  getConnection(id: ClientId): ConnectionInfo | undefined {
+    return this.connections.get(id);
+  }
+
+  /**
+   * Subscribe to connection events.
+   */
+  on<K extends keyof WebSocketServerEvents>(event: K, listener: WebSocketServerEvents[K]): void {
+    this.emitter.on(event, listener);
+  }
+
+  /**
+   * Unsubscribe from connection events.
+   */
+  off<K extends keyof WebSocketServerEvents>(event: K, listener: WebSocketServerEvents[K]): void {
+    this.emitter.off(event, listener);
   }
 
   /**
@@ -264,8 +386,12 @@ class WebSocketServerImpl implements WebSocketServerService {
       this.state = "stopping";
       this.logger.info("Shutting down WebSocket server");
 
+      // Stop heartbeat monitoring
+      this.stopHeartbeat();
+
       if (!this.server) {
         this.state = "stopped";
+        this.connections.clear();
         resolve();
         return;
       }
@@ -304,6 +430,8 @@ class WebSocketServerImpl implements WebSocketServerService {
             }
             this.state = "stopped";
             this.server = null;
+            this.connections.clear();
+            this.emitter.removeAllListeners();
             this.logger.info("WebSocket server shutdown complete");
             resolve();
           });
@@ -313,6 +441,8 @@ class WebSocketServerImpl implements WebSocketServerService {
           this.server?.close();
           this.state = "stopped";
           this.server = null;
+          this.connections.clear();
+          this.emitter.removeAllListeners();
           resolve();
         });
     });
@@ -360,28 +490,146 @@ class WebSocketServerImpl implements WebSocketServerService {
    * Handle a new WebSocket connection.
    */
   private handleConnection(ws: WebSocket, request: IncomingMessage): void {
-    const remoteAddress = request.socket.remoteAddress;
+    const trackedWs = ws as TrackedWebSocket;
+    const remoteAddress = request.socket.remoteAddress ?? "unknown";
+
+    // Generate unique connection ID and track the connection
+    const connectionId = generateConnectionId();
+    trackedWs.connectionId = connectionId;
+    trackedWs.isAlive = true;
+
+    const now = new Date();
+    const connectionInfo: ConnectionInfo = {
+      id: connectionId,
+      connectedAt: now,
+      lastActivity: now,
+      remoteAddress,
+    };
+
+    this.connections.set(connectionId, connectionInfo);
 
     this.logger.info("Client connected", {
+      connectionId,
       remoteAddress,
       totalConnections: this.getConnectionCount(),
     });
 
+    // Emit connection event
+    this.emitter.emit("connection", connectionInfo);
+
+    // Handle pong responses (heartbeat)
+    trackedWs.on("pong", () => {
+      trackedWs.isAlive = true;
+      const info = this.connections.get(connectionId);
+      if (info) {
+        info.lastActivity = new Date();
+      }
+      this.logger.debug("Received pong from client", { connectionId });
+    });
+
     // Handle client errors
-    ws.on("error", (error) => {
+    trackedWs.on("error", (error) => {
       this.logger.warn("Client connection error", {
+        connectionId,
         remoteAddress,
         error: error.message,
       });
+
+      const info = this.connections.get(connectionId);
+      if (info) {
+        this.emitter.emit("error", info, error);
+      }
     });
 
     // Handle client disconnect
-    ws.on("close", (code, reason) => {
+    trackedWs.on("close", (code, reason) => {
+      const info = this.connections.get(connectionId);
+      const reasonStr = reason.toString();
+
       this.logger.info("Client disconnected", {
+        connectionId,
         remoteAddress,
         code,
-        reason: reason.toString(),
-        totalConnections: this.getConnectionCount() - 1, // -1 because event fires before removal
+        reason: reasonStr,
+        totalConnections: this.getConnectionCount() - 1,
+      });
+
+      // Clean up connection tracking
+      this.connections.delete(connectionId);
+
+      // Emit disconnection event
+      if (info) {
+        this.emitter.emit("disconnection", info, code, reasonStr);
+      }
+    });
+  }
+
+  /**
+   * Start the heartbeat interval to ping all connected clients.
+   */
+  private startHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      return; // Already running
+    }
+
+    this.logger.debug("Starting heartbeat monitoring", {
+      interval: this.config.heartbeatInterval,
+      timeout: this.config.heartbeatTimeout,
+    });
+
+    this.heartbeatTimer = setInterval(() => {
+      this.performHeartbeat();
+    }, this.config.heartbeatInterval);
+  }
+
+  /**
+   * Stop the heartbeat interval.
+   */
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+      this.logger.debug("Stopped heartbeat monitoring");
+    }
+  }
+
+  /**
+   * Perform a heartbeat check on all connected clients.
+   * Terminates connections that didn't respond to the previous ping.
+   */
+  private performHeartbeat(): void {
+    if (!this.server) {
+      return;
+    }
+
+    this.server.clients.forEach((ws) => {
+      const trackedWs = ws as TrackedWebSocket;
+
+      if (!trackedWs.isAlive) {
+        // Client didn't respond to previous ping - terminate
+        const connectionId = trackedWs.connectionId;
+        const info = this.connections.get(connectionId);
+
+        this.logger.warn("Terminating stale connection (no heartbeat response)", {
+          connectionId,
+          remoteAddress: info?.remoteAddress,
+        });
+
+        trackedWs.terminate();
+        return;
+      }
+
+      // Mark as not alive until we receive pong
+      trackedWs.isAlive = false;
+
+      // Send ping
+      trackedWs.ping((err?: Error) => {
+        if (err) {
+          this.logger.debug("Failed to send ping", {
+            connectionId: trackedWs.connectionId,
+            error: err.message,
+          });
+        }
       });
     });
   }
