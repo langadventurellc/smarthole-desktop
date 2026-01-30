@@ -12,6 +12,8 @@ import {
   createLogger,
   Logger,
   LoggerConfig,
+  sanitizeLogData,
+  applyContentRedaction,
 } from "./logger";
 import { LogLevel } from "../types";
 
@@ -493,6 +495,473 @@ describe("Log Level Filtering", () => {
       logger.info("Info message");
       logger.debug("Debug message");
       logger.trace("Trace message");
+    }).not.toThrow();
+  });
+});
+
+// ============================================================================
+// Sanitization Tests
+// ============================================================================
+
+describe("sanitizeLogData", () => {
+  describe("sensitive pattern detection", () => {
+    it("should redact apiKey", () => {
+      const result = sanitizeLogData({ apiKey: "sk-1234567890" });
+      expect(result.apiKey).toBe("[REDACTED]");
+    });
+
+    it("should redact api_key", () => {
+      const result = sanitizeLogData({ api_key: "sk-1234567890" });
+      expect(result.api_key).toBe("[REDACTED]");
+    });
+
+    it("should redact api-key", () => {
+      const result = sanitizeLogData({ "api-key": "sk-1234567890" });
+      expect(result["api-key"]).toBe("[REDACTED]");
+    });
+
+    it("should redact password", () => {
+      const result = sanitizeLogData({ password: "secret123" });
+      expect(result.password).toBe("[REDACTED]");
+    });
+
+    it("should redact userPassword", () => {
+      const result = sanitizeLogData({ userPassword: "secret123" });
+      expect(result.userPassword).toBe("[REDACTED]");
+    });
+
+    it("should redact secret", () => {
+      const result = sanitizeLogData({ secret: "my-secret-value" });
+      expect(result.secret).toBe("[REDACTED]");
+    });
+
+    it("should redact clientSecret", () => {
+      const result = sanitizeLogData({ clientSecret: "client-secret-123" });
+      expect(result.clientSecret).toBe("[REDACTED]");
+    });
+
+    it("should redact token", () => {
+      const result = sanitizeLogData({ token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" });
+      expect(result.token).toBe("[REDACTED]");
+    });
+
+    it("should redact accessToken", () => {
+      const result = sanitizeLogData({ accessToken: "access-token-123" });
+      expect(result.accessToken).toBe("[REDACTED]");
+    });
+
+    it("should redact refreshToken", () => {
+      const result = sanitizeLogData({ refreshToken: "refresh-token-123" });
+      expect(result.refreshToken).toBe("[REDACTED]");
+    });
+
+    it("should redact auth", () => {
+      const result = sanitizeLogData({ auth: "basic-auth-value" });
+      expect(result.auth).toBe("[REDACTED]");
+    });
+
+    it("should redact authorization", () => {
+      const result = sanitizeLogData({ authorization: "Bearer xyz123" });
+      expect(result.authorization).toBe("[REDACTED]");
+    });
+
+    it("should redact credential", () => {
+      const result = sanitizeLogData({ credential: "user:pass" });
+      expect(result.credential).toBe("[REDACTED]");
+    });
+
+    it("should redact credentials", () => {
+      const result = sanitizeLogData({ credentials: { user: "admin", pass: "secret" } });
+      expect(result.credentials).toBe("[REDACTED]");
+    });
+
+    it("should redact bearer", () => {
+      const result = sanitizeLogData({ bearer: "bearer-token-123" });
+      expect(result.bearer).toBe("[REDACTED]");
+    });
+
+    it("should redact bearerToken", () => {
+      const result = sanitizeLogData({ bearerToken: "bearer-token-123" });
+      expect(result.bearerToken).toBe("[REDACTED]");
+    });
+
+    it("should be case insensitive", () => {
+      const result = sanitizeLogData({
+        APIKEY: "key1",
+        ApiKey: "key2",
+        PASSWORD: "pass1",
+        Password: "pass2",
+      });
+      expect(result.APIKEY).toBe("[REDACTED]");
+      expect(result.ApiKey).toBe("[REDACTED]");
+      expect(result.PASSWORD).toBe("[REDACTED]");
+      expect(result.Password).toBe("[REDACTED]");
+    });
+  });
+
+  describe("non-sensitive data preservation", () => {
+    it("should preserve non-sensitive string values", () => {
+      const result = sanitizeLogData({ userId: "usr_123", name: "John" });
+      expect(result.userId).toBe("usr_123");
+      expect(result.name).toBe("John");
+    });
+
+    it("should preserve non-sensitive number values", () => {
+      const result = sanitizeLogData({ count: 42, price: 19.99 });
+      expect(result.count).toBe(42);
+      expect(result.price).toBe(19.99);
+    });
+
+    it("should preserve boolean values", () => {
+      const result = sanitizeLogData({ isActive: true, isDeleted: false });
+      expect(result.isActive).toBe(true);
+      expect(result.isDeleted).toBe(false);
+    });
+
+    it("should preserve null values", () => {
+      const result = sanitizeLogData({ nullValue: null });
+      expect(result.nullValue).toBeNull();
+    });
+
+    it("should preserve undefined values", () => {
+      const result = sanitizeLogData({ undefinedValue: undefined });
+      expect(result.undefinedValue).toBeUndefined();
+    });
+  });
+
+  describe("nested object handling", () => {
+    it("should sanitize sensitive keys in nested objects", () => {
+      const result = sanitizeLogData({
+        user: {
+          id: "usr_123",
+          apiKey: "sk-nested-key",
+        },
+      });
+      expect(result.user).toEqual({
+        id: "usr_123",
+        apiKey: "[REDACTED]",
+      });
+    });
+
+    it("should handle deeply nested objects", () => {
+      const result = sanitizeLogData({
+        level1: {
+          level2: {
+            level3: {
+              password: "deep-secret",
+              data: "preserved",
+            },
+          },
+        },
+      });
+      expect(result).toEqual({
+        level1: {
+          level2: {
+            level3: {
+              password: "[REDACTED]",
+              data: "preserved",
+            },
+          },
+        },
+      });
+    });
+  });
+
+  describe("array handling", () => {
+    it("should sanitize objects in arrays", () => {
+      const result = sanitizeLogData({
+        users: [
+          { id: 1, apiKey: "key1" },
+          { id: 2, apiKey: "key2" },
+        ],
+      });
+      expect(result.users).toEqual([
+        { id: 1, apiKey: "[REDACTED]" },
+        { id: 2, apiKey: "[REDACTED]" },
+      ]);
+    });
+
+    it("should preserve primitive arrays", () => {
+      const result = sanitizeLogData({
+        ids: [1, 2, 3],
+        names: ["Alice", "Bob"],
+      });
+      expect(result.ids).toEqual([1, 2, 3]);
+      expect(result.names).toEqual(["Alice", "Bob"]);
+    });
+
+    it("should handle nested arrays", () => {
+      const result = sanitizeLogData({
+        matrix: [[{ token: "t1" }, { token: "t2" }], [{ token: "t3" }]],
+      });
+      expect(result.matrix).toEqual([
+        [{ token: "[REDACTED]" }, { token: "[REDACTED]" }],
+        [{ token: "[REDACTED]" }],
+      ]);
+    });
+
+    it("should handle null and undefined in arrays", () => {
+      const result = sanitizeLogData({
+        mixed: [null, undefined, { apiKey: "key" }, "string"],
+      });
+      expect(result.mixed).toEqual([null, undefined, { apiKey: "[REDACTED]" }, "string"]);
+    });
+  });
+
+  describe("mixed sensitive and non-sensitive data", () => {
+    it("should handle complex objects with mixed data", () => {
+      const result = sanitizeLogData({
+        request: {
+          method: "POST",
+          url: "/api/users",
+          headers: {
+            authorization: "Bearer token123",
+            "content-type": "application/json",
+          },
+          body: {
+            username: "john",
+            password: "secret123",
+          },
+        },
+        response: {
+          status: 200,
+          apiKey: "exposed-key",
+        },
+      });
+
+      expect(result).toEqual({
+        request: {
+          method: "POST",
+          url: "/api/users",
+          headers: {
+            authorization: "[REDACTED]",
+            "content-type": "application/json",
+          },
+          body: {
+            username: "john",
+            password: "[REDACTED]",
+          },
+        },
+        response: {
+          status: 200,
+          apiKey: "[REDACTED]",
+        },
+      });
+    });
+  });
+});
+
+// ============================================================================
+// Content Redaction Tests
+// ============================================================================
+
+describe("applyContentRedaction", () => {
+  describe("with logMessageContent: false", () => {
+    it("should redact content field", () => {
+      const result = applyContentRedaction({ content: "Hello world", userId: "usr_123" }, false);
+      expect(result.content).toBe("[CONTENT_REDACTED]");
+      expect(result.userId).toBe("usr_123");
+    });
+
+    it("should redact message_content field", () => {
+      const result = applyContentRedaction({ message_content: "User message" }, false);
+      expect(result.message_content).toBe("[CONTENT_REDACTED]");
+    });
+
+    it("should redact messageContent field", () => {
+      const result = applyContentRedaction({ messageContent: "User message" }, false);
+      expect(result.messageContent).toBe("[CONTENT_REDACTED]");
+    });
+
+    it("should redact text field", () => {
+      const result = applyContentRedaction({ text: "Some text content" }, false);
+      expect(result.text).toBe("[CONTENT_REDACTED]");
+    });
+
+    it("should redact body field", () => {
+      const result = applyContentRedaction({ body: "Message body" }, false);
+      expect(result.body).toBe("[CONTENT_REDACTED]");
+    });
+
+    it("should redact input field", () => {
+      const result = applyContentRedaction({ input: "User input" }, false);
+      expect(result.input).toBe("[CONTENT_REDACTED]");
+    });
+
+    it("should redact userInput field", () => {
+      const result = applyContentRedaction({ userInput: "User typed this" }, false);
+      expect(result.userInput).toBe("[CONTENT_REDACTED]");
+    });
+
+    it("should redact user_input field", () => {
+      const result = applyContentRedaction({ user_input: "User typed this" }, false);
+      expect(result.user_input).toBe("[CONTENT_REDACTED]");
+    });
+
+    it("should redact transcript field", () => {
+      const result = applyContentRedaction({ transcript: "Voice transcription" }, false);
+      expect(result.transcript).toBe("[CONTENT_REDACTED]");
+    });
+
+    it("should redact transcription field", () => {
+      const result = applyContentRedaction({ transcription: "Voice transcription" }, false);
+      expect(result.transcription).toBe("[CONTENT_REDACTED]");
+    });
+
+    it("should redact content in nested objects", () => {
+      const result = applyContentRedaction(
+        {
+          message: {
+            content: "Nested content",
+            id: "msg_123",
+          },
+        },
+        false
+      );
+      expect(result).toEqual({
+        message: {
+          content: "[CONTENT_REDACTED]",
+          id: "msg_123",
+        },
+      });
+    });
+
+    it("should redact content in arrays", () => {
+      const result = applyContentRedaction(
+        {
+          messages: [
+            { content: "Message 1", id: 1 },
+            { content: "Message 2", id: 2 },
+          ],
+        },
+        false
+      );
+      expect(result.messages).toEqual([
+        { content: "[CONTENT_REDACTED]", id: 1 },
+        { content: "[CONTENT_REDACTED]", id: 2 },
+      ]);
+    });
+
+    it("should preserve null values", () => {
+      const result = applyContentRedaction({ content: null, data: "test" }, false);
+      expect(result.content).toBeNull();
+    });
+
+    it("should preserve undefined values", () => {
+      const result = applyContentRedaction({ content: undefined, data: "test" }, false);
+      expect(result.content).toBeUndefined();
+    });
+  });
+
+  describe("with logMessageContent: true", () => {
+    it("should preserve content field", () => {
+      const result = applyContentRedaction({ content: "Hello world", userId: "usr_123" }, true);
+      expect(result.content).toBe("Hello world");
+      expect(result.userId).toBe("usr_123");
+    });
+
+    it("should preserve all content fields", () => {
+      const data = {
+        content: "content value",
+        text: "text value",
+        body: "body value",
+        input: "input value",
+        transcript: "transcript value",
+      };
+      const result = applyContentRedaction(data, true);
+      expect(result).toEqual(data);
+    });
+
+    it("should preserve nested content", () => {
+      const data = {
+        message: {
+          content: "Nested content",
+          id: "msg_123",
+        },
+      };
+      const result = applyContentRedaction(data, true);
+      expect(result).toEqual(data);
+    });
+  });
+});
+
+// ============================================================================
+// Integration Tests: Logger with Privacy
+// ============================================================================
+
+describe("Logger Privacy Integration", () => {
+  beforeEach(() => {
+    resetLogger();
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    resetLogger();
+  });
+
+  it("should apply sanitization when logging with context", () => {
+    const logger = createLogger({
+      level: LogLevel.INFO,
+      logMessageContent: true,
+    });
+
+    // Should not throw when logging sensitive data (it gets sanitized)
+    expect(() => {
+      logger.info("API call made", { apiKey: "sk-secret-key", endpoint: "/users" });
+    }).not.toThrow();
+  });
+
+  it("should apply content redaction based on config", () => {
+    const logger = createLogger({
+      level: LogLevel.INFO,
+      logMessageContent: false, // Content should be redacted
+    });
+
+    // Should not throw when logging content (it gets redacted)
+    expect(() => {
+      logger.info("User message received", { content: "Hello world", userId: "usr_123" });
+    }).not.toThrow();
+  });
+
+  it("should allow content logging when enabled", () => {
+    const logger = createLogger({
+      level: LogLevel.INFO,
+      logMessageContent: true, // Content should be preserved
+    });
+
+    // Should work without issues
+    expect(() => {
+      logger.info("User message received", { content: "Hello world", userId: "usr_123" });
+    }).not.toThrow();
+  });
+
+  it("should apply both sanitization and content redaction", () => {
+    const logger = createLogger({
+      level: LogLevel.INFO,
+      logMessageContent: false,
+    });
+
+    // Both sensitive data and content should be handled
+    expect(() => {
+      logger.info("Processing request", {
+        apiKey: "sk-secret",
+        content: "User message",
+        requestId: "req_123",
+      });
+    }).not.toThrow();
+  });
+
+  it("child loggers should inherit privacy settings", () => {
+    const parentLogger = createLogger({
+      level: LogLevel.INFO,
+      logMessageContent: false,
+    });
+
+    const childLogger = parentLogger.child({ component: "TestService" });
+
+    // Child logger should also handle privacy correctly
+    expect(() => {
+      childLogger.info("Child log", { content: "Should be redacted", token: "secret" });
     }).not.toThrow();
   });
 });

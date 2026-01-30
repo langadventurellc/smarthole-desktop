@@ -73,6 +73,214 @@ const DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024;
 /** Log filename */
 const LOG_FILENAME = "smarthole.log";
 
+/** Placeholder for redacted sensitive data */
+const REDACTED_VALUE = "[REDACTED]";
+
+/** Placeholder for redacted message content */
+const CONTENT_REDACTED_VALUE = "[CONTENT_REDACTED]";
+
+/**
+ * Patterns for detecting sensitive data in object keys.
+ * These keys will always have their values redacted.
+ */
+const SENSITIVE_PATTERNS: ReadonlyArray<RegExp> = [
+  /api[-_]?key/i,
+  /password/i,
+  /secret/i,
+  /token/i,
+  /auth/i,
+  /credential/i,
+  /bearer/i,
+];
+
+/**
+ * Fields that represent user-generated content.
+ * These are redacted when logMessageContent is false.
+ */
+const CONTENT_FIELDS: ReadonlySet<string> = new Set([
+  "content",
+  "message_content",
+  "messageContent",
+  "text",
+  "body",
+  "input",
+  "userInput",
+  "user_input",
+  "transcript",
+  "transcription",
+]);
+
+// ============================================================================
+// Sanitization Utilities
+// ============================================================================
+
+/**
+ * Checks if a key matches any sensitive pattern.
+ *
+ * @param key - The key to check
+ * @returns true if the key matches a sensitive pattern
+ */
+function isSensitiveKey(key: string): boolean {
+  return SENSITIVE_PATTERNS.some((pattern) => pattern.test(key));
+}
+
+/**
+ * Checks if a key represents user content that should be redacted
+ * when logMessageContent is disabled.
+ *
+ * @param key - The key to check
+ * @returns true if the key represents user content
+ */
+function isContentKey(key: string): boolean {
+  return CONTENT_FIELDS.has(key);
+}
+
+/**
+ * Recursively sanitizes log data by redacting sensitive values.
+ * Always redacts values for keys matching SENSITIVE_PATTERNS.
+ *
+ * @param data - The data to sanitize
+ * @returns A new object with sensitive values redacted
+ *
+ * @example
+ * ```typescript
+ * sanitizeLogData({ apiKey: 'sk-1234', userId: 'usr_123' });
+ * // Returns: { apiKey: '[REDACTED]', userId: 'usr_123' }
+ * ```
+ */
+export function sanitizeLogData(data: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const key of Object.keys(data)) {
+    const value = data[key];
+
+    if (isSensitiveKey(key)) {
+      // Always redact sensitive keys
+      result[key] = REDACTED_VALUE;
+    } else if (value === null || value === undefined) {
+      // Preserve null/undefined
+      result[key] = value;
+    } else if (Array.isArray(value)) {
+      // Recursively sanitize arrays
+      result[key] = sanitizeArray(value);
+    } else if (typeof value === "object") {
+      // Recursively sanitize nested objects
+      result[key] = sanitizeLogData(value as Record<string, unknown>);
+    } else {
+      // Preserve primitive values
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Recursively sanitizes an array, handling nested objects and arrays.
+ *
+ * @param arr - The array to sanitize
+ * @returns A new array with sensitive values redacted
+ */
+function sanitizeArray(arr: unknown[]): unknown[] {
+  return arr.map((item) => {
+    if (item === null || item === undefined) {
+      return item;
+    } else if (Array.isArray(item)) {
+      return sanitizeArray(item);
+    } else if (typeof item === "object") {
+      return sanitizeLogData(item as Record<string, unknown>);
+    } else {
+      return item;
+    }
+  });
+}
+
+/**
+ * Applies content redaction to log data when logMessageContent is disabled.
+ * Redacts values for keys in CONTENT_FIELDS.
+ *
+ * @param data - The data to process
+ * @param logMessageContent - Whether message content should be logged
+ * @returns A new object with content values redacted if logMessageContent is false
+ *
+ * @example
+ * ```typescript
+ * // With logMessageContent: false
+ * applyContentRedaction({ content: 'Hello world', userId: 'usr_123' }, false);
+ * // Returns: { content: '[CONTENT_REDACTED]', userId: 'usr_123' }
+ * ```
+ */
+export function applyContentRedaction(
+  data: Record<string, unknown>,
+  logMessageContent: boolean
+): Record<string, unknown> {
+  if (logMessageContent) {
+    // Content logging enabled, no redaction needed
+    return data;
+  }
+
+  const result: Record<string, unknown> = {};
+
+  for (const key of Object.keys(data)) {
+    const value = data[key];
+
+    if (value === null || value === undefined) {
+      // Preserve null/undefined (even for content fields)
+      result[key] = value;
+    } else if (isContentKey(key)) {
+      // Redact content field
+      result[key] = CONTENT_REDACTED_VALUE;
+    } else if (Array.isArray(value)) {
+      // Recursively process arrays
+      result[key] = applyContentRedactionArray(value, logMessageContent);
+    } else if (typeof value === "object") {
+      // Recursively process nested objects
+      result[key] = applyContentRedaction(value as Record<string, unknown>, logMessageContent);
+    } else {
+      // Preserve primitive values
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Applies content redaction to an array recursively.
+ *
+ * @param arr - The array to process
+ * @param logMessageContent - Whether message content should be logged
+ * @returns A new array with content values redacted if logMessageContent is false
+ */
+function applyContentRedactionArray(arr: unknown[], logMessageContent: boolean): unknown[] {
+  return arr.map((item) => {
+    if (item === null || item === undefined) {
+      return item;
+    } else if (Array.isArray(item)) {
+      return applyContentRedactionArray(item, logMessageContent);
+    } else if (typeof item === "object") {
+      return applyContentRedaction(item as Record<string, unknown>, logMessageContent);
+    } else {
+      return item;
+    }
+  });
+}
+
+/**
+ * Processes log context by applying both sensitive data sanitization
+ * and content redaction based on configuration.
+ *
+ * @param context - The log context to process
+ * @param logMessageContent - Whether message content should be logged
+ * @returns Processed context with appropriate redactions applied
+ */
+function processLogContext(context: LogContext, logMessageContent: boolean): LogContext {
+  // First apply sensitive data sanitization (always)
+  const sanitized = sanitizeLogData(context);
+  // Then apply content redaction based on config
+  return applyContentRedaction(sanitized, logMessageContent);
+}
+
 // ============================================================================
 // Logger Wrapper
 // ============================================================================
@@ -80,13 +288,18 @@ const LOG_FILENAME = "smarthole.log";
 /**
  * Wraps a pino logger instance to match the Logger interface.
  * Handles the difference between pino's API and our Logger interface.
+ * Applies privacy sanitization to all log context.
  */
 class LoggerWrapper implements Logger {
-  constructor(private readonly pinoLogger: PinoLogger) {}
+  constructor(
+    private readonly pinoLogger: PinoLogger,
+    private readonly logMessageContent: boolean = false
+  ) {}
 
   error(message: string, context?: LogContext): void {
     if (context) {
-      this.pinoLogger.error(context, message);
+      const processed = processLogContext(context, this.logMessageContent);
+      this.pinoLogger.error(processed, message);
     } else {
       this.pinoLogger.error(message);
     }
@@ -94,7 +307,8 @@ class LoggerWrapper implements Logger {
 
   warn(message: string, context?: LogContext): void {
     if (context) {
-      this.pinoLogger.warn(context, message);
+      const processed = processLogContext(context, this.logMessageContent);
+      this.pinoLogger.warn(processed, message);
     } else {
       this.pinoLogger.warn(message);
     }
@@ -102,7 +316,8 @@ class LoggerWrapper implements Logger {
 
   info(message: string, context?: LogContext): void {
     if (context) {
-      this.pinoLogger.info(context, message);
+      const processed = processLogContext(context, this.logMessageContent);
+      this.pinoLogger.info(processed, message);
     } else {
       this.pinoLogger.info(message);
     }
@@ -110,7 +325,8 @@ class LoggerWrapper implements Logger {
 
   debug(message: string, context?: LogContext): void {
     if (context) {
-      this.pinoLogger.debug(context, message);
+      const processed = processLogContext(context, this.logMessageContent);
+      this.pinoLogger.debug(processed, message);
     } else {
       this.pinoLogger.debug(message);
     }
@@ -118,14 +334,16 @@ class LoggerWrapper implements Logger {
 
   trace(message: string, context?: LogContext): void {
     if (context) {
-      this.pinoLogger.trace(context, message);
+      const processed = processLogContext(context, this.logMessageContent);
+      this.pinoLogger.trace(processed, message);
     } else {
       this.pinoLogger.trace(message);
     }
   }
 
   child(bindings: Record<string, unknown>): Logger {
-    return new LoggerWrapper(this.pinoLogger.child(bindings));
+    // Child loggers inherit the logMessageContent setting
+    return new LoggerWrapper(this.pinoLogger.child(bindings), this.logMessageContent);
   }
 }
 
@@ -315,7 +533,7 @@ export function initializeLogger(config: LoggerConfig): Logger {
 
   loggerConfig = config;
 
-  const { level, logDirectory, prettyPrint = false } = config;
+  const { level, logMessageContent, logDirectory, prettyPrint = false } = config;
 
   // Determine if we're running in Electron main process
   const isElectron =
@@ -384,7 +602,7 @@ export function initializeLogger(config: LoggerConfig): Logger {
     pinoLogger = pino(pinoOptions, pino.multistream(streams));
   }
 
-  loggerInstance = new LoggerWrapper(pinoLogger);
+  loggerInstance = new LoggerWrapper(pinoLogger, logMessageContent);
   return loggerInstance;
 }
 
@@ -429,7 +647,7 @@ export function resetLogger(): void {
  * @returns A new Logger instance
  */
 export function createLogger(config: LoggerConfig): Logger {
-  const { level, prettyPrint = false } = config;
+  const { level, logMessageContent, prettyPrint = false } = config;
 
   const pinoOptions: pino.LoggerOptions = {
     level,
@@ -452,5 +670,5 @@ export function createLogger(config: LoggerConfig): Logger {
     pinoLogger = pino(pinoOptions);
   }
 
-  return new LoggerWrapper(pinoLogger);
+  return new LoggerWrapper(pinoLogger, logMessageContent);
 }
