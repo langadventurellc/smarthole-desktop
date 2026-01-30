@@ -60,6 +60,11 @@ log:
   - "Documentation updated: Added comprehensive WebSocket Server section to
     CLAUDE.md covering server initialization, configuration, main process usage,
     renderer process status queries, and status object interface."
+  - "Feature implementation complete. Documentation committed as 7d7f7d0. Total
+    commits: 4 (b541eb6, 0c8d258, 8d246d4, 7d7f7d0). All 3 tasks completed with
+    reviews passed."
+  - Fixed Vite build error - externalized ws optional dependencies (bufferutil,
+    utf-8-validate) in vite.main.config.ts. Committed as 9c187c1.
 schema: v1.0
 childrenIds:
   - T-expose-websocket-server
