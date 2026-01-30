@@ -40,12 +40,18 @@ affectedFiles:
     and WEBSOCKET_STATUS_CHANGED IPC channels, WebSocketServerState type,
     WebSocketServerStatus interface, isWebSocketServerState and
     isWebSocketServerStatus type guards, and updated
-    IpcPayloadMap/IpcResponseMap
+    IpcPayloadMap/IpcResponseMap; Added 4 new IPC channels (MESSAGE_SEND,
+    MESSAGE_SEND_MULTIPLE, MESSAGE_GET_STATUS, MESSAGE_GET_RECENT),
+    IpcDeliveryResult, IpcDeliveryStatus, IpcRoutedMessage types for IPC
+    serialization, and payload/response types for all new channels. Updated
+    IpcPayloadMap and IpcResponseMap.
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
     increased channel count from 7 to 9, and updated naming convention regex to
-    allow domain:action:sub pattern
+    allow domain:action:sub pattern; Updated test for channel count (9 to 13),
+    updated naming convention regex to allow camelCase actions, added test for
+    new message delivery channels.
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -57,10 +63,12 @@ affectedFiles:
     all generic helpers, validation result helpers, and detailed validation
     functions including edge cases, nested validation, and error path
     verification
-  src/preload.ts: Updated with fully-typed electronAPI object containing logging,
+  src/preload.ts: "Updated with fully-typed electronAPI object containing logging,
     notification, configuration, and app lifecycle methods using
     ipcRenderer.send and ipcRenderer.invoke patterns; Added getWebSocketStatus()
-    and onWebSocketStatusChange(callback) methods to the electronAPI
+    and onWebSocketStatusChange(callback) methods to the electronAPI; Added 4
+    new methods to electronAPI: sendMessage, sendMessageMultiple,
+    getMessageStatus, getRecentDeliveries with full TypeScript types."
   src/types/electron.d.ts: Created global Window interface augmentation declaring
     electronAPI property with ElectronAPI type
   src/preload.test.ts: Created comprehensive unit tests (29 tests) mocking
@@ -130,7 +138,11 @@ affectedFiles:
     to: (1) calculate connection duration, (2) call registry.unregisterById() to
     clean up registered clients, (3) log disconnection with client details
     including duration, code, and reason. Different log levels for registered vs
-    unregistered clients."
+    unregistered clients.; Integrated message delivery service: added import,
+    added messageDelivery to wsState, initialized service after registration
+    handler, wired up response handling in WebSocket message event handler;
+    Registered message delivery IPC handlers using
+    registerMessageDeliveryHandlers inside app.whenReady()."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -229,6 +241,38 @@ affectedFiles:
     pattern with initialize/get/reset functions.
   src/services/registration-handler.test.ts: Added 13 unit tests covering
     initialization, message parsing, validation, and registration flow.
+  src/services/message-delivery.ts: "Created new message delivery service with
+    singleton pattern, DeliveryResult/DeliveryError/DeliveryStatus types,
+    sendToClient/sendToClients methods, delivery history tracking with LRU
+    eviction, and structured logging; Extended with response handling: added
+    DeliveryResponse interface, ResponseContext, ResponseProcessResult types,
+    MessageDeliveryEvents interface for typed events, handleResponse() and
+    on/off() methods to MessageDeliveryService interface, processResponse() and
+    findDeliveryStatusForUpdate() private methods, EventEmitter for events,
+    parseMessage() helper function"
+  src/services/message-delivery.test.ts: "Added comprehensive unit tests covering
+    initialization, single/multi-client delivery, error handling for all failure
+    modes, delivery history tracking, and history eviction behavior; Added
+    handleResponse test suite with 10 tests covering: ack/reject/notification
+    response processing, delivery status updates, event emission for all
+    response types, handling unknown messageIds, invalid JSON, non-response
+    messages, and invalid message formats"
+  src/ipc/message-delivery-handlers.ts: Created new file with handler factory
+    functions (createMessageSendHandler, createMessageSendMultipleHandler,
+    createMessageGetStatusHandler, createMessageGetRecentHandler) and
+    registerMessageDeliveryHandlers convenience function. Includes type
+    conversion helpers for branded types and Map serialization.
+  src/ipc/message-delivery-handlers.test.ts: Created new test file with 11 unit
+    tests covering all handlers, error handling when service not initialized,
+    Map-to-array serialization, and proper type conversion.
+  docs/message-delivery.md: Created new documentation file covering message
+    delivery initialization, sending messages, delivery results, response
+    handling with event subscriptions, delivery status tracking, IPC interface
+    with all 4 channels, renderer usage examples, configuration options, wire
+    format, and singleton pattern
+  CLAUDE.md: Updated project structure to include message-delivery in services
+    list, added link to new message-delivery.md documentation in Detailed
+    Documentation section
 log: []
 schema: v1.0
 childrenIds:

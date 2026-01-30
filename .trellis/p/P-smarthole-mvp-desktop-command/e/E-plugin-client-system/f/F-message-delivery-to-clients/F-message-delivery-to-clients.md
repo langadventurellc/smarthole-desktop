@@ -1,15 +1,91 @@
 ---
 id: F-message-delivery-to-clients
 title: Message Delivery to Clients
-status: open
+status: done
 priority: high
 parent: E-plugin-client-system
 prerequisites:
   - F-client-registration-registry
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/services/message-delivery.ts: "Created new message delivery service with
+    singleton pattern, DeliveryResult/DeliveryError/DeliveryStatus types,
+    sendToClient/sendToClients methods, delivery history tracking with LRU
+    eviction, and structured logging; Extended with response handling: added
+    DeliveryResponse interface, ResponseContext, ResponseProcessResult types,
+    MessageDeliveryEvents interface for typed events, handleResponse() and
+    on/off() methods to MessageDeliveryService interface, processResponse() and
+    findDeliveryStatusForUpdate() private methods, EventEmitter for events,
+    parseMessage() helper function"
+  src/services/message-delivery.test.ts: "Added comprehensive unit tests covering
+    initialization, single/multi-client delivery, error handling for all failure
+    modes, delivery history tracking, and history eviction behavior; Added
+    handleResponse test suite with 10 tests covering: ack/reject/notification
+    response processing, delivery status updates, event emission for all
+    response types, handling unknown messageIds, invalid JSON, non-response
+    messages, and invalid message formats"
+  src/main.ts: "Integrated message delivery service: added import, added
+    messageDelivery to wsState, initialized service after registration handler,
+    wired up response handling in WebSocket message event handler; Registered
+    message delivery IPC handlers using registerMessageDeliveryHandlers inside
+    app.whenReady()."
+  src/types/ipc.ts: Added 4 new IPC channels (MESSAGE_SEND, MESSAGE_SEND_MULTIPLE,
+    MESSAGE_GET_STATUS, MESSAGE_GET_RECENT), IpcDeliveryResult,
+    IpcDeliveryStatus, IpcRoutedMessage types for IPC serialization, and
+    payload/response types for all new channels. Updated IpcPayloadMap and
+    IpcResponseMap.
+  src/ipc/message-delivery-handlers.ts: Created new file with handler factory
+    functions (createMessageSendHandler, createMessageSendMultipleHandler,
+    createMessageGetStatusHandler, createMessageGetRecentHandler) and
+    registerMessageDeliveryHandlers convenience function. Includes type
+    conversion helpers for branded types and Map serialization.
+  src/ipc/message-delivery-handlers.test.ts: Created new test file with 11 unit
+    tests covering all handlers, error handling when service not initialized,
+    Map-to-array serialization, and proper type conversion.
+  src/preload.ts: "Added 4 new methods to electronAPI: sendMessage,
+    sendMessageMultiple, getMessageStatus, getRecentDeliveries with full
+    TypeScript types."
+  src/types/ipc.test.ts: Updated test for channel count (9 to 13), updated naming
+    convention regex to allow camelCase actions, added test for new message
+    delivery channels.
+  docs/message-delivery.md: Created new documentation file covering message
+    delivery initialization, sending messages, delivery results, response
+    handling with event subscriptions, delivery status tracking, IPC interface
+    with all 4 channels, renderer usage examples, configuration options, wire
+    format, and singleton pattern
+  CLAUDE.md: Updated project structure to include message-delivery in services
+    list, added link to new message-delivery.md documentation in Detailed
+    Documentation section
+log:
+  - "Started implementation. Created feature branch
+    feature/F-message-delivery-to-clients. Verified prerequisite
+    F-client-registration-registry is complete. Execution order:
+    T-implement-core-message → T-handle-client-message →
+    T-expose-message-delivery-to"
+  - Completed T-implement-core-message. Committed as 43936a1. Implementation
+    includes MessageDeliveryService with singleton pattern, fire-and-forget
+    delivery, history tracking with LRU eviction, and 16 unit tests. Review
+    passed with no blocking issues.
+  - Completed T-handle-client-message. Committed as 0c1d63b. Implementation adds
+    response handling to message delivery service with handleResponse() method,
+    DeliveryResponse type, event emission (response:ack/reject/notification),
+    and main.ts integration. Review passed. 10 unit tests added.
+  - "Auto-completed: All child tasks are complete"
+  - Completed T-expose-message-delivery-to. Committed as f73c5cf. Implementation
+    adds 4 IPC channels (message:send, message:sendMultiple, message:getStatus,
+    message:getRecent), handler factory functions, preload methods, and proper
+    Map serialization. Review passed. 11 unit tests added. All 3 tasks now
+    complete.
+  - Documentation update complete. Created docs/message-delivery.md with
+    comprehensive documentation covering initialization, sending messages,
+    delivery results, response handling, delivery status tracking, IPC
+    interface, wire format, and configuration. Updated CLAUDE.md to include
+    message-delivery service in project structure and added link to new
+    documentation.
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-expose-message-delivery-to
+  - T-handle-client-message
+  - T-implement-core-message
 created: 2026-01-30T06:24:55.339Z
 updated: 2026-01-30T06:24:55.339Z
 ---

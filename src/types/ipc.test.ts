@@ -56,14 +56,21 @@ describe("IPC_CHANNELS", () => {
       expect(IPC_CHANNELS.WEBSOCKET_STATUS_CHANGED).toBe("websocket:status:changed");
     });
 
-    it("should have exactly 9 channels", () => {
-      expect(Object.keys(IPC_CHANNELS)).toHaveLength(9);
+    it("should have all expected message delivery channels", () => {
+      expect(IPC_CHANNELS.MESSAGE_SEND).toBe("message:send");
+      expect(IPC_CHANNELS.MESSAGE_SEND_MULTIPLE).toBe("message:sendMultiple");
+      expect(IPC_CHANNELS.MESSAGE_GET_STATUS).toBe("message:getStatus");
+      expect(IPC_CHANNELS.MESSAGE_GET_RECENT).toBe("message:getRecent");
+    });
+
+    it("should have exactly 13 channels", () => {
+      expect(Object.keys(IPC_CHANNELS)).toHaveLength(13);
     });
 
     it("should follow the domain:action naming convention", () => {
       for (const channel of Object.values(IPC_CHANNELS)) {
-        // Allows domain:action or domain:action:sub patterns
-        expect(channel).toMatch(/^[a-z]+:[a-z]+(:[a-z]+)?$/);
+        // Allows domain:action or domain:action:sub patterns (action can be camelCase)
+        expect(channel).toMatch(/^[a-z]+:[a-zA-Z]+(:[a-zA-Z]+)?$/);
       }
     });
   });

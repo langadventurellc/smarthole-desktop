@@ -30,7 +30,7 @@ src/
 ├── preload.ts           # Secure IPC bridge (contextBridge)
 ├── renderer.tsx         # React entry point
 ├── App.tsx              # Main React component
-├── services/            # Core services (logger, notifications, websocket, registry)
+├── services/            # Core services (logger, notifications, websocket, registry, message-delivery)
 ├── ipc/                 # IPC handlers for main/renderer communication
 └── types/               # TypeScript type definitions
 ```
@@ -69,4 +69,5 @@ src/
 - [Notification System](docs/notifications.md) - queue, rate limiting, coalescing
 - [WebSocket Server](docs/websocket-server.md) - plugin connections, heartbeat, events
 - [Client Registration](docs/client-registration.md) - protocol, validation, registry API
+- [Message Delivery](docs/message-delivery.md) - routing messages to clients, response handling
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements

@@ -13,6 +13,7 @@ import {
   initializeRegistrationHandler,
   RegistrationHandler,
 } from "./services/registration-handler";
+import { initializeMessageDelivery, MessageDeliveryService } from "./services/message-delivery";
 import { IPC_CHANNELS, LogLevel } from "./types";
 import { createLogMessageHandler } from "./ipc/log-handler";
 import { createNotificationHandler } from "./ipc/notification-handler";
@@ -21,6 +22,7 @@ import {
   broadcastWebSocketStatusChange,
   buildWebSocketStatus,
 } from "./ipc/websocket-status-handler";
+import { registerMessageDeliveryHandlers } from "./ipc/message-delivery-handlers";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -36,10 +38,12 @@ const WS_DEFAULT_PORT = 9473;
 const wsState: {
   server: WebSocketServerService | null;
   registrationHandler: RegistrationHandler | null;
+  messageDelivery: MessageDeliveryService | null;
   lastError: string | undefined;
 } = {
   server: null,
   registrationHandler: null,
+  messageDelivery: null,
   lastError: undefined,
 };
 
@@ -157,6 +161,10 @@ app.whenReady().then(async () => {
     wsState.registrationHandler = initializeRegistrationHandler();
     logger.info("Registration handler initialized");
 
+    // Initialize message delivery service for sending messages to clients and handling responses
+    wsState.messageDelivery = initializeMessageDelivery();
+    logger.info("Message delivery service initialized");
+
     // Subscribe to connection events to broadcast status changes
     wsState.server.on("connection", () => {
       notifyWebSocketStatusChange();
@@ -193,8 +201,9 @@ app.whenReady().then(async () => {
       notifyWebSocketStatusChange();
     });
 
-    // Wire up message handling for registration
+    // Wire up message handling for registration and responses
     wsState.server.on("message", (info, ws, data) => {
+      // Try registration handler first
       if (wsState.registrationHandler) {
         const result = wsState.registrationHandler.processMessage(data, {
           ws,
@@ -204,6 +213,20 @@ app.whenReady().then(async () => {
           logger.debug("Registration message processed", {
             connectionId: info.id,
             registered: result.registered,
+          });
+          return; // Message handled by registration
+        }
+      }
+
+      // Try response handler for client responses
+      if (wsState.messageDelivery) {
+        const result = wsState.messageDelivery.handleResponse(data, {
+          connectionId: info.id,
+        });
+        if (result.handled) {
+          logger.debug("Response message processed", {
+            connectionId: info.id,
+            responseType: result.responseType,
           });
         }
       }
@@ -227,6 +250,10 @@ app.whenReady().then(async () => {
       wsLogger
     )
   );
+
+  // Register message delivery IPC handlers
+  const messageLogger = logger.child({ component: "MessageDeliveryIPC" });
+  registerMessageDeliveryHandlers(ipcMain, () => wsState.messageDelivery, messageLogger);
 
   // Register error handlers
   registerProcessErrorHandlers({
