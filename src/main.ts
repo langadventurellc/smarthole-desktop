@@ -22,6 +22,7 @@ import {
   broadcastWebSocketStatusChange,
   buildWebSocketStatus,
 } from "./ipc/websocket-status-handler";
+import { registerMessageDeliveryHandlers } from "./ipc/message-delivery-handlers";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -249,6 +250,10 @@ app.whenReady().then(async () => {
       wsLogger
     )
   );
+
+  // Register message delivery IPC handlers
+  const messageLogger = logger.child({ component: "MessageDeliveryIPC" });
+  registerMessageDeliveryHandlers(ipcMain, () => wsState.messageDelivery, messageLogger);
 
   // Register error handlers
   registerProcessErrorHandlers({

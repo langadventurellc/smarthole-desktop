@@ -42,6 +42,12 @@ export const IPC_CHANNELS = {
   // WebSocket server status channels
   WEBSOCKET_STATUS_GET: "websocket:status:get", // Renderer -> Main request
   WEBSOCKET_STATUS_CHANGED: "websocket:status:changed", // Main -> Renderer broadcast
+
+  // Message delivery channels
+  MESSAGE_SEND: "message:send", // Send message to single client
+  MESSAGE_SEND_MULTIPLE: "message:sendMultiple", // Send message to multiple clients
+  MESSAGE_GET_STATUS: "message:getStatus", // Get delivery status for a message
+  MESSAGE_GET_RECENT: "message:getRecent", // Get recent delivery history
 } as const;
 
 /**
@@ -195,6 +201,107 @@ export interface WebSocketServerStatus {
 }
 
 // ============================================================================
+// Message Delivery IPC Types
+// ============================================================================
+
+// Re-export types from message-delivery service for convenience
+// Import from services would create circular dependencies, so we define IPC-specific types here
+
+/**
+ * Serializable delivery result for IPC transport.
+ * Mirrors DeliveryResult from message-delivery service.
+ */
+export type IpcDeliveryResult =
+  | { success: true; deliveredAt: string }
+  | { success: false; error: "CLIENT_NOT_FOUND" | "CLIENT_NOT_CONNECTED" | "SEND_FAILED" };
+
+/**
+ * Serializable delivery status for IPC transport.
+ * Mirrors DeliveryStatus from message-delivery service.
+ */
+export interface IpcDeliveryStatus {
+  /** The message ID that was delivered */
+  messageId: string;
+  /** The client name the message was sent to */
+  clientName: string;
+  /** The result of the delivery attempt */
+  result: IpcDeliveryResult;
+  /** When the delivery was attempted */
+  attemptedAt: string;
+  /** Response from the client, if received */
+  response?: {
+    type: "ack" | "reject" | "notification";
+    receivedAt: string;
+    payload?: Record<string, unknown>;
+  };
+}
+
+/**
+ * Serializable routed message for IPC transport.
+ * Mirrors RoutedMessage from messages.ts.
+ */
+export interface IpcRoutedMessage {
+  /** Unique message ID for correlation */
+  id: string;
+  /** Raw transcribed text (unmodified from user input) */
+  text: string;
+  /** ISO 8601 timestamp when message was created */
+  timestamp: string;
+  /** Additional metadata about the message */
+  metadata: {
+    confidence?: number;
+    routingReason?: string;
+    inputMethod: "voice" | "text";
+    directRouted: boolean;
+  };
+}
+
+/**
+ * Payload for message:send IPC channel.
+ */
+export interface MessageSendPayload {
+  /** The client name to send to */
+  clientName: string;
+  /** The message to deliver */
+  message: IpcRoutedMessage;
+}
+
+/**
+ * Payload for message:sendMultiple IPC channel.
+ */
+export interface MessageSendMultiplePayload {
+  /** Array of client names to send to */
+  clientNames: string[];
+  /** The message to deliver */
+  message: IpcRoutedMessage;
+}
+
+/**
+ * Payload for message:getStatus IPC channel.
+ */
+export interface MessageGetStatusPayload {
+  /** The message ID to look up */
+  messageId: string;
+}
+
+/**
+ * Payload for message:getRecent IPC channel.
+ */
+export interface MessageGetRecentPayload {
+  /** Maximum number of statuses to return */
+  limit?: number;
+}
+
+/**
+ * Response for message:sendMultiple IPC channel.
+ * Uses array of entries instead of Map for IPC serialization.
+ */
+export interface MessageSendMultipleResponse {
+  /** Array of [clientName, result] pairs */
+  results: Array<[string, IpcDeliveryResult]>;
+}
+
+// ============================================================================
 // IPC Type Maps (for type-safe handlers)
 // ============================================================================
 
@@ -215,6 +322,10 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.APP_VERSION]: void; // No payload needed
   [IPC_CHANNELS.WEBSOCKET_STATUS_GET]: void; // No payload needed
   [IPC_CHANNELS.WEBSOCKET_STATUS_CHANGED]: WebSocketServerStatus;
+  [IPC_CHANNELS.MESSAGE_SEND]: MessageSendPayload;
+  [IPC_CHANNELS.MESSAGE_SEND_MULTIPLE]: MessageSendMultiplePayload;
+  [IPC_CHANNELS.MESSAGE_GET_STATUS]: MessageGetStatusPayload;
+  [IPC_CHANNELS.MESSAGE_GET_RECENT]: MessageGetRecentPayload;
 }
 
 /**
@@ -228,6 +339,10 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.CONFIG_GET]: ConfigGetResponse;
   [IPC_CHANNELS.APP_VERSION]: AppVersionResponse;
   [IPC_CHANNELS.WEBSOCKET_STATUS_GET]: WebSocketServerStatus;
+  [IPC_CHANNELS.MESSAGE_SEND]: IpcDeliveryResult;
+  [IPC_CHANNELS.MESSAGE_SEND_MULTIPLE]: MessageSendMultipleResponse;
+  [IPC_CHANNELS.MESSAGE_GET_STATUS]: IpcDeliveryStatus | null;
+  [IPC_CHANNELS.MESSAGE_GET_RECENT]: IpcDeliveryStatus[];
 }
 
 // ============================================================================

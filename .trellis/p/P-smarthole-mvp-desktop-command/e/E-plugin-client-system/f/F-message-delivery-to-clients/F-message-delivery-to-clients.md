@@ -1,7 +1,7 @@
 ---
 id: F-message-delivery-to-clients
 title: Message Delivery to Clients
-status: in-progress
+status: done
 priority: high
 parent: E-plugin-client-system
 prerequisites:
@@ -25,7 +25,28 @@ affectedFiles:
     messages, and invalid message formats"
   src/main.ts: "Integrated message delivery service: added import, added
     messageDelivery to wsState, initialized service after registration handler,
-    wired up response handling in WebSocket message event handler"
+    wired up response handling in WebSocket message event handler; Registered
+    message delivery IPC handlers using registerMessageDeliveryHandlers inside
+    app.whenReady()."
+  src/types/ipc.ts: Added 4 new IPC channels (MESSAGE_SEND, MESSAGE_SEND_MULTIPLE,
+    MESSAGE_GET_STATUS, MESSAGE_GET_RECENT), IpcDeliveryResult,
+    IpcDeliveryStatus, IpcRoutedMessage types for IPC serialization, and
+    payload/response types for all new channels. Updated IpcPayloadMap and
+    IpcResponseMap.
+  src/ipc/message-delivery-handlers.ts: Created new file with handler factory
+    functions (createMessageSendHandler, createMessageSendMultipleHandler,
+    createMessageGetStatusHandler, createMessageGetRecentHandler) and
+    registerMessageDeliveryHandlers convenience function. Includes type
+    conversion helpers for branded types and Map serialization.
+  src/ipc/message-delivery-handlers.test.ts: Created new test file with 11 unit
+    tests covering all handlers, error handling when service not initialized,
+    Map-to-array serialization, and proper type conversion.
+  src/preload.ts: "Added 4 new methods to electronAPI: sendMessage,
+    sendMessageMultiple, getMessageStatus, getRecentDeliveries with full
+    TypeScript types."
+  src/types/ipc.test.ts: Updated test for channel count (9 to 13), updated naming
+    convention regex to allow camelCase actions, added test for new message
+    delivery channels.
 log:
   - "Started implementation. Created feature branch
     feature/F-message-delivery-to-clients. Verified prerequisite
@@ -36,6 +57,11 @@ log:
     includes MessageDeliveryService with singleton pattern, fire-and-forget
     delivery, history tracking with LRU eviction, and 16 unit tests. Review
     passed with no blocking issues.
+  - Completed T-handle-client-message. Committed as 0c1d63b. Implementation adds
+    response handling to message delivery service with handleResponse() method,
+    DeliveryResponse type, event emission (response:ack/reject/notification),
+    and main.ts integration. Review passed. 10 unit tests added.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
   - T-expose-message-delivery-to

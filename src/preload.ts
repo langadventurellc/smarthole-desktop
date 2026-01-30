@@ -14,6 +14,10 @@ import type {
   ConfigGetResponse,
   AppVersionResponse,
   WebSocketServerStatus,
+  IpcRoutedMessage,
+  IpcDeliveryResult,
+  IpcDeliveryStatus,
+  MessageSendMultipleResponse,
 } from "./types";
 import { IPC_CHANNELS } from "./types";
 import type { LogLevel, AppConfig } from "./types";
@@ -228,6 +232,55 @@ const electronAPI = {
     return (): void => {
       ipcRenderer.removeListener(IPC_CHANNELS.WEBSOCKET_STATUS_CHANGED, handler);
     };
+  },
+
+  // ============================================
+  // Message Delivery
+  // ============================================
+
+  /**
+   * Send a message to a single connected client.
+   *
+   * @param clientName - The name of the client to send to
+   * @param message - The routed message to deliver
+   * @returns Promise resolving to the delivery result
+   */
+  sendMessage: (clientName: string, message: IpcRoutedMessage): Promise<IpcDeliveryResult> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.MESSAGE_SEND, clientName, message);
+  },
+
+  /**
+   * Send a message to multiple connected clients.
+   *
+   * @param clientNames - Array of client names to send to
+   * @param message - The routed message to deliver
+   * @returns Promise resolving to results for each client (as array of [name, result] pairs)
+   */
+  sendMessageMultiple: (
+    clientNames: string[],
+    message: IpcRoutedMessage
+  ): Promise<MessageSendMultipleResponse> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.MESSAGE_SEND_MULTIPLE, clientNames, message);
+  },
+
+  /**
+   * Get the delivery status for a specific message.
+   *
+   * @param messageId - The message ID to look up
+   * @returns Promise resolving to the delivery status, or null if not found
+   */
+  getMessageStatus: (messageId: string): Promise<IpcDeliveryStatus | null> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.MESSAGE_GET_STATUS, messageId);
+  },
+
+  /**
+   * Get recent message delivery history.
+   *
+   * @param limit - Maximum number of statuses to return (optional)
+   * @returns Promise resolving to array of delivery statuses, newest first
+   */
+  getRecentDeliveries: (limit?: number): Promise<IpcDeliveryStatus[]> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.MESSAGE_GET_RECENT, limit);
   },
 };
 
