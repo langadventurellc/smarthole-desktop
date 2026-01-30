@@ -47,6 +47,14 @@ affectedFiles:
   src/types/ipc.test.ts: Updated test for channel count (9 to 13), updated naming
     convention regex to allow camelCase actions, added test for new message
     delivery channels.
+  docs/message-delivery.md: Created new documentation file covering message
+    delivery initialization, sending messages, delivery results, response
+    handling with event subscriptions, delivery status tracking, IPC interface
+    with all 4 channels, renderer usage examples, configuration options, wire
+    format, and singleton pattern
+  CLAUDE.md: Updated project structure to include message-delivery in services
+    list, added link to new message-delivery.md documentation in Detailed
+    Documentation section
 log:
   - "Started implementation. Created feature branch
     feature/F-message-delivery-to-clients. Verified prerequisite
@@ -62,6 +70,17 @@ log:
     DeliveryResponse type, event emission (response:ack/reject/notification),
     and main.ts integration. Review passed. 10 unit tests added.
   - "Auto-completed: All child tasks are complete"
+  - Completed T-expose-message-delivery-to. Committed as f73c5cf. Implementation
+    adds 4 IPC channels (message:send, message:sendMultiple, message:getStatus,
+    message:getRecent), handler factory functions, preload methods, and proper
+    Map serialization. Review passed. 11 unit tests added. All 3 tasks now
+    complete.
+  - Documentation update complete. Created docs/message-delivery.md with
+    comprehensive documentation covering initialization, sending messages,
+    delivery results, response handling, delivery status tracking, IPC
+    interface, wire format, and configuration. Updated CLAUDE.md to include
+    message-delivery service in project structure and added link to new
+    documentation.
 schema: v1.0
 childrenIds:
   - T-expose-message-delivery-to

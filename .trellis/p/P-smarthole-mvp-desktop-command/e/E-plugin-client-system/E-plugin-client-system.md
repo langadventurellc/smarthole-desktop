@@ -104,6 +104,14 @@ affectedFiles:
   src/ipc/message-delivery-handlers.test.ts: Created new test file with 11 unit
     tests covering all handlers, error handling when service not initialized,
     Map-to-array serialization, and proper type conversion.
+  docs/message-delivery.md: Created new documentation file covering message
+    delivery initialization, sending messages, delivery results, response
+    handling with event subscriptions, delivery status tracking, IPC interface
+    with all 4 channels, renderer usage examples, configuration options, wire
+    format, and singleton pattern
+  CLAUDE.md: Updated project structure to include message-delivery in services
+    list, added link to new message-delivery.md documentation in Detailed
+    Documentation section
 log: []
 schema: v1.0
 childrenIds:
