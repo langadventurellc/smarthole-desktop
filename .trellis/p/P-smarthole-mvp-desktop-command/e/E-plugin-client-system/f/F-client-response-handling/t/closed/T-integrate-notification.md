@@ -1,12 +1,46 @@
 ---
 id: T-integrate-notification
 title: Integrate notification responses with notification queue
-status: open
+status: done
 priority: high
 parent: F-client-response-handling
 prerequisites: []
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/main.ts: Added imports for NotificationPayload, ClientNotificationPriority,
+    NotificationPriority. Added mapClientPriorityToQueuePriority() helper to map
+    client 'normal' priority to queue 'medium'. Added hasNotificationContent()
+    helper to validate notifications. Added response:notification event listener
+    that validates, maps, and enqueues client notifications.
+log:
+  - >-
+    Research complete. Key findings:
+
+    - NotificationPayload from client has optional title/body and priority with
+    "normal" value
+
+    - NotificationQueue.enqueue() expects NotificationOptions with required
+    title/body, type, and priority using "medium"
+
+    - Need to map client's "normal" priority to queue's "medium"
+
+    - Event listener wiring goes after initializeMessageDelivery() in main.ts
+
+    - Will add validation to skip empty notifications (no title AND no body)
+  - >-
+    Integrated notification responses with the notification queue system. Added
+    event listener for `response:notification` events from
+    MessageDeliveryService that:
+
+    1. Validates notifications have content (title or body) before enqueueing
+
+    2. Maps client notification payload to NotificationOptions format (title,
+    body, type='info', priority)
+
+    3. Maps client priority values to queue priority (normal -> medium)
+
+    4. Uses client name as fallback title when not provided
+
+    5. Logs both empty notification warnings and successful routing
 schema: v1.0
 childrenIds: []
 created: 2026-01-30T21:55:26.746Z

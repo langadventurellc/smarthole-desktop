@@ -153,7 +153,12 @@ affectedFiles:
     buildTrayMenu() function that builds menu with client status from registry,
     added updateTrayMenu() function to rebuild menu on status change, modified
     createTray() to use buildTrayMenu(), subscribed to registry 'registered' and
-    'unregistered' events to trigger menu updates"
+    'unregistered' events to trigger menu updates; Added imports for
+    NotificationPayload, ClientNotificationPriority, NotificationPriority. Added
+    mapClientPriorityToQueuePriority() helper to map client 'normal' priority to
+    queue 'medium'. Added hasNotificationContent() helper to validate
+    notifications. Added response:notification event listener that validates,
+    maps, and enqueues client notifications."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
