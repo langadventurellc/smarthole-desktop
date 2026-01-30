@@ -47,6 +47,12 @@ affectedFiles:
   src/types/hotkey.ts: Created new types file for hotkey event types (HotkeyType,
     HotkeyActivatedEvent, HotkeyReleasedEvent, HotkeyErrorCode,
     HotkeyErrorEvent) to avoid circular dependency between types and services
+  docs/global-hotkey-system.md: Created comprehensive documentation for the global
+    hotkey system covering architecture, services (HotkeyManager, InputState),
+    IPC channels, renderer API, types, configuration, platform notes, and error
+    handling
+  CLAUDE.md: Updated services list to include hotkey-manager and input-state;
+    added link to global-hotkey-system.md in Detailed Documentation section
 log: []
 schema: v1.0
 childrenIds:

@@ -46,6 +46,12 @@ affectedFiles:
   src/types/hotkey.ts: Created new types file for hotkey event types (HotkeyType,
     HotkeyActivatedEvent, HotkeyReleasedEvent, HotkeyErrorCode,
     HotkeyErrorEvent) to avoid circular dependency between types and services
+  docs/global-hotkey-system.md: Created comprehensive documentation for the global
+    hotkey system covering architecture, services (HotkeyManager, InputState),
+    IPC channels, renderer API, types, configuration, platform notes, and error
+    handling
+  CLAUDE.md: Updated services list to include hotkey-manager and input-state;
+    added link to global-hotkey-system.md in Detailed Documentation section
 log:
   - >-
     Started feature implementation. Created feature branch
@@ -93,6 +99,49 @@ log:
     T-implement-hotkey-and-input which integrates hotkey manager and input state
     via IPC.
   - "Auto-completed: All child tasks are complete"
+  - >-
+    Documentation update completed:
+
+
+    1. Created `docs/global-hotkey-system.md` with comprehensive documentation
+    covering:
+       - Overview of the hotkey and input state system
+       - Architecture diagram showing service relationships
+       - HotkeyManager service documentation (initialization, events, key features)
+       - InputState service documentation (state machine diagram, states, events, modes)
+       - IPC channels reference tables
+       - Renderer API usage examples with code snippets
+       - Complete type definitions for all events and interfaces
+       - Configuration options
+       - Platform-specific notes (macOS accessibility, Windows)
+       - Dependencies list
+       - IPC wiring instructions
+       - Error handling patterns
+
+    2. Updated `CLAUDE.md`:
+       - Added hotkey-manager and input-state to services list in project structure
+       - Added link to new documentation in "Detailed Documentation" section
+  - >-
+    All 3 tasks completed and reviewed:
+
+    1. T-implement-hotkey-manager - Hotkey manager service with lazy-loaded
+    uiohook-napi
+
+    2. T-implement-input-state - Input state service with validated state
+    machine
+
+    3. T-implement-hotkey-and-input - IPC integration connecting services to
+    renderer
+
+
+    Documentation updated:
+
+    - Created docs/global-hotkey-system.md
+
+    - Updated CLAUDE.md with new services and docs link
+
+
+    All tests pass (617 tests), all quality checks pass. Ready for final commit.
 schema: v1.0
 childrenIds:
   - T-implement-hotkey-and-input
