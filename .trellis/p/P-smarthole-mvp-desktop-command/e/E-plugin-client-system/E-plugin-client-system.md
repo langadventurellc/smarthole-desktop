@@ -37,7 +37,11 @@ affectedFiles:
     in WebSocket message event handler; Registered message delivery IPC handlers
     using registerMessageDeliveryHandlers inside app.whenReady().; Registered
     client status IPC handlers and subscribed to registry events for real-time
-    broadcasts"
+    broadcasts; Refactored tray menu to support dynamic updates: added
+    buildTrayMenu() function that builds menu with client status from registry,
+    added updateTrayMenu() function to rebuild menu on status change, modified
+    createTray() to use buildTrayMenu(), subscribed to registry 'registered' and
+    'unregistered' events to trigger menu updates"
   package.json: Added @types/ws as a dev dependency (ws was already installed)
   src/types/ipc.ts: Added WEBSOCKET_STATUS_GET and WEBSOCKET_STATUS_CHANGED IPC
     channels, WebSocketServerState type, WebSocketServerStatus interface,

@@ -149,7 +149,11 @@ affectedFiles:
     Registered message delivery IPC handlers using
     registerMessageDeliveryHandlers inside app.whenReady().; Registered client
     status IPC handlers and subscribed to registry events for real-time
-    broadcasts"
+    broadcasts; Refactored tray menu to support dynamic updates: added
+    buildTrayMenu() function that builds menu with client status from registry,
+    added updateTrayMenu() function to rebuild menu on status change, modified
+    createTray() to use buildTrayMenu(), subscribed to registry 'registered' and
+    'unregistered' events to trigger menu updates"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added

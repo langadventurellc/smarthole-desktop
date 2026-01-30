@@ -1,7 +1,7 @@
 ---
 id: F-connection-health-ui
 title: Connection Health & UI Integration
-status: in-progress
+status: done
 priority: medium
 parent: E-plugin-client-system
 prerequisites:
@@ -17,8 +17,12 @@ affectedFiles:
   src/ipc/client-status-handler.test.ts: Added comprehensive tests for all handler
     functions and broadcast behavior (14 tests)
   src/ipc/index.ts: Added export for client-status-handler module
-  src/main.ts: Registered client status IPC handlers and subscribed to registry
-    events for real-time broadcasts
+  src/main.ts: "Registered client status IPC handlers and subscribed to registry
+    events for real-time broadcasts; Refactored tray menu to support dynamic
+    updates: added buildTrayMenu() function that builds menu with client status
+    from registry, added updateTrayMenu() function to rebuild menu on status
+    change, modified createTray() to use buildTrayMenu(), subscribed to registry
+    'registered' and 'unregistered' events to trigger menu updates"
   src/preload.ts: Added getClientCount, getClientList, getClientDetails, and
     onClientStatusChange methods to the preload API
   src/types/ipc.test.ts: Updated channel count test and added tests for new client status channels
@@ -26,6 +30,11 @@ log:
   - "Started implementation. Created feature branch
     feature/F-connection-health-ui. Execution order:
     T-implement-client-status-ipc → T-integrate-client-connection"
+  - Completed T-implement-client-status-ipc. Committed as b290c04.
+    Implementation adds client status IPC layer with 4 channels, handler
+    functions, preload API extensions, and 14 tests. Review passed with no
+    blocking issues.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
   - T-implement-client-status-ipc

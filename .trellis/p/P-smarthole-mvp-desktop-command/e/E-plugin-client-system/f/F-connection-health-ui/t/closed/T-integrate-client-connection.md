@@ -1,13 +1,29 @@
 ---
 id: T-integrate-client-connection
 title: Integrate Client Connection Status into Tray Menu
-status: open
+status: done
 priority: medium
 parent: F-connection-health-ui
 prerequisites:
   - T-implement-client-status-ipc
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/main.ts: "Refactored tray menu to support dynamic updates: added
+    buildTrayMenu() function that builds menu with client status from registry,
+    added updateTrayMenu() function to rebuild menu on status change, modified
+    createTray() to use buildTrayMenu(), subscribed to registry 'registered' and
+    'unregistered' events to trigger menu updates"
+log:
+  - Started implementation. Read main.ts and client-registry.ts to understand
+    current tray menu and registry API. Will refactor createTray() to support
+    dynamic updates with buildTrayMenu() and updateTrayMenu() functions.
+  - Integrated client connection status into the system tray menu. Refactored
+    tray menu creation to support dynamic updates by extracting buildTrayMenu()
+    and adding updateTrayMenu() functions. The tray menu now displays the
+    current client count with proper pluralization (e.g., "2 clients connected"
+    or "1 client connected"), shows a "Connected Clients" submenu listing client
+    names with descriptions when clients are connected, and updates
+    automatically when clients register or unregister via registry event
+    subscriptions.
 schema: v1.0
 childrenIds: []
 created: 2026-01-30T21:11:52.865Z
