@@ -129,7 +129,8 @@ affectedFiles:
   src/ipc/log-handler.ts: Created new module with createLogMessageHandler() and
     processLogMessage() functions for handling renderer log messages with
     payload validation and context enrichment
-  src/ipc/index.ts: Created barrel export for IPC module
+  src/ipc/index.ts: Created barrel export for IPC module; Added export for
+    notification-handler module to barrel export file.
   src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
     covering handler creation, payload validation, log level mapping, context
     enrichment, and edge cases
@@ -148,6 +149,16 @@ affectedFiles:
   src/services/notification-queue.test.ts: Created comprehensive unit tests (34
     tests) covering singleton pattern, priority ordering, rate limiting,
     coalescing, queue overflow, clear/destroy methods, and edge cases
+  src/ipc/notification-handler.ts: Created IPC notification handler with
+    createNotificationHandler() factory function and processNotification() for
+    testing. Validates payloads using isNotifyShowPayload(), logs invalid
+    payloads as warnings, converts valid payloads to NotificationOptions, and
+    enqueues via NotificationQueue.
+  src/ipc/notification-handler.test.ts: Created comprehensive unit tests (31
+    tests) covering payload validation (missing title/body/type/priority,
+    invalid types), valid payload processing, notification enqueuing, error
+    handling when queue throws, and edge cases (empty strings, long content,
+    special characters).
 log: []
 schema: v1.0
 childrenIds:
