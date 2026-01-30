@@ -33,6 +33,11 @@ affectedFiles:
     handling when queue throws, and edge cases (empty strings, long content,
     special characters).
   src/ipc/index.ts: Added export for notification-handler module to barrel export file.
+  src/main.ts: "Added notification system integration: imports for
+    NotificationService, NotificationQueue, and notification handler;
+    initialization of notification service and queue after logger; child logger
+    for notification IPC; IPC handler registration for NOTIFY_SHOW channel;
+    cleanup on will-quit event to destroy the queue"
 log:
   - "Starting feature implementation. Created feature branch
     feature/F-system-notifications. All 5 tasks verified with correct
@@ -49,11 +54,16 @@ log:
     notification coalescing, queue overflow handling, and singleton pattern. 34
     tests passing. Committed as bc2a8aa. Proceeding to
     T-create-notification-ipc.
+  - Completed T-create-notification-ipc. Created src/ipc/notification-handler.ts
+    with createNotificationHandler() factory and processNotification() for
+    testing. Uses isNotifyShowPayload() type guard, logs invalid payloads as
+    warnings. 31 tests passing. Committed as adc7605. Proceeding to
+    T-integrate-notification-system.
 schema: v1.0
 childrenIds:
   - T-add-integration-tests-for
-  - T-create-notification-ipc
   - T-integrate-notification-system
+  - T-create-notification-ipc
   - T-create-notificationservice
   - T-implement-notificationqueue
 created: 2026-01-29T02:21:31.116Z

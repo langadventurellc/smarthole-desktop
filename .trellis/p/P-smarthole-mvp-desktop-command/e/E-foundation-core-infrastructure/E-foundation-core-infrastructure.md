@@ -104,10 +104,14 @@ affectedFiles:
     36 tests covering handler registration, unregistration, uncaughtException
     handling, unhandledRejection handling, render-process-gone,
     child-process-gone, options handling, and error wrapping
-  src/main.ts: Added import and early registration of process error handlers with
+  src/main.ts: "Added import and early registration of process error handlers with
     onFatalError callback; Added logger initialization early in startup, created
     IPC child logger, registered IPC handler for LOG_MESSAGE channel, added
-    application startup logging
+    application startup logging; Added notification system integration: imports
+    for NotificationService, NotificationQueue, and notification handler;
+    initialization of notification service and queue after logger; child logger
+    for notification IPC; IPC handler registration for NOTIFY_SHOW channel;
+    cleanup on will-quit event to destroy the queue"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added

@@ -1,13 +1,59 @@
 ---
 id: T-integrate-notification-system
 title: Integrate notification system into main process initialization
-status: open
+status: done
 priority: medium
 parent: F-system-notifications
 prerequisites:
   - T-create-notification-ipc
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/main.ts: "Added notification system integration: imports for
+    NotificationService, NotificationQueue, and notification handler;
+    initialization of notification service and queue after logger; child logger
+    for notification IPC; IPC handler registration for NOTIFY_SHOW channel;
+    cleanup on will-quit event to destroy the queue"
+log:
+  - >-
+    Research phase complete. Reviewed:
+
+    - src/main.ts - Current main process initialization (logger, IPC handler for
+    LOG_MESSAGE)
+
+    - src/ipc/log-handler.ts - Pattern reference for IPC handler registration
+
+    - src/ipc/notification-handler.ts - Notification IPC handler (prerequisite
+    complete)
+
+    - src/services/notifications.ts - NotificationService with
+    initializeNotificationService() and getNotificationService()
+
+    - src/services/notification-queue.ts - NotificationQueue with
+    initializeNotificationQueue() and getNotificationQueue()
+
+    - src/types/ipc.ts - IPC_CHANNELS.NOTIFY_SHOW constant
+
+
+    Implementation plan:
+
+    1. Add imports for notification system components at top of main.ts
+
+    2. After logger initialization, initialize NotificationService
+
+    3. Initialize NotificationQueue with NotificationService
+
+    4. Create child logger for notification IPC (notifyLogger)
+
+    5. Register IPC handler for NOTIFY_SHOW channel using
+    createNotificationHandler
+
+    6. Add cleanup on 'will-quit' event to destroy the queue
+  - Integrated the notification system into main process initialization. Updated
+    src/main.ts to import and initialize NotificationService and
+    NotificationQueue after the logger, created a dedicated child logger for
+    notification IPC (notifyLogger), registered the IPC handler for the
+    NOTIFY_SHOW channel, and added cleanup on the 'will-quit' event to destroy
+    the queue and release timers. All quality checks pass (type-check, lint,
+    format, 804 tests).
 schema: v1.0
 childrenIds: []
 created: 2026-01-30T02:01:50.868Z
