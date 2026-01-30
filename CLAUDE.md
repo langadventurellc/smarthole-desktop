@@ -34,10 +34,79 @@ mise run test       # Run tests
 
 ## Architecture Notes
 
+### Core Entry Points
+
 - `src/main.ts` - Electron main process, handles tray icon and system-level functionality
 - `src/preload.ts` - Preload script for secure IPC between main and renderer
 - `src/renderer.tsx` - React entry point for any window UIs
 - `src/App.tsx` - Main React component
+
+### Services
+
+- `src/services/logger.ts` - Centralized logging service using pino
+
+### IPC Handlers
+
+- `src/ipc/log-handler.ts` - Handles log messages from renderer process
+
+## Logging System
+
+The application uses a centralized logging system built on [pino](https://github.com/pinojs/pino).
+
+### Logger Initialization
+
+Initialize the logger early in the main process (before other operations):
+
+```typescript
+import { initializeLogger } from "./services/logger";
+import { LogLevel } from "./types";
+
+const logger = initializeLogger({
+  level: "info" as LogLevel,
+  logMessageContent: false, // Privacy: don't log user content
+  prettyPrint: !app.isPackaged, // Pretty print in development
+});
+```
+
+### Logging from Main Process
+
+```typescript
+import { getLogger } from "./services/logger";
+
+const logger = getLogger();
+logger.info("Application starting", { version: app.getVersion() });
+logger.error("Something failed", { error: err.message });
+
+// Child loggers for component isolation
+const ipcLogger = logger.child({ component: "IPC" });
+ipcLogger.debug("Message received", { channel: "log:message" });
+```
+
+### Logging from Renderer Process
+
+The renderer uses the `electronAPI` exposed via preload:
+
+```typescript
+// In renderer code
+window.electronAPI.logInfo("User action", { action: "button-click" });
+window.electronAPI.logError("Component error", { component: "Settings" });
+```
+
+### Privacy-Aware Logging
+
+The logger automatically sanitizes sensitive data:
+
+- **Always redacted**: Keys matching patterns like `apiKey`, `password`, `token`, `secret`, `auth`, `credential`, `bearer`
+- **Conditionally redacted**: User content fields (`content`, `text`, `body`, `input`, `transcript`) when `logMessageContent: false`
+
+### Log File Location
+
+Logs are written to:
+
+- Development: `{project}/logs/smarthole.log`
+- Production: Platform-specific logs directory via `app.getPath('logs')`
+
+Log files rotate at 10MB, keeping the 5 most recent rotated files.
 
 ## Guidelines
 

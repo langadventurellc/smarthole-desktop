@@ -64,7 +64,15 @@ smarthole-desktop/
 │   ├── preload.ts       # Preload script for renderer
 │   ├── renderer.tsx     # Renderer entry point
 │   ├── App.tsx          # React app component
-│   └── index.html       # HTML template
+│   ├── index.html       # HTML template
+│   ├── services/
+│   │   ├── index.ts     # Services barrel export
+│   │   └── logger.ts    # Centralized pino-based logging
+│   ├── ipc/
+│   │   ├── index.ts     # IPC handlers barrel export
+│   │   └── log-handler.ts # Renderer-to-main log forwarding
+│   ├── types/           # TypeScript type definitions
+│   └── utils/           # Utility functions
 ├── forge.config.ts      # Electron Forge configuration
 ├── vite.*.config.ts     # Vite configurations
 ├── mise.toml            # mise task runner configuration
