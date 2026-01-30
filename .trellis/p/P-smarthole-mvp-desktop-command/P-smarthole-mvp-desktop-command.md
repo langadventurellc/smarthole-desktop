@@ -44,14 +44,17 @@ affectedFiles:
     MESSAGE_SEND_MULTIPLE, MESSAGE_GET_STATUS, MESSAGE_GET_RECENT),
     IpcDeliveryResult, IpcDeliveryStatus, IpcRoutedMessage types for IPC
     serialization, and payload/response types for all new channels. Updated
-    IpcPayloadMap and IpcResponseMap.
+    IpcPayloadMap and IpcResponseMap.; Added 4 client status IPC channels,
+    ClientSummary, ClientDetails, ClientGetDetailsPayload, and
+    ClientStatusChangedPayload types, plus payload/response map entries
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
     increased channel count from 7 to 9, and updated naming convention regex to
     allow domain:action:sub pattern; Updated test for channel count (9 to 13),
     updated naming convention regex to allow camelCase actions, added test for
-    new message delivery channels.
+    new message delivery channels.; Updated channel count test and added tests
+    for new client status channels
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -68,7 +71,9 @@ affectedFiles:
     ipcRenderer.send and ipcRenderer.invoke patterns; Added getWebSocketStatus()
     and onWebSocketStatusChange(callback) methods to the electronAPI; Added 4
     new methods to electronAPI: sendMessage, sendMessageMultiple,
-    getMessageStatus, getRecentDeliveries with full TypeScript types."
+    getMessageStatus, getRecentDeliveries with full TypeScript types.; Added
+    getClientCount, getClientList, getClientDetails, and onClientStatusChange
+    methods to the preload API"
   src/types/electron.d.ts: Created global Window interface augmentation declaring
     electronAPI property with ElectronAPI type
   src/preload.test.ts: Created comprehensive unit tests (29 tests) mocking
@@ -142,7 +147,13 @@ affectedFiles:
     added messageDelivery to wsState, initialized service after registration
     handler, wired up response handling in WebSocket message event handler;
     Registered message delivery IPC handlers using
-    registerMessageDeliveryHandlers inside app.whenReady()."
+    registerMessageDeliveryHandlers inside app.whenReady().; Registered client
+    status IPC handlers and subscribed to registry events for real-time
+    broadcasts; Refactored tray menu to support dynamic updates: added
+    buildTrayMenu() function that builds menu with client status from registry,
+    added updateTrayMenu() function to rebuild menu on status change, modified
+    createTray() to use buildTrayMenu(), subscribed to registry 'registered' and
+    'unregistered' events to trigger menu updates"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -167,7 +178,8 @@ affectedFiles:
     processLogMessage() functions for handling renderer log messages with
     payload validation and context enrichment
   src/ipc/index.ts: Created barrel export for IPC module; Added export for
-    notification-handler module to barrel export file.
+    notification-handler module to barrel export file.; Added export for
+    client-status-handler module
   src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
     covering handler creation, payload validation, log level mapping, context
     enrichment, and edge cases
@@ -273,6 +285,12 @@ affectedFiles:
   CLAUDE.md: Updated project structure to include message-delivery in services
     list, added link to new message-delivery.md documentation in Detailed
     Documentation section
+  src/ipc/client-status-handler.ts: Created new IPC handler file with
+    createClientCountHandler, createClientListHandler,
+    createClientDetailsHandler, broadcastClientStatusChange,
+    createRegisteredEventHandler, and createUnregisteredEventHandler functions
+  src/ipc/client-status-handler.test.ts: Added comprehensive tests for all handler
+    functions and broadcast behavior (14 tests)
 log: []
 schema: v1.0
 childrenIds:

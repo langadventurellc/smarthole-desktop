@@ -63,8 +63,15 @@ describe("IPC_CHANNELS", () => {
       expect(IPC_CHANNELS.MESSAGE_GET_RECENT).toBe("message:getRecent");
     });
 
-    it("should have exactly 13 channels", () => {
-      expect(Object.keys(IPC_CHANNELS)).toHaveLength(13);
+    it("should have all expected client status channels", () => {
+      expect(IPC_CHANNELS.CLIENTS_GET_COUNT).toBe("clients:getCount");
+      expect(IPC_CHANNELS.CLIENTS_GET_LIST).toBe("clients:getList");
+      expect(IPC_CHANNELS.CLIENTS_GET_DETAILS).toBe("clients:getDetails");
+      expect(IPC_CHANNELS.CLIENTS_STATUS_CHANGED).toBe("clients:statusChanged");
+    });
+
+    it("should have exactly 17 channels", () => {
+      expect(Object.keys(IPC_CHANNELS)).toHaveLength(17);
     });
 
     it("should follow the domain:action naming convention", () => {

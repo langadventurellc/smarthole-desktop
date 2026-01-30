@@ -18,6 +18,9 @@ import type {
   IpcDeliveryResult,
   IpcDeliveryStatus,
   MessageSendMultipleResponse,
+  ClientSummary,
+  ClientDetails,
+  ClientStatusChangedPayload,
 } from "./types";
 import { IPC_CHANNELS } from "./types";
 import type { LogLevel, AppConfig } from "./types";
@@ -281,6 +284,60 @@ const electronAPI = {
    */
   getRecentDeliveries: (limit?: number): Promise<IpcDeliveryStatus[]> => {
     return ipcRenderer.invoke(IPC_CHANNELS.MESSAGE_GET_RECENT, limit);
+  },
+
+  // ============================================
+  // Client Status
+  // ============================================
+
+  /**
+   * Get the number of registered clients.
+   *
+   * @returns Promise resolving to the count of registered clients
+   */
+  getClientCount: (): Promise<number> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.CLIENTS_GET_COUNT);
+  },
+
+  /**
+   * Get a list of all registered clients.
+   *
+   * @returns Promise resolving to array of client summaries
+   */
+  getClientList: (): Promise<ClientSummary[]> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.CLIENTS_GET_LIST);
+  },
+
+  /**
+   * Get detailed information about a specific client.
+   *
+   * @param name - The client name to look up
+   * @returns Promise resolving to client details, or null if not found
+   */
+  getClientDetails: (name: string): Promise<ClientDetails | null> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.CLIENTS_GET_DETAILS, name);
+  },
+
+  /**
+   * Listen for client status changes (registrations/unregistrations).
+   * Called whenever a client registers or unregisters.
+   *
+   * @param callback - Function called with the status change payload
+   * @returns Unsubscribe function to stop listening
+   */
+  onClientStatusChange: (callback: (payload: ClientStatusChangedPayload) => void): (() => void) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      payload: ClientStatusChangedPayload
+    ): void => {
+      callback(payload);
+    };
+    ipcRenderer.on(IPC_CHANNELS.CLIENTS_STATUS_CHANGED, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.CLIENTS_STATUS_CHANGED, handler);
+    };
   },
 };
 

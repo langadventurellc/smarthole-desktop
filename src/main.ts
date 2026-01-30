@@ -23,6 +23,13 @@ import {
   buildWebSocketStatus,
 } from "./ipc/websocket-status-handler";
 import { registerMessageDeliveryHandlers } from "./ipc/message-delivery-handlers";
+import {
+  createClientCountHandler,
+  createClientListHandler,
+  createClientDetailsHandler,
+  createRegisteredEventHandler,
+  createUnregisteredEventHandler,
+} from "./ipc/client-status-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -81,13 +88,51 @@ function createTrayIcon(): Electron.NativeImage {
   return icon;
 }
 
-function createTray(): void {
-  const icon = createTrayIcon();
+/**
+ * Builds the tray context menu with current client connection status.
+ * Called whenever the menu needs to be rebuilt (initial creation or status change).
+ *
+ * @returns The built Electron Menu
+ */
+function buildTrayMenu(): Electron.Menu {
+  // Get current client status from registry (with fallback for early initialization)
+  let clientCount = 0;
+  let connectedClients: { name: string; description?: string }[] = [];
 
-  tray = new Tray(icon);
-  tray.setToolTip("SmartHole");
+  try {
+    const registry = getClientRegistry();
+    clientCount = registry.getClientCount();
+    connectedClients = registry.getAllClients().map((client) => ({
+      name: client.name,
+      description: client.description,
+    }));
+  } catch {
+    // Registry not initialized yet - use defaults
+  }
 
-  const contextMenu = Menu.buildFromTemplate([
+  // Build menu template with client status
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: `${clientCount} client${clientCount !== 1 ? "s" : ""} connected`,
+      enabled: false, // Display-only label
+    },
+  ];
+
+  // Add connected clients submenu when clients are connected
+  if (clientCount > 0) {
+    template.push({
+      label: "Connected Clients",
+      submenu: connectedClients.map((client) => ({
+        label: client.name,
+        sublabel: client.description,
+        enabled: false,
+      })),
+    });
+  }
+
+  // Add separator and standard menu items
+  template.push(
+    { type: "separator" },
     {
       label: "About SmartHole",
       click: (): void => {
@@ -106,9 +151,31 @@ function createTray(): void {
       click: (): void => {
         app.quit();
       },
-    },
-  ]);
+    }
+  );
 
+  return Menu.buildFromTemplate(template);
+}
+
+/**
+ * Updates the tray context menu with current client connection status.
+ * Should be called when clients connect or disconnect.
+ */
+function updateTrayMenu(): void {
+  if (!tray) {
+    return;
+  }
+  const contextMenu = buildTrayMenu();
+  tray.setContextMenu(contextMenu);
+}
+
+function createTray(): void {
+  const icon = createTrayIcon();
+
+  tray = new Tray(icon);
+  tray.setToolTip("SmartHole");
+
+  const contextMenu = buildTrayMenu();
   tray.setContextMenu(contextMenu);
 }
 
@@ -250,6 +317,36 @@ app.whenReady().then(async () => {
       wsLogger
     )
   );
+
+  // Register client status IPC handlers
+  const clientStatusLogger = logger.child({ component: "ClientStatusIPC" });
+  const registryGetter = (): ReturnType<typeof getClientRegistry> => getClientRegistry();
+
+  ipcMain.handle(
+    IPC_CHANNELS.CLIENTS_GET_COUNT,
+    createClientCountHandler(registryGetter, clientStatusLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.CLIENTS_GET_LIST,
+    createClientListHandler(registryGetter, clientStatusLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.CLIENTS_GET_DETAILS,
+    createClientDetailsHandler(registryGetter, clientStatusLogger)
+  );
+
+  // Subscribe to registry events to broadcast status changes to renderer
+  const registry = getClientRegistry();
+  registry.on("registered", createRegisteredEventHandler(registryGetter));
+  registry.on("unregistered", createUnregisteredEventHandler(registryGetter));
+
+  // Subscribe to registry events to update tray menu when clients connect/disconnect
+  registry.on("registered", () => {
+    updateTrayMenu();
+  });
+  registry.on("unregistered", () => {
+    updateTrayMenu();
+  });
 
   // Register message delivery IPC handlers
   const messageLogger = logger.child({ component: "MessageDeliveryIPC" });
