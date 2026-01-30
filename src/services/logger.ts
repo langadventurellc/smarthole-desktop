@@ -47,7 +47,11 @@ export interface LoggerConfig {
   logMessageContent: boolean;
   /** Path to the log directory (defaults to process.cwd()/logs in non-Electron) */
   logDirectory?: string;
-  /** Enable pretty printing for console output (development mode) */
+  /**
+   * @deprecated Pretty printing via pino.transport() causes 100% CPU in Electron.
+   * Use CLI piping instead: `npm run dev | npx pino-pretty`
+   * This option is ignored.
+   */
   prettyPrint?: boolean;
 }
 
@@ -533,7 +537,10 @@ export function initializeLogger(config: LoggerConfig): Logger {
 
   loggerConfig = config;
 
-  const { level, logMessageContent, logDirectory, prettyPrint = false } = config;
+  const { level, logMessageContent, logDirectory } = config;
+
+  // Note: prettyPrint option is ignored - pino.transport() causes 100% CPU in Electron.
+  // Use CLI piping instead: `npm run dev | npx pino-pretty`
 
   // Determine if we're running in Electron main process
   const isElectron =
@@ -556,51 +563,22 @@ export function initializeLogger(config: LoggerConfig): Logger {
     timestamp: pino.stdTimeFunctions.isoTime,
   };
 
-  let pinoLogger: PinoLogger;
-
-  if (prettyPrint) {
-    // Development mode: use pino-pretty for console output with file transport
-    // Using pino.transport() for pretty printing
-    const transport = pino.transport({
-      targets: [
-        {
-          target: "pino-pretty",
-          level,
-          options: {
-            colorize: true,
-            translateTime: "SYS:standard",
-            ignore: "pid,hostname",
-          },
-        },
-        {
-          target: "pino/file",
-          level,
-          options: {
-            destination: path.join(effectiveLogDirectory, LOG_FILENAME),
-            mkdir: true,
-          },
-        },
-      ],
-    });
-
-    pinoLogger = pino(pinoOptions, transport);
-  } else {
-    // Production mode: JSON output to file and stdout
-    const streams: pino.StreamEntry[] = [
-      // Console output (JSON)
-      { level, stream: process.stdout },
-      // File output with rotation
-      {
+  // Use pino.destination() for async file logging without worker threads.
+  // pino.transport() causes 100% CPU usage in Electron due to worker thread issues.
+  const streams: pino.StreamEntry[] = [
+    // Console output (JSON - pipe through pino-pretty for formatting)
+    { level, stream: process.stdout },
+    // File output with rotation
+    {
+      level,
+      stream: createFileDestination({
+        logDirectory: effectiveLogDirectory,
         level,
-        stream: createFileDestination({
-          logDirectory: effectiveLogDirectory,
-          level,
-        }),
-      },
-    ];
+      }),
+    },
+  ];
 
-    pinoLogger = pino(pinoOptions, pino.multistream(streams));
-  }
+  const pinoLogger = pino(pinoOptions, pino.multistream(streams));
 
   loggerInstance = new LoggerWrapper(pinoLogger, logMessageContent);
   return loggerInstance;
@@ -643,32 +621,23 @@ export function resetLogger(): void {
  * Creates a standalone logger without affecting the global instance.
  * Useful for testing or isolated logging scenarios.
  *
+ * Note: prettyPrint option is ignored - pino.transport() causes 100% CPU in Electron.
+ * Use CLI piping instead: `npm run dev | npx pino-pretty`
+ *
  * @param config - Logger configuration options
  * @returns A new Logger instance
  */
 export function createLogger(config: LoggerConfig): Logger {
-  const { level, logMessageContent, prettyPrint = false } = config;
+  const { level, logMessageContent } = config;
+
+  // Note: prettyPrint option is ignored - pino.transport() causes 100% CPU in Electron.
 
   const pinoOptions: pino.LoggerOptions = {
     level,
     timestamp: pino.stdTimeFunctions.isoTime,
   };
 
-  let pinoLogger: PinoLogger;
-
-  if (prettyPrint) {
-    const transport = pino.transport({
-      target: "pino-pretty",
-      options: {
-        colorize: true,
-        translateTime: "SYS:standard",
-        ignore: "pid,hostname",
-      },
-    });
-    pinoLogger = pino(pinoOptions, transport);
-  } else {
-    pinoLogger = pino(pinoOptions);
-  }
+  const pinoLogger = pino(pinoOptions);
 
   return new LoggerWrapper(pinoLogger, logMessageContent);
 }

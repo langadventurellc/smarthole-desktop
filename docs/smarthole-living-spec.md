@@ -1,4 +1,4 @@
-# SmartHole MVP Requirements
+# SmartHole Living Specification
 
 ## Overview
 

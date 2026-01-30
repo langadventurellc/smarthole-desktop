@@ -1,83 +1,14 @@
 import { app, Tray, Menu, nativeImage, dialog, ipcMain } from "electron";
 import { registerProcessErrorHandlers } from "./utils/process-error-handlers";
-import { initializeLogger } from "./services/logger";
+import { initializeLogger, Logger } from "./services/logger";
 import { initializeNotificationService } from "./services/notifications";
 import { initializeNotificationQueue, getNotificationQueue } from "./services/notification-queue";
 import { IPC_CHANNELS, LogLevel } from "./types";
 import { createLogMessageHandler } from "./ipc/log-handler";
 import { createNotificationHandler } from "./ipc/notification-handler";
 
-// ============================================================================
-// Logger Initialization (early, before other operations)
-// ============================================================================
-
-/**
- * Initialize the logger early in the application lifecycle.
- * This ensures all subsequent operations can use structured logging.
- */
-const logger = initializeLogger({
-  level: "info" as LogLevel,
-  logMessageContent: false, // Privacy-aware: don't log message content by default
-  prettyPrint: !app.isPackaged, // Pretty print in development
-});
-
-/**
- * Child logger for IPC-related logging.
- */
-const ipcLogger = logger.child({ component: "IPC" });
-
-/**
- * Child logger for notification IPC logging.
- */
-const notifyLogger = logger.child({ component: "NotificationIPC" });
-
-// ============================================================================
-// Notification Service Initialization
-// ============================================================================
-
-/**
- * Initialize the notification service after logger.
- * This provides native OS notification capabilities.
- */
-const notificationService = initializeNotificationService();
-logger.info("Notification service initialized", {
-  supported: notificationService.isSupported(),
-});
-
-/**
- * Initialize the notification queue with rate limiting and priority ordering.
- */
-const notificationQueue = initializeNotificationQueue(notificationService, {
-  maxPerMinute: 10,
-  maxQueueDepth: 20,
-  minInterval: 1000,
-});
-
-// Register error handlers early, before any async operations
-registerProcessErrorHandlers({
-  logger, // Now using the initialized logger
-  onFatalError: (error) => {
-    // Could save state, show dialog, etc.
-    logger.error("Fatal error occurred", { message: error.message, stack: error.stack });
-  },
-});
-
-// ============================================================================
-// IPC Handlers
-// ============================================================================
-
-/**
- * Handle log messages from the renderer process.
- * Validates payload and forwards to the main process logger with enriched context.
- */
-ipcMain.on(IPC_CHANNELS.LOG_MESSAGE, createLogMessageHandler(logger, ipcLogger));
-
-/**
- * Handle notification requests from the renderer process.
- * Validates payload and forwards to the notification queue for display.
- */
-ipcMain.on(IPC_CHANNELS.NOTIFY_SHOW, createNotificationHandler(notificationQueue, notifyLogger));
-
+// Module-level variables (initialized in app.whenReady())
+let logger: Logger;
 let tray: Tray | null = null;
 
 function createTrayIcon(): Electron.NativeImage {
@@ -138,6 +69,45 @@ function createTray(): void {
 }
 
 app.whenReady().then(() => {
+  // ============================================================================
+  // Initialize all services AFTER Electron is ready
+  // This prevents pino worker thread issues that cause 100% CPU usage
+  // ============================================================================
+
+  // Initialize logger first
+  logger = initializeLogger({
+    level: "info" as LogLevel,
+    logMessageContent: false, // Privacy-aware: don't log message content by default
+    prettyPrint: !app.isPackaged, // Pretty print in development
+  });
+
+  const ipcLogger = logger.child({ component: "IPC" });
+  const notifyLogger = logger.child({ component: "NotificationIPC" });
+
+  // Initialize notification services
+  const notificationService = initializeNotificationService();
+  logger.info("Notification service initialized", {
+    supported: notificationService.isSupported(),
+  });
+
+  const notificationQueue = initializeNotificationQueue(notificationService, {
+    maxPerMinute: 10,
+    maxQueueDepth: 20,
+    minInterval: 1000,
+  });
+
+  // Register error handlers
+  registerProcessErrorHandlers({
+    logger,
+    onFatalError: (error) => {
+      logger.error("Fatal error occurred", { message: error.message, stack: error.stack });
+    },
+  });
+
+  // Register IPC handlers
+  ipcMain.on(IPC_CHANNELS.LOG_MESSAGE, createLogMessageHandler(logger, ipcLogger));
+  ipcMain.on(IPC_CHANNELS.NOTIFY_SHOW, createNotificationHandler(notificationQueue, notifyLogger));
+
   logger.info("Application starting", { version: app.getVersion() });
 
   createTray();

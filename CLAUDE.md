@@ -58,17 +58,27 @@ The application uses a centralized logging system built on [pino](https://github
 
 ### Logger Initialization
 
-Initialize the logger early in the main process (before other operations):
+Initialize the logger inside `app.whenReady()` in the main process:
 
 ```typescript
 import { initializeLogger } from "./services/logger";
 import { LogLevel } from "./types";
 
-const logger = initializeLogger({
-  level: "info" as LogLevel,
-  logMessageContent: false, // Privacy: don't log user content
-  prettyPrint: !app.isPackaged, // Pretty print in development
+app.whenReady().then(() => {
+  const logger = initializeLogger({
+    level: "info" as LogLevel,
+    logMessageContent: false, // Privacy: don't log user content
+  });
+  // ... rest of initialization
 });
+```
+
+**Important**: All service initialization must happen inside `app.whenReady()` to avoid CPU issues with pino's worker threads.
+
+For pretty-printed logs during development, pipe through pino-pretty:
+
+```bash
+mise run dev 2>&1 | npx pino-pretty
 ```
 
 ### Logging from Main Process
@@ -117,17 +127,21 @@ The application uses a native OS notification system built on Electron's Notific
 
 ### Notification Initialization
 
-Initialize the notification service after the logger in the main process:
+Initialize the notification service after the logger, inside `app.whenReady()`:
 
 ```typescript
 import { initializeNotificationService } from "./services/notifications";
 import { initializeNotificationQueue } from "./services/notification-queue";
 
-const notificationService = initializeNotificationService();
-const notificationQueue = initializeNotificationQueue(notificationService, {
-  maxPerMinute: 10, // Maximum notifications per minute
-  maxQueueDepth: 20, // Maximum queue size before dropping low priority
-  minInterval: 1000, // Minimum ms between notifications
+app.whenReady().then(() => {
+  // Initialize logger first...
+
+  const notificationService = initializeNotificationService();
+  const notificationQueue = initializeNotificationQueue(notificationService, {
+    maxPerMinute: 10, // Maximum notifications per minute
+    maxQueueDepth: 20, // Maximum queue size before dropping low priority
+    minInterval: 1000, // Minimum ms between notifications
+  });
 });
 ```
 
