@@ -11,3 +11,5 @@
 export * from "./logger";
 export * from "./notifications";
 export * from "./notification-queue";
+export * from "./client-registry";
+export * from "./registration-handler";

@@ -15,7 +15,8 @@ affectedFiles:
     common.ts; Updated barrel export to include config types export; Updated
     barrel export to include messages module; Updated barrel export to include
     IPC types; Updated barrel export to include guards module; Added ElectronAPI
-    type export from preload module; Added export for errors.ts to barrel export
+    type export from preload module; Added export for errors.ts to barrel
+    export; Added export for client-registry types
   src/types/common.test.ts: Created comprehensive unit tests for all types and
     functions (37 tests) including type-level constraint verification
   src/types/config.ts: Created configuration type definitions including LogLevel,
@@ -123,7 +124,13 @@ affectedFiles:
     initialization in app.whenReady() and shutdown in will-quit event; Added
     WebSocket state tracking with wsState object, status change broadcasting on
     connection events, and registered WebSocket status IPC handler with
-    ipcMain.handle()"
+    ipcMain.handle(); Added client registry and registration handler
+    initialization, wired up message event to registration handler.; Added
+    getClientRegistry import. Modified WebSocket 'disconnection' event handler
+    to: (1) calculate connection duration, (2) call registry.unregisterById() to
+    clean up registered clients, (3) log disconnection with client details
+    including duration, code, and reason. Different log levels for registered vs
+    unregistered clients."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -134,7 +141,9 @@ affectedFiles:
     log context. Updated initializeLogger() and createLogger() to pass
     logMessageContent to LoggerWrapper.
   src/services/index.ts: Created barrel export for services module; Added export
-    for notifications module; Added export for notification-queue module
+    for notifications module; Added export for notification-queue module; Added
+    export for client-registry service; Added export for registration-handler
+    module.
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -189,7 +198,9 @@ affectedFiles:
     event emitters for connection/disconnection/error events, TrackedWebSocket
     interface for isAlive flag pattern, getActiveConnections() and
     getConnection() APIs, startHeartbeat/stopHeartbeat/performHeartbeat private
-    methods
+    methods; Added 'message' event to WebSocketServerEvents, updated
+    'connection' event signature, added message handler in handleConnection
+    method.
   src/services/websocket-server.test.ts: Added focused unit tests for
     initialization, lifecycle, and localhost validation; Added 9 new tests for
     connection tracking (track connections, remove on disconnect, emit events,
@@ -201,6 +212,23 @@ affectedFiles:
     renderer windows
   src/ipc/websocket-status-handler.test.ts: Added 9 unit tests covering
     buildWebSocketStatus state mapping and createWebSocketStatusHandler behavior
+  src/types/client-registry.ts: Created new type definitions file with
+    RegistryClient, RegistryClientInfo, RegistrationSuccess,
+    RegistrationFailure, RegistrationResponse, RegistrationErrorCode,
+    ClientRegisteredEvent, ClientUnregisteredEvent, ClientRegistryEvents,
+    WebSocketRegistrationResponse, and validation helpers
+  src/services/client-registry.ts: Created ClientRegistry service with
+    EventEmitter pattern, Map-based storage, register/unregister operations,
+    lookup methods, and singleton management (initializeClientRegistry,
+    getClientRegistry, resetClientRegistry)
+  src/services/client-registry.test.ts: Added 14 unit tests covering
+    initialization, registration, unregistration, lookup operations, and clear
+    functionality
+  src/services/registration-handler.ts: Created new registration handler service
+    with message parsing, validation, and response sending. Includes singleton
+    pattern with initialize/get/reset functions.
+  src/services/registration-handler.test.ts: Added 13 unit tests covering
+    initialization, message parsing, validation, and registration flow.
 log: []
 schema: v1.0
 childrenIds:

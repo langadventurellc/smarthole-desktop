@@ -14,6 +14,7 @@ export * from "./errors";
 export * from "./ipc";
 export * from "./messages";
 export * from "./guards";
+export * from "./client-registry";
 
 // Re-export ElectronAPI type from preload for external use
 export type { ElectronAPI } from "../preload";
