@@ -33,6 +33,13 @@ log:
     and updates DeliveryStatus. Review passed. 7 tests added. Moving to
     T-integrate-notification.
   - "Auto-completed: All child tasks are complete"
+  - Completed T-integrate-notification. Committed as a7c6dbe. Implementation
+    adds response:notification event listener in main.ts that validates
+    notification content, maps client priority (normal -> medium), and enqueues
+    to notification queue. All 581 tests pass. Both tasks now complete.
+  - "Documentation update complete. Updated docs/message-delivery.md with:
+    Response Timeout section, Notification Routing section, Configuration
+    Options table documenting responseTimeoutMs. All quality checks pass."
 schema: v1.0
 childrenIds:
   - T-add-response-timeout-handling

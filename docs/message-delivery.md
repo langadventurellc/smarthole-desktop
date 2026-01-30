@@ -77,6 +77,34 @@ delivery.on("response:notification", (messageId, clientName, notification) => {
 { type: "response", payload: { type: "notification", messageId: "msg-123", title: "Done", body: "Task completed" } }
 ```
 
+### Response Timeout
+
+If a client does not respond within the configured timeout (default 30 seconds), the message is treated as implicitly rejected:
+
+- A `response:reject` event is emitted with reason `"Response timeout"`
+- The `DeliveryStatus` is updated with a reject response
+- The timeout is logged as a warning
+
+This ensures the system doesn't accumulate indefinitely-pending messages and provides a clear signal when clients fail to respond.
+
+### Notification Routing
+
+When clients respond with a notification request, the notification is automatically routed to the notification queue in `main.ts`:
+
+```typescript
+// Wired up during initialization in main.ts
+messageDelivery.on("response:notification", (messageId, clientName, notification) => {
+  notificationQueue.enqueue({
+    title: notification.title ?? clientName,
+    body: notification.body ?? "",
+    type: "info",
+    priority: mapClientPriorityToQueuePriority(notification.priority),
+  });
+});
+```
+
+This ensures client-requested notifications flow through the same rate limiting and coalescing as other system notifications.
+
 ## Delivery Status Tracking
 
 The service maintains a history of recent deliveries for debugging:
@@ -144,8 +172,16 @@ const recent = await window.electronAPI.getRecentDeliveries(10);
 ```typescript
 const delivery = initializeMessageDelivery({
   maxHistorySize: 100, // Maximum delivery statuses to keep (default: 100)
+  responseTimeoutMs: 30000, // Timeout for client responses in ms (default: 30000)
 });
 ```
+
+### Configuration Options
+
+| Option              | Type   | Default | Description                                                              |
+| ------------------- | ------ | ------- | ------------------------------------------------------------------------ |
+| `maxHistorySize`    | number | 100     | Maximum number of delivery statuses to keep in history                   |
+| `responseTimeoutMs` | number | 30000   | Timeout in milliseconds before treating a message as implicitly rejected |
 
 ## Wire Format
 
