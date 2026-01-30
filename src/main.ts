@@ -14,7 +14,13 @@ import {
   RegistrationHandler,
 } from "./services/registration-handler";
 import { initializeMessageDelivery, MessageDeliveryService } from "./services/message-delivery";
-import { IPC_CHANNELS, LogLevel } from "./types";
+import {
+  IPC_CHANNELS,
+  LogLevel,
+  NotificationPayload,
+  ClientNotificationPriority,
+  NotificationPriority,
+} from "./types";
 import { createLogMessageHandler } from "./ipc/log-handler";
 import { createNotificationHandler } from "./ipc/notification-handler";
 import {
@@ -60,6 +66,36 @@ const wsState: {
 function notifyWebSocketStatusChange(): void {
   const status = buildWebSocketStatus(wsState.server, wsState.lastError, WS_DEFAULT_PORT);
   broadcastWebSocketStatusChange(status);
+}
+
+/**
+ * Maps client notification priority to the notification queue priority.
+ * Clients use "normal" while the queue uses "medium".
+ *
+ * @param priority - The client-provided priority (or undefined)
+ * @returns The mapped NotificationPriority for the queue
+ */
+function mapClientPriorityToQueuePriority(
+  priority: ClientNotificationPriority | undefined
+): NotificationPriority {
+  if (!priority) {
+    return "medium";
+  }
+  if (priority === "normal") {
+    return "medium";
+  }
+  return priority;
+}
+
+/**
+ * Checks if a notification payload has displayable content.
+ * A notification needs at least a title or body to be shown.
+ *
+ * @param notification - The notification payload from a client
+ * @returns true if the notification has content to display
+ */
+function hasNotificationContent(notification: NotificationPayload): boolean {
+  return Boolean(notification.title || notification.body);
 }
 
 function createTrayIcon(): Electron.NativeImage {
@@ -231,6 +267,33 @@ app.whenReady().then(async () => {
     // Initialize message delivery service for sending messages to clients and handling responses
     wsState.messageDelivery = initializeMessageDelivery();
     logger.info("Message delivery service initialized");
+
+    // Wire up notification response handling to route client notifications to the queue
+    wsState.messageDelivery.on("response:notification", (messageId, clientName, notification) => {
+      // Validate notification has content to display
+      if (!hasNotificationContent(notification)) {
+        logger.warn("Empty notification received from client", {
+          messageId,
+          clientName,
+        });
+        return;
+      }
+
+      // Map client notification to queue format and enqueue
+      notificationQueue.enqueue({
+        title: notification.title ?? clientName,
+        body: notification.body ?? "",
+        type: "info", // Client notifications are informational by default
+        priority: mapClientPriorityToQueuePriority(notification.priority),
+      });
+
+      logger.info("Client notification routed to queue", {
+        messageId,
+        clientName,
+        title: notification.title,
+        priority: notification.priority,
+      });
+    });
 
     // Subscribe to connection events to broadcast status changes
     wsState.server.on("connection", () => {

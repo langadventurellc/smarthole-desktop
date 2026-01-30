@@ -1,7 +1,7 @@
 ---
 id: E-plugin-client-system
 title: Plugin Client System
-status: in-progress
+status: done
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
@@ -41,7 +41,12 @@ affectedFiles:
     buildTrayMenu() function that builds menu with client status from registry,
     added updateTrayMenu() function to rebuild menu on status change, modified
     createTray() to use buildTrayMenu(), subscribed to registry 'registered' and
-    'unregistered' events to trigger menu updates"
+    'unregistered' events to trigger menu updates; Added imports for
+    NotificationPayload, ClientNotificationPriority, NotificationPriority. Added
+    mapClientPriorityToQueuePriority() helper to map client 'normal' priority to
+    queue 'medium'. Added hasNotificationContent() helper to validate
+    notifications. Added response:notification event listener that validates,
+    maps, and enqueues client notifications."
   package.json: Added @types/ws as a dev dependency (ws was already installed)
   src/types/ipc.ts: Added WEBSOCKET_STATUS_GET and WEBSOCKET_STATUS_CHANGED IPC
     channels, WebSocketServerState type, WebSocketServerStatus interface,
@@ -99,14 +104,21 @@ affectedFiles:
     MessageDeliveryEvents interface for typed events, handleResponse() and
     on/off() methods to MessageDeliveryService interface, processResponse() and
     findDeliveryStatusForUpdate() private methods, EventEmitter for events,
-    parseMessage() helper function"
+    parseMessage() helper function; Added responseTimeoutMs config option,
+    pendingResponses Map for timer tracking,
+    startResponseTimer/cancelResponseTimer/clearAllPendingTimers/handleTimeout
+    methods, timer start on successful delivery, timer cancel on response
+    received, timer cleanup on reset"
   src/services/message-delivery.test.ts: "Added comprehensive unit tests covering
     initialization, single/multi-client delivery, error handling for all failure
     modes, delivery history tracking, and history eviction behavior; Added
     handleResponse test suite with 10 tests covering: ack/reject/notification
     response processing, delivery status updates, event emission for all
     response types, handling unknown messageIds, invalid JSON, non-response
-    messages, and invalid message formats"
+    messages, and invalid message formats; Added 7 new tests for response
+    timeout: default 30s timeout, custom timeout, status update on timeout,
+    timer cancellation on response, no timer for failed deliveries, multiple
+    concurrent timeouts, timer cleanup on reset"
   src/ipc/message-delivery-handlers.ts: Created new file with handler factory
     functions (createMessageSendHandler, createMessageSendMultipleHandler,
     createMessageGetStatusHandler, createMessageGetRecentHandler) and
@@ -130,7 +142,8 @@ affectedFiles:
   src/ipc/client-status-handler.test.ts: Added comprehensive tests for all handler
     functions and broadcast behavior (14 tests)
   src/ipc/index.ts: Added export for client-status-handler module
-log: []
+log:
+  - "Auto-completed: All child features are complete"
 schema: v1.0
 childrenIds:
   - F-client-registration-registry
