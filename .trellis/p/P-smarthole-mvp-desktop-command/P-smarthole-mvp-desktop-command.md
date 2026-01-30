@@ -130,7 +130,9 @@ affectedFiles:
     to: (1) calculate connection duration, (2) call registry.unregisterById() to
     clean up registered clients, (3) log disconnection with client details
     including duration, code, and reason. Different log levels for registered vs
-    unregistered clients."
+    unregistered clients.; Integrated message delivery service: added import,
+    added messageDelivery to wsState, initialized service after registration
+    handler, wired up response handling in WebSocket message event handler"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -229,13 +231,22 @@ affectedFiles:
     pattern with initialize/get/reset functions.
   src/services/registration-handler.test.ts: Added 13 unit tests covering
     initialization, message parsing, validation, and registration flow.
-  src/services/message-delivery.ts: Created new message delivery service with
+  src/services/message-delivery.ts: "Created new message delivery service with
     singleton pattern, DeliveryResult/DeliveryError/DeliveryStatus types,
     sendToClient/sendToClients methods, delivery history tracking with LRU
-    eviction, and structured logging
-  src/services/message-delivery.test.ts: Added comprehensive unit tests covering
+    eviction, and structured logging; Extended with response handling: added
+    DeliveryResponse interface, ResponseContext, ResponseProcessResult types,
+    MessageDeliveryEvents interface for typed events, handleResponse() and
+    on/off() methods to MessageDeliveryService interface, processResponse() and
+    findDeliveryStatusForUpdate() private methods, EventEmitter for events,
+    parseMessage() helper function"
+  src/services/message-delivery.test.ts: "Added comprehensive unit tests covering
     initialization, single/multi-client delivery, error handling for all failure
-    modes, delivery history tracking, and history eviction behavior
+    modes, delivery history tracking, and history eviction behavior; Added
+    handleResponse test suite with 10 tests covering: ack/reject/notification
+    response processing, delivery status updates, event emission for all
+    response types, handling unknown messageIds, invalid JSON, non-response
+    messages, and invalid message formats"
 log: []
 schema: v1.0
 childrenIds:

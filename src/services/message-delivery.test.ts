@@ -21,6 +21,8 @@ import {
   ClientRegistration,
   RoutedMessage,
   LogLevel,
+  WebSocketResponseMessage,
+  ClientResponse,
 } from "../types";
 
 // ============================================================================
@@ -315,6 +317,235 @@ describe("MessageDelivery", () => {
       const clientNames = history.map((s) => s.clientName);
       expect(clientNames).toContain("notebook");
       expect(clientNames).toContain("terminal");
+    });
+  });
+
+  describe("handleResponse", () => {
+    /**
+     * Helper to create a WebSocket response message as raw data.
+     */
+    function createResponseData(response: ClientResponse): Buffer {
+      const message: WebSocketResponseMessage = {
+        type: "response",
+        payload: response,
+      };
+      return Buffer.from(JSON.stringify(message));
+    }
+
+    /**
+     * Register a client and send a message to it, returning the context needed for responses.
+     */
+    function setupDeliveredMessage(clientName: string): {
+      connectionId: string;
+      messageId: string;
+    } {
+      const connectionId = `client-${clientName}`;
+      registerTestClient(clientName);
+      const message = createTestMessage({ id: createMessageId(`msg-${clientName}`) });
+      delivery.sendToClient(clientName, message);
+      return { connectionId, messageId: message.id };
+    }
+
+    it("processes ack response and updates delivery status", () => {
+      const { connectionId, messageId } = setupDeliveredMessage("notebook");
+
+      const responseData = createResponseData({
+        messageId: createMessageId(messageId),
+        type: "ack",
+        payload: {},
+      });
+
+      const result = delivery.handleResponse(responseData, {
+        connectionId: createClientId(connectionId),
+      });
+
+      expect(result.handled).toBe(true);
+      if (result.handled) {
+        expect(result.responseType).toBe("ack");
+      }
+
+      // Verify delivery status was updated
+      const status = delivery.getDeliveryStatus(createMessageId(messageId));
+      expect(status?.response).toBeDefined();
+      expect(status?.response?.type).toBe("ack");
+      expect(status?.response?.receivedAt).toBeDefined();
+    });
+
+    it("processes reject response with reason", () => {
+      const { connectionId, messageId } = setupDeliveredMessage("notebook");
+      const rejectReason = "I don't handle calendar events";
+
+      const responseData = createResponseData({
+        messageId: createMessageId(messageId),
+        type: "reject",
+        payload: { reason: rejectReason },
+      });
+
+      const result = delivery.handleResponse(responseData, {
+        connectionId: createClientId(connectionId),
+      });
+
+      expect(result.handled).toBe(true);
+      if (result.handled) {
+        expect(result.responseType).toBe("reject");
+      }
+
+      const status = delivery.getDeliveryStatus(createMessageId(messageId));
+      expect(status?.response?.type).toBe("reject");
+      expect(status?.response?.payload).toEqual({ reason: rejectReason });
+    });
+
+    it("processes notification response", () => {
+      const { connectionId, messageId } = setupDeliveredMessage("notebook");
+      const notification = {
+        title: "Note saved",
+        body: "Your note was saved successfully",
+        priority: "normal" as const,
+      };
+
+      const responseData = createResponseData({
+        messageId: createMessageId(messageId),
+        type: "notification",
+        payload: notification,
+      });
+
+      const result = delivery.handleResponse(responseData, {
+        connectionId: createClientId(connectionId),
+      });
+
+      expect(result.handled).toBe(true);
+      if (result.handled) {
+        expect(result.responseType).toBe("notification");
+      }
+
+      const status = delivery.getDeliveryStatus(createMessageId(messageId));
+      expect(status?.response?.type).toBe("notification");
+      expect(status?.response?.payload).toEqual(notification);
+    });
+
+    it("returns unknown_message for response to unknown messageId", () => {
+      registerTestClient("notebook");
+      const connectionId = "client-notebook";
+
+      const responseData = createResponseData({
+        messageId: createMessageId("unknown-msg-id"),
+        type: "ack",
+        payload: {},
+      });
+
+      const result = delivery.handleResponse(responseData, {
+        connectionId: createClientId(connectionId),
+      });
+
+      expect(result.handled).toBe(false);
+      if (!result.handled) {
+        expect(result.reason).toBe("unknown_message");
+      }
+    });
+
+    it("returns not_response for non-response messages", () => {
+      registerTestClient("notebook");
+      const connectionId = "client-notebook";
+
+      // Send a registration message instead of a response
+      const registrationData = Buffer.from(
+        JSON.stringify({
+          type: "registration",
+          payload: { name: "test", description: "test" },
+        })
+      );
+
+      const result = delivery.handleResponse(registrationData, {
+        connectionId: createClientId(connectionId),
+      });
+
+      expect(result.handled).toBe(false);
+      if (!result.handled) {
+        expect(result.reason).toBe("not_response");
+      }
+    });
+
+    it("returns parse_error for invalid JSON", () => {
+      const result = delivery.handleResponse(Buffer.from("not valid json"), {
+        connectionId: createClientId("client-test"),
+      });
+
+      expect(result.handled).toBe(false);
+      if (!result.handled) {
+        expect(result.reason).toBe("parse_error");
+      }
+    });
+
+    it("returns invalid_message for non-WebSocket message format", () => {
+      const result = delivery.handleResponse(Buffer.from(JSON.stringify({ foo: "bar" })), {
+        connectionId: createClientId("client-test"),
+      });
+
+      expect(result.handled).toBe(false);
+      if (!result.handled) {
+        expect(result.reason).toBe("invalid_message");
+      }
+    });
+
+    it("emits response:ack event when ack received", () => {
+      const { connectionId, messageId } = setupDeliveredMessage("notebook");
+      const ackHandler = vi.fn();
+      delivery.on("response:ack", ackHandler);
+
+      const responseData = createResponseData({
+        messageId: createMessageId(messageId),
+        type: "ack",
+        payload: {},
+      });
+
+      delivery.handleResponse(responseData, {
+        connectionId: createClientId(connectionId),
+      });
+
+      expect(ackHandler).toHaveBeenCalledWith(messageId, "notebook");
+
+      delivery.off("response:ack", ackHandler);
+    });
+
+    it("emits response:reject event when reject received", () => {
+      const { connectionId, messageId } = setupDeliveredMessage("notebook");
+      const rejectHandler = vi.fn();
+      delivery.on("response:reject", rejectHandler);
+
+      const responseData = createResponseData({
+        messageId: createMessageId(messageId),
+        type: "reject",
+        payload: { reason: "Not my problem" },
+      });
+
+      delivery.handleResponse(responseData, {
+        connectionId: createClientId(connectionId),
+      });
+
+      expect(rejectHandler).toHaveBeenCalledWith(messageId, "notebook", "Not my problem");
+
+      delivery.off("response:reject", rejectHandler);
+    });
+
+    it("emits response:notification event when notification received", () => {
+      const { connectionId, messageId } = setupDeliveredMessage("notebook");
+      const notifyHandler = vi.fn();
+      delivery.on("response:notification", notifyHandler);
+
+      const notification = { title: "Done", body: "Task complete" };
+      const responseData = createResponseData({
+        messageId: createMessageId(messageId),
+        type: "notification",
+        payload: notification,
+      });
+
+      delivery.handleResponse(responseData, {
+        connectionId: createClientId(connectionId),
+      });
+
+      expect(notifyHandler).toHaveBeenCalledWith(messageId, "notebook", notification);
+
+      delivery.off("response:notification", notifyHandler);
     });
   });
 });
