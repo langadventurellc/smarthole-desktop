@@ -117,7 +117,8 @@ affectedFiles:
     LoggerWrapper to accept logMessageContent flag and apply sanitization to all
     log context. Updated initializeLogger() and createLogger() to pass
     logMessageContent to LoggerWrapper.
-  src/services/index.ts: Created barrel export for services module
+  src/services/index.ts: Created barrel export for services module; Added export
+    for notifications module
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -135,6 +136,12 @@ affectedFiles:
   src/services/logger.integration.test.ts: Created new integration test file with
     21 tests covering file writing, log rotation, IPC flow, log level filtering,
     and privacy features
+  src/services/notifications.ts: Created new NotificationService with singleton
+    pattern, Electron Notification API wrapper, content sanitization, and
+    graceful degradation
+  src/services/notifications.test.ts: Created comprehensive unit tests (33 tests)
+    for NotificationService including singleton pattern, all methods, content
+    sanitization, and graceful degradation
 log: []
 schema: v1.0
 childrenIds:
