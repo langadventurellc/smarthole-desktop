@@ -7,6 +7,8 @@
  */
 
 import { LogLevel, AppConfig, PartialAppConfig } from "./config";
+import { InputStateInfo, InputStateChangedEvent } from "./input";
+import { HotkeyActivatedEvent, HotkeyReleasedEvent } from "./hotkey";
 
 // ============================================================================
 // IPC Channel Definitions
@@ -54,6 +56,14 @@ export const IPC_CHANNELS = {
   CLIENTS_GET_LIST: "clients:getList", // Get list of client summaries
   CLIENTS_GET_DETAILS: "clients:getDetails", // Get full details for a specific client
   CLIENTS_STATUS_CHANGED: "clients:statusChanged", // Main -> Renderer broadcast
+
+  // Hotkey channels
+  HOTKEY_ACTIVATED: "hotkey:activated", // Main -> Renderer broadcast when hotkey pressed
+  HOTKEY_RELEASED: "hotkey:released", // Main -> Renderer broadcast when hotkey released
+
+  // Input state channels
+  INPUT_STATE_CHANGED: "input:stateChanged", // Main -> Renderer broadcast when input state changes
+  INPUT_GET_STATE: "input:getState", // Renderer -> Main invoke to get current state
 } as const;
 
 /**
@@ -363,6 +373,20 @@ export interface ClientStatusChangedPayload {
 }
 
 // ============================================================================
+// Hotkey IPC Types
+// ============================================================================
+
+// Re-export hotkey event types for IPC consumers
+export type { HotkeyActivatedEvent, HotkeyReleasedEvent };
+
+// ============================================================================
+// Input State IPC Types
+// ============================================================================
+
+// Re-export input state types for IPC consumers
+export type { InputStateInfo, InputStateChangedEvent };
+
+// ============================================================================
 // IPC Type Maps (for type-safe handlers)
 // ============================================================================
 
@@ -391,6 +415,10 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.CLIENTS_GET_LIST]: void; // No payload needed
   [IPC_CHANNELS.CLIENTS_GET_DETAILS]: ClientGetDetailsPayload;
   [IPC_CHANNELS.CLIENTS_STATUS_CHANGED]: ClientStatusChangedPayload;
+  [IPC_CHANNELS.HOTKEY_ACTIVATED]: HotkeyActivatedEvent;
+  [IPC_CHANNELS.HOTKEY_RELEASED]: HotkeyReleasedEvent;
+  [IPC_CHANNELS.INPUT_STATE_CHANGED]: InputStateChangedEvent;
+  [IPC_CHANNELS.INPUT_GET_STATE]: void; // No payload needed
 }
 
 /**
@@ -411,6 +439,7 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.CLIENTS_GET_COUNT]: number;
   [IPC_CHANNELS.CLIENTS_GET_LIST]: ClientSummary[];
   [IPC_CHANNELS.CLIENTS_GET_DETAILS]: ClientDetails | null;
+  [IPC_CHANNELS.INPUT_GET_STATE]: InputStateInfo;
 }
 
 // ============================================================================

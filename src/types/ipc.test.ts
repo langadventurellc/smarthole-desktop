@@ -70,8 +70,18 @@ describe("IPC_CHANNELS", () => {
       expect(IPC_CHANNELS.CLIENTS_STATUS_CHANGED).toBe("clients:statusChanged");
     });
 
-    it("should have exactly 17 channels", () => {
-      expect(Object.keys(IPC_CHANNELS)).toHaveLength(17);
+    it("should have all expected hotkey channels", () => {
+      expect(IPC_CHANNELS.HOTKEY_ACTIVATED).toBe("hotkey:activated");
+      expect(IPC_CHANNELS.HOTKEY_RELEASED).toBe("hotkey:released");
+    });
+
+    it("should have all expected input state channels", () => {
+      expect(IPC_CHANNELS.INPUT_STATE_CHANGED).toBe("input:stateChanged");
+      expect(IPC_CHANNELS.INPUT_GET_STATE).toBe("input:getState");
+    });
+
+    it("should have exactly 21 channels", () => {
+      expect(Object.keys(IPC_CHANNELS)).toHaveLength(21);
     });
 
     it("should follow the domain:action naming convention", () => {

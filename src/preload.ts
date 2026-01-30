@@ -21,6 +21,10 @@ import type {
   ClientSummary,
   ClientDetails,
   ClientStatusChangedPayload,
+  HotkeyActivatedEvent,
+  HotkeyReleasedEvent,
+  InputStateInfo,
+  InputStateChangedEvent,
 } from "./types";
 import { IPC_CHANNELS } from "./types";
 import type { LogLevel, AppConfig } from "./types";
@@ -337,6 +341,86 @@ const electronAPI = {
     // Return unsubscribe function
     return (): void => {
       ipcRenderer.removeListener(IPC_CHANNELS.CLIENTS_STATUS_CHANGED, handler);
+    };
+  },
+
+  // ============================================
+  // Hotkey Events
+  // ============================================
+
+  /**
+   * Listen for hotkey activation events.
+   * Called whenever a registered hotkey is pressed.
+   *
+   * @param callback - Function called with the hotkey activated event
+   * @returns Unsubscribe function to stop listening
+   */
+  onHotkeyActivated: (callback: (event: HotkeyActivatedEvent) => void): (() => void) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      hotkeyEvent: HotkeyActivatedEvent
+    ): void => {
+      callback(hotkeyEvent);
+    };
+    ipcRenderer.on(IPC_CHANNELS.HOTKEY_ACTIVATED, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.HOTKEY_ACTIVATED, handler);
+    };
+  },
+
+  /**
+   * Listen for hotkey release events.
+   * Called whenever a registered hotkey is released (for push-to-talk mode).
+   *
+   * @param callback - Function called with the hotkey released event
+   * @returns Unsubscribe function to stop listening
+   */
+  onHotkeyReleased: (callback: (event: HotkeyReleasedEvent) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, hotkeyEvent: HotkeyReleasedEvent): void => {
+      callback(hotkeyEvent);
+    };
+    ipcRenderer.on(IPC_CHANNELS.HOTKEY_RELEASED, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.HOTKEY_RELEASED, handler);
+    };
+  },
+
+  // ============================================
+  // Input State
+  // ============================================
+
+  /**
+   * Get the current input state information.
+   *
+   * @returns Promise resolving to the current input state info
+   */
+  getInputState: (): Promise<InputStateInfo> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.INPUT_GET_STATE);
+  },
+
+  /**
+   * Listen for input state changes.
+   * Called whenever the input state transitions (idle, recording, processing).
+   *
+   * @param callback - Function called with the state changed event
+   * @returns Unsubscribe function to stop listening
+   */
+  onInputStateChanged: (callback: (event: InputStateChangedEvent) => void): (() => void) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      stateEvent: InputStateChangedEvent
+    ): void => {
+      callback(stateEvent);
+    };
+    ipcRenderer.on(IPC_CHANNELS.INPUT_STATE_CHANGED, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.INPUT_STATE_CHANGED, handler);
     };
   },
 };

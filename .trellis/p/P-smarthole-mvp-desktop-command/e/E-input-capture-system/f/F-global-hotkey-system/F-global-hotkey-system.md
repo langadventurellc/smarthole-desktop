@@ -1,7 +1,7 @@
 ---
 id: F-global-hotkey-system
 title: Global Hotkey System
-status: in-progress
+status: done
 priority: high
 parent: E-input-capture-system
 prerequisites: []
@@ -9,7 +9,10 @@ affectedFiles:
   src/services/hotkey-manager.ts: Created hotkey manager service with singleton
     pattern, EventEmitter for events, Electron globalShortcut integration,
     uiohook-napi for key up detection, and macOS accessibility permission
-    handling
+    handling; Refactored to use lazy loading for uiohook-napi - removed
+    top-level import, added loadUiohook() for dynamic import,
+    buildAcceleratorToKeycodeMap() for lazy keycode map creation,
+    setupUiohookListeners() called lazily after first registerHotkeys() call
   src/services/hotkey-manager.test.ts: Added unit tests for initialization,
     registration, event emission, unregistration, and accessibility permissions
   src/services/index.ts: Added export for hotkey-manager module; Added export for
@@ -23,6 +26,26 @@ affectedFiles:
     validated state machine, EventEmitter for events, mode tracking
   src/services/input-state.test.ts: Added unit tests for state machine
     transitions, event emission, mode changes, and getStateInfo
+  src/types/ipc.ts: Added 4 new IPC channels (HOTKEY_ACTIVATED, HOTKEY_RELEASED,
+    INPUT_STATE_CHANGED, INPUT_GET_STATE), imported and re-exported hotkey and
+    input state types, updated IpcPayloadMap and IpcResponseMap
+  src/ipc/hotkey-handler.ts: Created new IPC handler with
+    broadcastHotkeyActivated, broadcastHotkeyReleased, and
+    wireHotkeyManagerToIpc functions
+  src/ipc/input-state-handler.ts: Created new IPC handler with
+    broadcastInputStateChanged, createInputStateHandler, and wireInputStateToIpc
+    functions
+  src/ipc/index.ts: Added exports for hotkey-handler and input-state-handler modules
+  src/preload.ts: Added onHotkeyActivated, onHotkeyReleased, getInputState, and
+    onInputStateChanged APIs to electronAPI
+  src/main.ts: Added imports for services and handlers, initialized hotkey manager
+    and input state service, wired events to IPC broadcasts and state
+    transitions, added cleanup in will-quit handler
+  src/types/ipc.test.ts: Updated channel count test from 17 to 21, added tests for
+    new hotkey and input state channels
+  src/types/hotkey.ts: Created new types file for hotkey event types (HotkeyType,
+    HotkeyActivatedEvent, HotkeyReleasedEvent, HotkeyErrorCode,
+    HotkeyErrorEvent) to avoid circular dependency between types and services
 log:
   - >-
     Started feature implementation. Created feature branch
@@ -66,6 +89,10 @@ log:
 
 
     Both tasks passed code review. Ready to commit.
+  - Committed trellis state (311bd72). Starting final task
+    T-implement-hotkey-and-input which integrates hotkey manager and input state
+    via IPC.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
   - T-implement-hotkey-and-input

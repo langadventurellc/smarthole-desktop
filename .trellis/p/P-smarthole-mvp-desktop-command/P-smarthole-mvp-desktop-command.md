@@ -47,7 +47,10 @@ affectedFiles:
     serialization, and payload/response types for all new channels. Updated
     IpcPayloadMap and IpcResponseMap.; Added 4 client status IPC channels,
     ClientSummary, ClientDetails, ClientGetDetailsPayload, and
-    ClientStatusChangedPayload types, plus payload/response map entries
+    ClientStatusChangedPayload types, plus payload/response map entries; Added 4
+    new IPC channels (HOTKEY_ACTIVATED, HOTKEY_RELEASED, INPUT_STATE_CHANGED,
+    INPUT_GET_STATE), imported and re-exported hotkey and input state types,
+    updated IpcPayloadMap and IpcResponseMap
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -55,7 +58,8 @@ affectedFiles:
     allow domain:action:sub pattern; Updated test for channel count (9 to 13),
     updated naming convention regex to allow camelCase actions, added test for
     new message delivery channels.; Updated channel count test and added tests
-    for new client status channels
+    for new client status channels; Updated channel count test from 17 to 21,
+    added tests for new hotkey and input state channels
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -74,7 +78,8 @@ affectedFiles:
     new methods to electronAPI: sendMessage, sendMessageMultiple,
     getMessageStatus, getRecentDeliveries with full TypeScript types.; Added
     getClientCount, getClientList, getClientDetails, and onClientStatusChange
-    methods to the preload API"
+    methods to the preload API; Added onHotkeyActivated, onHotkeyReleased,
+    getInputState, and onInputStateChanged APIs to electronAPI"
   src/types/electron.d.ts: Created global Window interface augmentation declaring
     electronAPI property with ElectronAPI type
   src/preload.test.ts: Created comprehensive unit tests (29 tests) mocking
@@ -160,7 +165,9 @@ affectedFiles:
     mapClientPriorityToQueuePriority() helper to map client 'normal' priority to
     queue 'medium'. Added hasNotificationContent() helper to validate
     notifications. Added response:notification event listener that validates,
-    maps, and enqueues client notifications."
+    maps, and enqueues client notifications.; Added imports for services and
+    handlers, initialized hotkey manager and input state service, wired events
+    to IPC broadcasts and state transitions, added cleanup in will-quit handler"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -187,7 +194,8 @@ affectedFiles:
     payload validation and context enrichment
   src/ipc/index.ts: Created barrel export for IPC module; Added export for
     notification-handler module to barrel export file.; Added export for
-    client-status-handler module
+    client-status-handler module; Added exports for hotkey-handler and
+    input-state-handler modules
   src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
     covering handler creation, payload validation, log level mapping, context
     enrichment, and edge cases
@@ -309,7 +317,10 @@ affectedFiles:
   src/services/hotkey-manager.ts: Created hotkey manager service with singleton
     pattern, EventEmitter for events, Electron globalShortcut integration,
     uiohook-napi for key up detection, and macOS accessibility permission
-    handling
+    handling; Refactored to use lazy loading for uiohook-napi - removed
+    top-level import, added loadUiohook() for dynamic import,
+    buildAcceleratorToKeycodeMap() for lazy keycode map creation,
+    setupUiohookListeners() called lazily after first registerHotkeys() call
   src/services/hotkey-manager.test.ts: Added unit tests for initialization,
     registration, event emission, unregistration, and accessibility permissions
   src/types/input.ts: "Created input state types: InputState enum, InputStateInfo
@@ -319,6 +330,15 @@ affectedFiles:
     validated state machine, EventEmitter for events, mode tracking
   src/services/input-state.test.ts: Added unit tests for state machine
     transitions, event emission, mode changes, and getStateInfo
+  src/ipc/hotkey-handler.ts: Created new IPC handler with
+    broadcastHotkeyActivated, broadcastHotkeyReleased, and
+    wireHotkeyManagerToIpc functions
+  src/ipc/input-state-handler.ts: Created new IPC handler with
+    broadcastInputStateChanged, createInputStateHandler, and wireInputStateToIpc
+    functions
+  src/types/hotkey.ts: Created new types file for hotkey event types (HotkeyType,
+    HotkeyActivatedEvent, HotkeyReleasedEvent, HotkeyErrorCode,
+    HotkeyErrorEvent) to avoid circular dependency between types and services
 log: []
 schema: v1.0
 childrenIds:

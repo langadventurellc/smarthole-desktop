@@ -2,14 +2,25 @@
  * Hotkey manager service for system-wide keyboard shortcuts.
  * Provides key down and key up event detection for push-to-talk mode.
  *
+ * Note: uiohook-napi is lazy-loaded to avoid native module issues at app startup.
+ * The native module is only loaded when registerHotkeys() is called.
+ *
  * @see F-global-hotkey-system feature specification
  */
 
 import { EventEmitter } from "events";
 import { globalShortcut, systemPreferences, app } from "electron";
-import { uIOhook, UiohookKey } from "uiohook-napi";
 import { getLogger, Logger } from "./logger";
-import { HotkeyConfig } from "../types";
+import {
+  HotkeyConfig,
+  HotkeyActivatedEvent,
+  HotkeyReleasedEvent,
+  HotkeyErrorEvent,
+  HotkeyType,
+} from "../types";
+
+// Re-export types that consumers need
+export type { HotkeyActivatedEvent, HotkeyReleasedEvent, HotkeyErrorEvent };
 
 // ============================================================================
 // Types
@@ -27,37 +38,12 @@ export interface HotkeyManagerEvents {
   error: (event: HotkeyErrorEvent) => void;
 }
 
-export interface HotkeyActivatedEvent {
-  /** The accelerator string that was activated (e.g., "CommandOrControl+Shift+Space") */
-  accelerator: string;
-  /** Which hotkey type was activated */
-  hotkeyType: "voiceInput" | "textInput";
-}
-
-export interface HotkeyReleasedEvent {
-  /** The accelerator string that was released */
-  accelerator: string;
-  /** Which hotkey type was released */
-  hotkeyType: "voiceInput" | "textInput";
-}
-
-export interface HotkeyErrorEvent {
-  /** Error message */
-  message: string;
-  /** The accelerator that failed (if applicable) */
-  accelerator?: string;
-  /** Error code */
-  code: HotkeyErrorCode;
-}
-
-export type HotkeyErrorCode = "REGISTRATION_FAILED" | "ACCESSIBILITY_DENIED" | "UIOHOOK_ERROR";
-
 /**
  * Internal state for tracking a registered hotkey.
  */
 interface RegisteredHotkey {
   accelerator: string;
-  hotkeyType: "voiceInput" | "textInput";
+  hotkeyType: HotkeyType;
   /** uiohook keycodes for detecting key up */
   keycodes: number[];
   isPressed: boolean;
@@ -112,98 +98,155 @@ export interface HotkeyManagerService {
 }
 
 // ============================================================================
+// Lazy Loading for uiohook-napi
+// ============================================================================
+
+/**
+ * Type for the uiohook-napi module.
+ */
+type UiohookModule = typeof import("uiohook-napi");
+
+/**
+ * Cached uiohook module after lazy loading.
+ */
+let uiohookModule: UiohookModule | null = null;
+
+/**
+ * Lazy loads the uiohook-napi module.
+ * The native module is only loaded when this function is first called.
+ *
+ * @returns The uiohook-napi module
+ * @throws If the native module fails to load
+ */
+async function loadUiohook(): Promise<UiohookModule> {
+  if (uiohookModule) {
+    return uiohookModule;
+  }
+
+  // Dynamic import to avoid loading native module at module parse time
+  uiohookModule = await import("uiohook-napi");
+  return uiohookModule;
+}
+
+/**
+ * Gets the cached uiohook module (must be loaded first via loadUiohook).
+ * @returns The uiohook module or null if not loaded
+ */
+function getUiohook(): UiohookModule | null {
+  return uiohookModule;
+}
+
+// ============================================================================
 // Accelerator Parsing
 // ============================================================================
 
 /**
- * Maps Electron accelerator key names to uiohook keycodes.
- * These vary by platform, but uiohook normalizes them.
+ * Cached accelerator to keycode map (built lazily after uiohook is loaded).
  */
-const ACCELERATOR_TO_KEYCODE: Record<string, number> = {
-  // Modifiers
-  control: UiohookKey.Ctrl,
-  ctrl: UiohookKey.Ctrl,
-  command: UiohookKey.Meta,
-  cmd: UiohookKey.Meta,
-  meta: UiohookKey.Meta,
-  alt: UiohookKey.Alt,
-  option: UiohookKey.Alt,
-  shift: UiohookKey.Shift,
+let acceleratorToKeycodeMap: Record<string, number> | null = null;
 
-  // Special keys
-  space: UiohookKey.Space,
-  tab: UiohookKey.Tab,
-  enter: UiohookKey.Enter,
-  return: UiohookKey.Enter,
-  backspace: UiohookKey.Backspace,
-  delete: UiohookKey.Delete,
-  escape: UiohookKey.Escape,
-  esc: UiohookKey.Escape,
-  up: UiohookKey.ArrowUp,
-  down: UiohookKey.ArrowDown,
-  left: UiohookKey.ArrowLeft,
-  right: UiohookKey.ArrowRight,
+/**
+ * Builds the accelerator to keycode map using UiohookKey constants.
+ * Must be called after uiohook is loaded.
+ */
+function buildAcceleratorToKeycodeMap(
+  UiohookKey: UiohookModule["UiohookKey"]
+): Record<string, number> {
+  return {
+    // Modifiers
+    control: UiohookKey.Ctrl,
+    ctrl: UiohookKey.Ctrl,
+    command: UiohookKey.Meta,
+    cmd: UiohookKey.Meta,
+    meta: UiohookKey.Meta,
+    alt: UiohookKey.Alt,
+    option: UiohookKey.Alt,
+    shift: UiohookKey.Shift,
 
-  // Function keys
-  f1: UiohookKey.F1,
-  f2: UiohookKey.F2,
-  f3: UiohookKey.F3,
-  f4: UiohookKey.F4,
-  f5: UiohookKey.F5,
-  f6: UiohookKey.F6,
-  f7: UiohookKey.F7,
-  f8: UiohookKey.F8,
-  f9: UiohookKey.F9,
-  f10: UiohookKey.F10,
-  f11: UiohookKey.F11,
-  f12: UiohookKey.F12,
+    // Special keys
+    space: UiohookKey.Space,
+    tab: UiohookKey.Tab,
+    enter: UiohookKey.Enter,
+    return: UiohookKey.Enter,
+    backspace: UiohookKey.Backspace,
+    delete: UiohookKey.Delete,
+    escape: UiohookKey.Escape,
+    esc: UiohookKey.Escape,
+    up: UiohookKey.ArrowUp,
+    down: UiohookKey.ArrowDown,
+    left: UiohookKey.ArrowLeft,
+    right: UiohookKey.ArrowRight,
 
-  // Letters (A-Z) - uiohook uses virtual keycodes
-  a: UiohookKey.A,
-  b: UiohookKey.B,
-  c: UiohookKey.C,
-  d: UiohookKey.D,
-  e: UiohookKey.E,
-  f: UiohookKey.F,
-  g: UiohookKey.G,
-  h: UiohookKey.H,
-  i: UiohookKey.I,
-  j: UiohookKey.J,
-  k: UiohookKey.K,
-  l: UiohookKey.L,
-  m: UiohookKey.M,
-  n: UiohookKey.N,
-  o: UiohookKey.O,
-  p: UiohookKey.P,
-  q: UiohookKey.Q,
-  r: UiohookKey.R,
-  s: UiohookKey.S,
-  t: UiohookKey.T,
-  u: UiohookKey.U,
-  v: UiohookKey.V,
-  w: UiohookKey.W,
-  x: UiohookKey.X,
-  y: UiohookKey.Y,
-  z: UiohookKey.Z,
+    // Function keys
+    f1: UiohookKey.F1,
+    f2: UiohookKey.F2,
+    f3: UiohookKey.F3,
+    f4: UiohookKey.F4,
+    f5: UiohookKey.F5,
+    f6: UiohookKey.F6,
+    f7: UiohookKey.F7,
+    f8: UiohookKey.F8,
+    f9: UiohookKey.F9,
+    f10: UiohookKey.F10,
+    f11: UiohookKey.F11,
+    f12: UiohookKey.F12,
 
-  // Numbers
-  "0": UiohookKey["0"],
-  "1": UiohookKey["1"],
-  "2": UiohookKey["2"],
-  "3": UiohookKey["3"],
-  "4": UiohookKey["4"],
-  "5": UiohookKey["5"],
-  "6": UiohookKey["6"],
-  "7": UiohookKey["7"],
-  "8": UiohookKey["8"],
-  "9": UiohookKey["9"],
-};
+    // Letters (A-Z) - uiohook uses virtual keycodes
+    a: UiohookKey.A,
+    b: UiohookKey.B,
+    c: UiohookKey.C,
+    d: UiohookKey.D,
+    e: UiohookKey.E,
+    f: UiohookKey.F,
+    g: UiohookKey.G,
+    h: UiohookKey.H,
+    i: UiohookKey.I,
+    j: UiohookKey.J,
+    k: UiohookKey.K,
+    l: UiohookKey.L,
+    m: UiohookKey.M,
+    n: UiohookKey.N,
+    o: UiohookKey.O,
+    p: UiohookKey.P,
+    q: UiohookKey.Q,
+    r: UiohookKey.R,
+    s: UiohookKey.S,
+    t: UiohookKey.T,
+    u: UiohookKey.U,
+    v: UiohookKey.V,
+    w: UiohookKey.W,
+    x: UiohookKey.X,
+    y: UiohookKey.Y,
+    z: UiohookKey.Z,
+
+    // Numbers
+    "0": UiohookKey["0"],
+    "1": UiohookKey["1"],
+    "2": UiohookKey["2"],
+    "3": UiohookKey["3"],
+    "4": UiohookKey["4"],
+    "5": UiohookKey["5"],
+    "6": UiohookKey["6"],
+    "7": UiohookKey["7"],
+    "8": UiohookKey["8"],
+    "9": UiohookKey["9"],
+  };
+}
 
 /**
  * Parses an Electron accelerator string into uiohook keycodes.
  * Example: "CommandOrControl+Shift+Space" -> [Meta/Ctrl, Shift, Space]
+ *
+ * @param accelerator - The accelerator string to parse
+ * @param UiohookKey - The UiohookKey constants from the loaded module
+ * @returns Array of keycodes
  */
-function parseAccelerator(accelerator: string): number[] {
+function parseAccelerator(accelerator: string, UiohookKey: UiohookModule["UiohookKey"]): number[] {
+  // Build the map lazily if not already built
+  if (!acceleratorToKeycodeMap) {
+    acceleratorToKeycodeMap = buildAcceleratorToKeycodeMap(UiohookKey);
+  }
+
   const parts = accelerator.toLowerCase().split("+");
   const keycodes: number[] = [];
 
@@ -216,7 +259,7 @@ function parseAccelerator(accelerator: string): number[] {
       continue;
     }
 
-    const keycode = ACCELERATOR_TO_KEYCODE[trimmed];
+    const keycode = acceleratorToKeycodeMap[trimmed];
     if (keycode !== undefined) {
       keycodes.push(keycode);
     }
@@ -234,24 +277,39 @@ class HotkeyManagerImpl implements HotkeyManagerService {
   private readonly emitter: EventEmitter;
   private readonly registeredHotkeys: Map<string, RegisteredHotkey> = new Map();
   private uiohookStarted = false;
+  private uiohookListenersSetup = false;
   private currentlyPressedKeys: Set<number> = new Set();
 
   constructor() {
     this.logger = getLogger().child({ component: "HotkeyManager" });
     this.emitter = new EventEmitter();
-    this.setupUiohookListeners();
     this.setupCleanup();
   }
 
+  /**
+   * Sets up uiohook event listeners.
+   * Called lazily after uiohook is loaded.
+   */
   private setupUiohookListeners(): void {
-    uIOhook.on("keydown", (e) => {
+    if (this.uiohookListenersSetup) {
+      return;
+    }
+
+    const uiohook = getUiohook();
+    if (!uiohook) {
+      return;
+    }
+
+    uiohook.uIOhook.on("keydown", (e) => {
       this.currentlyPressedKeys.add(e.keycode);
     });
 
-    uIOhook.on("keyup", (e) => {
+    uiohook.uIOhook.on("keyup", (e) => {
       this.currentlyPressedKeys.delete(e.keycode);
       this.handleKeyUp(e.keycode);
     });
+
+    this.uiohookListenersSetup = true;
   }
 
   private setupCleanup(): void {
@@ -298,15 +356,43 @@ class HotkeyManagerImpl implements HotkeyManagerService {
       }
     }
 
+    // Lazy-load uiohook-napi
+    let uiohook: UiohookModule;
+    try {
+      uiohook = await loadUiohook();
+      this.logger.debug("uiohook-napi loaded successfully");
+    } catch (error) {
+      this.logger.error("Failed to load uiohook-napi", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      const errorEvent: HotkeyErrorEvent = {
+        message: `Failed to load native keyboard hook module: ${error instanceof Error ? error.message : String(error)}`,
+        code: "UIOHOOK_ERROR",
+      };
+      this.emitter.emit("error", errorEvent);
+      return false;
+    }
+
+    // Setup listeners now that uiohook is loaded
+    this.setupUiohookListeners();
+
     // Register voice input hotkey
-    const voiceSuccess = this.registerSingleHotkey(config.voiceInput, "voiceInput");
+    const voiceSuccess = this.registerSingleHotkey(
+      config.voiceInput,
+      "voiceInput",
+      uiohook.UiohookKey
+    );
     if (!voiceSuccess) {
       return false;
     }
 
     // Register text input hotkey if provided
     if (config.textInput) {
-      const textSuccess = this.registerSingleHotkey(config.textInput, "textInput");
+      const textSuccess = this.registerSingleHotkey(
+        config.textInput,
+        "textInput",
+        uiohook.UiohookKey
+      );
       if (!textSuccess) {
         // Unregister voice hotkey if text registration fails
         globalShortcut.unregister(config.voiceInput);
@@ -318,7 +404,7 @@ class HotkeyManagerImpl implements HotkeyManagerService {
     // Start uiohook for key up detection if not already started
     if (!this.uiohookStarted) {
       try {
-        uIOhook.start();
+        uiohook.uIOhook.start();
         this.uiohookStarted = true;
         this.logger.debug("uiohook started for key up detection");
       } catch (error) {
@@ -344,7 +430,8 @@ class HotkeyManagerImpl implements HotkeyManagerService {
 
   private registerSingleHotkey(
     accelerator: string,
-    hotkeyType: "voiceInput" | "textInput"
+    hotkeyType: HotkeyType,
+    UiohookKey: UiohookModule["UiohookKey"]
   ): boolean {
     // Try to register with Electron's globalShortcut
     const success = globalShortcut.register(accelerator, () => {
@@ -367,7 +454,7 @@ class HotkeyManagerImpl implements HotkeyManagerService {
     }
 
     // Parse accelerator for key up detection
-    const keycodes = parseAccelerator(accelerator);
+    const keycodes = parseAccelerator(accelerator, UiohookKey);
 
     const registeredHotkey: RegisteredHotkey = {
       accelerator,
@@ -381,7 +468,7 @@ class HotkeyManagerImpl implements HotkeyManagerService {
     return true;
   }
 
-  private handleHotkeyActivated(accelerator: string, hotkeyType: "voiceInput" | "textInput"): void {
+  private handleHotkeyActivated(accelerator: string, hotkeyType: HotkeyType): void {
     const hotkey = this.registeredHotkeys.get(accelerator);
     if (hotkey) {
       hotkey.isPressed = true;
@@ -411,16 +498,19 @@ class HotkeyManagerImpl implements HotkeyManagerService {
 
     this.registeredHotkeys.clear();
 
-    // Stop uiohook
+    // Stop uiohook if it was started
     if (this.uiohookStarted) {
-      try {
-        uIOhook.stop();
-        this.uiohookStarted = false;
-        this.logger.debug("uiohook stopped");
-      } catch (error) {
-        this.logger.warn("Failed to stop uiohook", {
-          error: error instanceof Error ? error.message : String(error),
-        });
+      const uiohook = getUiohook();
+      if (uiohook) {
+        try {
+          uiohook.uIOhook.stop();
+          this.uiohookStarted = false;
+          this.logger.debug("uiohook stopped");
+        } catch (error) {
+          this.logger.warn("Failed to stop uiohook", {
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       }
     }
 
@@ -475,6 +565,9 @@ let hotkeyManagerInstance: HotkeyManagerImpl | null = null;
 /**
  * Initializes the global hotkey manager instance.
  * Must be called inside `app.whenReady()` after the logger has been initialized.
+ *
+ * Note: This does NOT load the uiohook-napi native module. The module is
+ * lazy-loaded when registerHotkeys() is called.
  */
 export function initializeHotkeyManager(): HotkeyManagerService {
   if (hotkeyManagerInstance) {
@@ -506,4 +599,7 @@ export function resetHotkeyManager(): void {
     hotkeyManagerInstance.unregisterAll();
   }
   hotkeyManagerInstance = null;
+  // Also reset the cached uiohook module and keycode map for clean testing
+  uiohookModule = null;
+  acceleratorToKeycodeMap = null;
 }
