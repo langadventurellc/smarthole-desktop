@@ -8,4 +8,7 @@ if git diff --staged --name-only | grep -E '\.(ts|tsx|js|jsx)$' > /dev/null; the
   mise run lint
   mise run type-check
   mise run test
+
+  echo "Running smoke test to verify application builds and starts..."
+  mise run smoke-test
 fi
