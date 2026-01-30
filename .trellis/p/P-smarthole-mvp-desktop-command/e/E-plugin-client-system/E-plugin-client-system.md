@@ -35,7 +35,9 @@ affectedFiles:
     message delivery service: added import, added messageDelivery to wsState,
     initialized service after registration handler, wired up response handling
     in WebSocket message event handler; Registered message delivery IPC handlers
-    using registerMessageDeliveryHandlers inside app.whenReady()."
+    using registerMessageDeliveryHandlers inside app.whenReady().; Registered
+    client status IPC handlers and subscribed to registry events for real-time
+    broadcasts"
   package.json: Added @types/ws as a dev dependency (ws was already installed)
   src/types/ipc.ts: Added WEBSOCKET_STATUS_GET and WEBSOCKET_STATUS_CHANGED IPC
     channels, WebSocketServerState type, WebSocketServerStatus interface,
@@ -44,7 +46,9 @@ affectedFiles:
     MESSAGE_SEND_MULTIPLE, MESSAGE_GET_STATUS, MESSAGE_GET_RECENT),
     IpcDeliveryResult, IpcDeliveryStatus, IpcRoutedMessage types for IPC
     serialization, and payload/response types for all new channels. Updated
-    IpcPayloadMap and IpcResponseMap.
+    IpcPayloadMap and IpcResponseMap.; Added 4 client status IPC channels,
+    ClientSummary, ClientDetails, ClientGetDetailsPayload, and
+    ClientStatusChangedPayload types, plus payload/response map entries
   src/ipc/websocket-status-handler.ts: Created new IPC handler with
     buildWebSocketStatus helper function, createWebSocketStatusHandler factory
     function, and broadcastWebSocketStatusChange for pushing status updates to
@@ -54,12 +58,15 @@ affectedFiles:
   src/preload.ts: "Added getWebSocketStatus() and
     onWebSocketStatusChange(callback) methods to the electronAPI; Added 4 new
     methods to electronAPI: sendMessage, sendMessageMultiple, getMessageStatus,
-    getRecentDeliveries with full TypeScript types."
+    getRecentDeliveries with full TypeScript types.; Added getClientCount,
+    getClientList, getClientDetails, and onClientStatusChange methods to the
+    preload API"
   src/types/ipc.test.ts: Updated tests to include new WebSocket channels,
     increased channel count from 7 to 9, and updated naming convention regex to
     allow domain:action:sub pattern; Updated test for channel count (9 to 13),
     updated naming convention regex to allow camelCase actions, added test for
-    new message delivery channels.
+    new message delivery channels.; Updated channel count test and added tests
+    for new client status channels
   src/types/client-registry.ts: Created new type definitions file with
     RegistryClient, RegistryClientInfo, RegistrationSuccess,
     RegistrationFailure, RegistrationResponse, RegistrationErrorCode,
@@ -112,6 +119,13 @@ affectedFiles:
   CLAUDE.md: Updated project structure to include message-delivery in services
     list, added link to new message-delivery.md documentation in Detailed
     Documentation section
+  src/ipc/client-status-handler.ts: Created new IPC handler file with
+    createClientCountHandler, createClientListHandler,
+    createClientDetailsHandler, broadcastClientStatusChange,
+    createRegisteredEventHandler, and createUnregisteredEventHandler functions
+  src/ipc/client-status-handler.test.ts: Added comprehensive tests for all handler
+    functions and broadcast behavior (14 tests)
+  src/ipc/index.ts: Added export for client-status-handler module
 log: []
 schema: v1.0
 childrenIds:

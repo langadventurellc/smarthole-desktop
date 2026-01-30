@@ -48,6 +48,12 @@ export const IPC_CHANNELS = {
   MESSAGE_SEND_MULTIPLE: "message:sendMultiple", // Send message to multiple clients
   MESSAGE_GET_STATUS: "message:getStatus", // Get delivery status for a message
   MESSAGE_GET_RECENT: "message:getRecent", // Get recent delivery history
+
+  // Client status channels
+  CLIENTS_GET_COUNT: "clients:getCount", // Get number of registered clients
+  CLIENTS_GET_LIST: "clients:getList", // Get list of client summaries
+  CLIENTS_GET_DETAILS: "clients:getDetails", // Get full details for a specific client
+  CLIENTS_STATUS_CHANGED: "clients:statusChanged", // Main -> Renderer broadcast
 } as const;
 
 /**
@@ -302,6 +308,61 @@ export interface MessageSendMultipleResponse {
 }
 
 // ============================================================================
+// Client Status IPC Types
+// ============================================================================
+
+/**
+ * Minimal client info for list view.
+ * Contains only the essential fields for displaying a client list.
+ */
+export interface ClientSummary {
+  /** Client-provided unique name */
+  name: string;
+  /** Free-form description for display */
+  description: string;
+}
+
+/**
+ * Full client details for detailed view.
+ * Mirrors RegistryClientInfo for IPC transport.
+ */
+export interface ClientDetails {
+  /** Server-assigned unique identifier */
+  id: string;
+  /** Client-provided unique name */
+  name: string;
+  /** Free-form description */
+  description: string;
+  /** Optional client version */
+  version?: string;
+  /** Optional structured capability hints */
+  capabilities?: string[];
+  /** ISO 8601 timestamp when the client registered */
+  registeredAt: string;
+}
+
+/**
+ * Payload for clients:getDetails IPC channel.
+ */
+export interface ClientGetDetailsPayload {
+  /** The client name to look up */
+  clientName: string;
+}
+
+/**
+ * Payload broadcast when client status changes.
+ * Sent from main process to all renderer processes.
+ */
+export interface ClientStatusChangedPayload {
+  /** The type of change that occurred */
+  event: "registered" | "unregistered";
+  /** The client that changed */
+  client: ClientSummary;
+  /** Current count of registered clients */
+  count: number;
+}
+
+// ============================================================================
 // IPC Type Maps (for type-safe handlers)
 // ============================================================================
 
@@ -326,6 +387,10 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.MESSAGE_SEND_MULTIPLE]: MessageSendMultiplePayload;
   [IPC_CHANNELS.MESSAGE_GET_STATUS]: MessageGetStatusPayload;
   [IPC_CHANNELS.MESSAGE_GET_RECENT]: MessageGetRecentPayload;
+  [IPC_CHANNELS.CLIENTS_GET_COUNT]: void; // No payload needed
+  [IPC_CHANNELS.CLIENTS_GET_LIST]: void; // No payload needed
+  [IPC_CHANNELS.CLIENTS_GET_DETAILS]: ClientGetDetailsPayload;
+  [IPC_CHANNELS.CLIENTS_STATUS_CHANGED]: ClientStatusChangedPayload;
 }
 
 /**
@@ -343,6 +408,9 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.MESSAGE_SEND_MULTIPLE]: MessageSendMultipleResponse;
   [IPC_CHANNELS.MESSAGE_GET_STATUS]: IpcDeliveryStatus | null;
   [IPC_CHANNELS.MESSAGE_GET_RECENT]: IpcDeliveryStatus[];
+  [IPC_CHANNELS.CLIENTS_GET_COUNT]: number;
+  [IPC_CHANNELS.CLIENTS_GET_LIST]: ClientSummary[];
+  [IPC_CHANNELS.CLIENTS_GET_DETAILS]: ClientDetails | null;
 }
 
 // ============================================================================

@@ -23,6 +23,13 @@ import {
   buildWebSocketStatus,
 } from "./ipc/websocket-status-handler";
 import { registerMessageDeliveryHandlers } from "./ipc/message-delivery-handlers";
+import {
+  createClientCountHandler,
+  createClientListHandler,
+  createClientDetailsHandler,
+  createRegisteredEventHandler,
+  createUnregisteredEventHandler,
+} from "./ipc/client-status-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -250,6 +257,28 @@ app.whenReady().then(async () => {
       wsLogger
     )
   );
+
+  // Register client status IPC handlers
+  const clientStatusLogger = logger.child({ component: "ClientStatusIPC" });
+  const registryGetter = (): ReturnType<typeof getClientRegistry> => getClientRegistry();
+
+  ipcMain.handle(
+    IPC_CHANNELS.CLIENTS_GET_COUNT,
+    createClientCountHandler(registryGetter, clientStatusLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.CLIENTS_GET_LIST,
+    createClientListHandler(registryGetter, clientStatusLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.CLIENTS_GET_DETAILS,
+    createClientDetailsHandler(registryGetter, clientStatusLogger)
+  );
+
+  // Subscribe to registry events to broadcast status changes to renderer
+  const registry = getClientRegistry();
+  registry.on("registered", createRegisteredEventHandler(registryGetter));
+  registry.on("unregistered", createUnregisteredEventHandler(registryGetter));
 
   // Register message delivery IPC handlers
   const messageLogger = logger.child({ component: "MessageDeliveryIPC" });

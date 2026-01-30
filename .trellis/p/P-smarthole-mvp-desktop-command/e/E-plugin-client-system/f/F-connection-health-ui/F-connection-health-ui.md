@@ -1,15 +1,35 @@
 ---
 id: F-connection-health-ui
 title: Connection Health & UI Integration
-status: open
+status: in-progress
 priority: medium
 parent: E-plugin-client-system
 prerequisites:
   - F-client-registration-registry
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/ipc.ts: Added 4 client status IPC channels, ClientSummary,
+    ClientDetails, ClientGetDetailsPayload, and ClientStatusChangedPayload
+    types, plus payload/response map entries
+  src/ipc/client-status-handler.ts: Created new IPC handler file with
+    createClientCountHandler, createClientListHandler,
+    createClientDetailsHandler, broadcastClientStatusChange,
+    createRegisteredEventHandler, and createUnregisteredEventHandler functions
+  src/ipc/client-status-handler.test.ts: Added comprehensive tests for all handler
+    functions and broadcast behavior (14 tests)
+  src/ipc/index.ts: Added export for client-status-handler module
+  src/main.ts: Registered client status IPC handlers and subscribed to registry
+    events for real-time broadcasts
+  src/preload.ts: Added getClientCount, getClientList, getClientDetails, and
+    onClientStatusChange methods to the preload API
+  src/types/ipc.test.ts: Updated channel count test and added tests for new client status channels
+log:
+  - "Started implementation. Created feature branch
+    feature/F-connection-health-ui. Execution order:
+    T-implement-client-status-ipc → T-integrate-client-connection"
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-implement-client-status-ipc
+  - T-integrate-client-connection
 created: 2026-01-30T06:24:55.457Z
 updated: 2026-01-30T06:24:55.457Z
 ---
