@@ -36,11 +36,41 @@ log:
     2. T-implement-input-state (no prerequisites) 
 
     3. T-implement-hotkey-and-input (depends on #1 and #2)
+  - >-
+    Completed T-implement-hotkey-manager:
+
+    - Created src/services/hotkey-manager.ts with singleton pattern
+
+    - Uses Electron globalShortcut for key down, uiohook-napi for key up
+
+    - EventEmitter events: hotkey:activated, hotkey:released, error
+
+    - macOS accessibility permission handling
+
+    - 13 unit tests passing
+
+
+    Completed T-implement-input-state:
+
+    - Created src/types/input.ts with InputState enum and InputStateInfo
+    interface  
+
+    - Created src/services/input-state.ts with validated state machine
+
+    - Transitions: IDLE→RECORDING, RECORDING→PROCESSING, RECORDING→IDLE,
+    PROCESSING→IDLE
+
+    - EventEmitter events: stateChanged, modeChanged
+
+    - 21 unit tests passing
+
+
+    Both tasks passed code review. Ready to commit.
 schema: v1.0
 childrenIds:
   - T-implement-hotkey-and-input
-  - T-implement-input-state
   - T-implement-hotkey-manager
+  - T-implement-input-state
 created: 2026-01-30T22:14:48.821Z
 updated: 2026-01-30T22:14:48.821Z
 ---
