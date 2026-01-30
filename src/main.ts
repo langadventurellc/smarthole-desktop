@@ -3,7 +3,7 @@ import { registerProcessErrorHandlers } from "./utils/process-error-handlers";
 import { initializeLogger, Logger } from "./services/logger";
 import { initializeNotificationService } from "./services/notifications";
 import { initializeNotificationQueue, getNotificationQueue } from "./services/notification-queue";
-import { initializeClientRegistry } from "./services/client-registry";
+import { initializeClientRegistry, getClientRegistry } from "./services/client-registry";
 import {
   initializeWebSocketServer,
   shutdownWebSocketServer,
@@ -161,7 +161,32 @@ app.whenReady().then(async () => {
     wsState.server.on("connection", () => {
       notifyWebSocketStatusChange();
     });
-    wsState.server.on("disconnection", () => {
+    wsState.server.on("disconnection", (info, code, reason) => {
+      // Calculate connection duration
+      const durationMs = Date.now() - info.connectedAt.getTime();
+      const durationSec = Math.round(durationMs / 1000);
+
+      // Clean up client from registry if they were registered
+      const registry = getClientRegistry();
+      const wasRegistered = registry.unregisterById(info.id, "disconnect");
+
+      if (wasRegistered) {
+        logger.info("Registered client disconnected", {
+          connectionId: info.id,
+          durationSeconds: durationSec,
+          code,
+          reason: reason || "unknown",
+        });
+      } else {
+        // Client disconnected without having registered (or registration failed)
+        logger.debug("Unregistered connection closed", {
+          connectionId: info.id,
+          durationSeconds: durationSec,
+          code,
+          reason: reason || "unknown",
+        });
+      }
+
       notifyWebSocketStatusChange();
     });
     wsState.server.on("error", () => {

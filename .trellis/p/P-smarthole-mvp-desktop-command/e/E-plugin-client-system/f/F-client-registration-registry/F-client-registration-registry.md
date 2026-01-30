@@ -1,7 +1,7 @@
 ---
 id: F-client-registration-registry
 title: Client Registration & Registry
-status: in-progress
+status: done
 priority: high
 parent: E-plugin-client-system
 prerequisites:
@@ -30,8 +30,13 @@ affectedFiles:
   src/services/websocket-server.ts: Added 'message' event to
     WebSocketServerEvents, updated 'connection' event signature, added message
     handler in handleConnection method.
-  src/main.ts: Added client registry and registration handler initialization,
-    wired up message event to registration handler.
+  src/main.ts: "Added client registry and registration handler initialization,
+    wired up message event to registration handler.; Added getClientRegistry
+    import. Modified WebSocket 'disconnection' event handler to: (1) calculate
+    connection duration, (2) call registry.unregisterById() to clean up
+    registered clients, (3) log disconnection with client details including
+    duration, code, and reason. Different log levels for registered vs
+    unregistered clients."
 log:
   - "Started implementation. Created feature branch
     feature/F-client-registration-registry. Execution order:
@@ -41,6 +46,12 @@ log:
     includes TypeScript types for registration system and ClientRegistry service
     with EventEmitter pattern, dual-map storage, and 14 unit tests. Review
     passed with no blocking issues.
+  - Completed T-implement-registration. Committed as 443089a. Implementation
+    includes RegistrationHandler service with message parsing, validation, and
+    response protocol. Added 'message' event to WebSocket server and wired up
+    registration handler in main process. Review passed with approval. 13 unit
+    tests added.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
   - T-implement-disconnection

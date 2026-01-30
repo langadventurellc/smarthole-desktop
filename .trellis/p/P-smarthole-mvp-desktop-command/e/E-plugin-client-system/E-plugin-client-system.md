@@ -22,12 +22,16 @@ affectedFiles:
     connection tracking (track connections, remove on disconnect, emit events,
     get by ID) and heartbeat monitoring (lastActivity updates, event
     unsubscription)
-  src/main.ts: Integrated WebSocket server initialization in app.whenReady() and
+  src/main.ts: "Integrated WebSocket server initialization in app.whenReady() and
     shutdown in will-quit event; Added WebSocket state tracking with wsState
     object, status change broadcasting on connection events, and registered
     WebSocket status IPC handler with ipcMain.handle(); Added client registry
     and registration handler initialization, wired up message event to
-    registration handler.
+    registration handler.; Added getClientRegistry import. Modified WebSocket
+    'disconnection' event handler to: (1) calculate connection duration, (2)
+    call registry.unregisterById() to clean up registered clients, (3) log
+    disconnection with client details including duration, code, and reason.
+    Different log levels for registered vs unregistered clients."
   package.json: Added @types/ws as a dev dependency (ws was already installed)
   src/types/ipc.ts: Added WEBSOCKET_STATUS_GET and WEBSOCKET_STATUS_CHANGED IPC
     channels, WebSocketServerState type, WebSocketServerStatus interface,

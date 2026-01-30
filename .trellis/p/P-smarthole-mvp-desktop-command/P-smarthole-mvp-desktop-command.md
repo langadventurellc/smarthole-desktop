@@ -125,7 +125,12 @@ affectedFiles:
     WebSocket state tracking with wsState object, status change broadcasting on
     connection events, and registered WebSocket status IPC handler with
     ipcMain.handle(); Added client registry and registration handler
-    initialization, wired up message event to registration handler."
+    initialization, wired up message event to registration handler.; Added
+    getClientRegistry import. Modified WebSocket 'disconnection' event handler
+    to: (1) calculate connection duration, (2) call registry.unregisterById() to
+    clean up registered clients, (3) log disconnection with client details
+    including duration, code, and reason. Different log levels for registered vs
+    unregistered clients."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
