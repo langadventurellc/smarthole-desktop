@@ -25,6 +25,17 @@ affectedFiles:
     lifecycle, show (positioning, focus, placeholder, events), hide (window,
     input clearing, focus restoration), isVisible, event
     subscription/unsubscription, and getWindow accessor
+  src/preload-popup.ts: Created preload script with PopupAPI exposing submit,
+    dismiss, notifyFocused methods and onPlaceholderChange, onClear event
+    listeners via contextBridge
+  src/popup/index.html: Created minimal HTML entry point for popup window with
+    module script reference
+  src/popup/popup.tsx: Created React component with auto-focus, keyboard handling
+    (Enter submits, Escape dismisses), placeholder/clear subscriptions
+  src/popup/popup.css: Created Spotlight-like styling with semi-transparent
+    background, blur, dark mode and high contrast support
+  src/types/electron.d.ts: Added PopupAPI type import and Window.popupAPI
+    declaration for type-safe popup renderer code
 log:
   - >-
     Started feature implementation. Created feature branch
@@ -93,13 +104,59 @@ log:
 
 
     Ready for implementation in dependency order.
+  - >-
+    Completed T-create-text-input-popup:
+
+    - Created src/windows/text-input-popup.ts with singleton
+    TextInputPopupService
+
+    - Screen positioning centered on active display using screen API
+
+    - Focus management with previous window restoration
+
+    - Event emitter for submitted, dismissed, focused events
+
+    - 20 unit tests covering service lifecycle and window operations
+
+    - Commit: 0c5a107
+
+
+    Next tasks available:
+
+    - T-create-popup-preload-script (depends on T-add-text-input-popup-ipc which
+    is done)
+
+    - T-add-text-input-ipc-handlers (depends on T-add-text-input-popup-ipc and
+    T-create-text-input-popup, both now done)
+  - >-
+    Completed T-create-text-input-popup:
+
+    - Created src/windows/text-input-popup.ts with singleton pattern
+
+    - Created src/windows/index.ts for module exports
+
+    - Added 20 unit tests for service lifecycle, show/hide, positioning, focus
+    management
+
+    - BrowserWindow configuration: frameless, transparent, always-on-top
+
+    - Screen positioning centers on active display using cursor point
+
+    - Focus management stores and restores previous window
+
+    - EventEmitter for submitted, dismissed, focused events
+
+    - Path resolution for dev/prod environments
+
+
+    Commit created. Moving to next task: T-create-popup-preload-script
 schema: v1.0
 childrenIds:
   - T-add-text-input-ipc-handlers
   - T-create-popup-preload-script
-  - T-create-text-input-popup
   - T-update-build-configuration
   - T-add-text-input-popup-ipc
+  - T-create-text-input-popup
 created: 2026-01-30T22:15:30.255Z
 updated: 2026-01-30T22:15:30.255Z
 ---

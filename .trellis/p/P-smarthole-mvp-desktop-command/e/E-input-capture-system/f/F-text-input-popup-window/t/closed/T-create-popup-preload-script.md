@@ -1,13 +1,72 @@
 ---
 id: T-create-popup-preload-script
 title: Create popup preload script and renderer UI
-status: open
+status: done
 priority: high
 parent: F-text-input-popup-window
 prerequisites:
   - T-add-text-input-popup-ipc
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/preload-popup.ts: Created preload script with PopupAPI exposing submit,
+    dismiss, notifyFocused methods and onPlaceholderChange, onClear event
+    listeners via contextBridge
+  src/popup/index.html: Created minimal HTML entry point for popup window with
+    module script reference
+  src/popup/popup.tsx: Created React component with auto-focus, keyboard handling
+    (Enter submits, Escape dismisses), placeholder/clear subscriptions
+  src/popup/popup.css: Created Spotlight-like styling with semi-transparent
+    background, blur, dark mode and high contrast support
+  src/types/electron.d.ts: Added PopupAPI type import and Window.popupAPI
+    declaration for type-safe popup renderer code
+log:
+  - >-
+    Implementation completed successfully:
+
+
+    1. Created src/preload-popup.ts with:
+       - submit(text) - Sends TEXT_INPUT_SUBMIT IPC with TextInputSubmitPayload
+       - dismiss() - Sends TEXT_INPUT_DISMISSED IPC
+       - notifyFocused() - Sends TEXT_INPUT_FOCUSED IPC
+       - onPlaceholderChange(callback) - Listens for textInput:placeholder events
+       - onClear(callback) - Listens for textInput:clear events
+       - Exported PopupAPI type for type declarations
+
+    2. Created src/popup/index.html:
+       - Minimal HTML entry point
+       - Module script reference to popup.tsx
+
+    3. Created src/popup/popup.tsx:
+       - PopupInput React component with useState/useEffect/useRef
+       - Auto-focus on mount with notifyFocused notification
+       - Placeholder change subscription
+       - Clear input subscription
+       - Enter key submits text (if non-empty)
+       - Escape key dismisses popup
+       - Input configured with autoComplete/autoCorrect/autoCapitalize/spellCheck disabled
+
+    4. Created src/popup/popup.css:
+       - Spotlight-like styling with frameless appearance
+       - 44px height input with 8px rounded corners
+       - Semi-transparent background with blur effect
+       - Box shadow for floating appearance
+       - Dark mode support via prefers-color-scheme media query
+       - High contrast mode support via prefers-contrast media query
+       - System font stack for native feel
+
+    5. Updated src/types/electron.d.ts:
+       - Added PopupAPI import from preload-popup.ts
+       - Extended Window interface with popupAPI property
+
+    All quality checks pass (lint, format, type-check).
+
+    All 649 tests pass.
+  - Created popup preload script and renderer UI for the text input popup
+    window. Implemented preload-popup.ts with secure IPC bridge (submit,
+    dismiss, notifyFocused, onPlaceholderChange, onClear APIs), popup/index.html
+    entry point, popup/popup.tsx React component with keyboard handling (Enter
+    submits, Escape dismisses), and popup/popup.css with Spotlight-like styling
+    including dark mode and high contrast support. Updated electron.d.ts with
+    PopupAPI type declaration.
 schema: v1.0
 childrenIds: []
 created: 2026-01-30T23:42:11.226Z

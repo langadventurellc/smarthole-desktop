@@ -87,7 +87,8 @@ affectedFiles:
     methods to the preload API; Added onHotkeyActivated, onHotkeyReleased,
     getInputState, and onInputStateChanged APIs to electronAPI"
   src/types/electron.d.ts: Created global Window interface augmentation declaring
-    electronAPI property with ElectronAPI type
+    electronAPI property with ElectronAPI type; Added PopupAPI type import and
+    Window.popupAPI declaration for type-safe popup renderer code
   src/preload.test.ts: Created comprehensive unit tests (29 tests) mocking
     ipcRenderer to verify IPC channels, payload structures, convenience methods,
     and onConfigChanged unsubscribe functionality
@@ -362,6 +363,15 @@ affectedFiles:
     lifecycle, show (positioning, focus, placeholder, events), hide (window,
     input clearing, focus restoration), isVisible, event
     subscription/unsubscription, and getWindow accessor
+  src/preload-popup.ts: Created preload script with PopupAPI exposing submit,
+    dismiss, notifyFocused methods and onPlaceholderChange, onClear event
+    listeners via contextBridge
+  src/popup/index.html: Created minimal HTML entry point for popup window with
+    module script reference
+  src/popup/popup.tsx: Created React component with auto-focus, keyboard handling
+    (Enter submits, Escape dismisses), placeholder/clear subscriptions
+  src/popup/popup.css: Created Spotlight-like styling with semi-transparent
+    background, blur, dark mode and high contrast support
 log: []
 schema: v1.0
 childrenIds:
