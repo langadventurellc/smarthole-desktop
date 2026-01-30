@@ -1,13 +1,82 @@
 ---
 id: T-implement-privacy-aware
 title: Implement privacy-aware logging with sanitization
-status: open
+status: done
 priority: high
 parent: F-logging-system
 prerequisites:
   - T-implement-core-pino-logger
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/services/logger.ts: Added SENSITIVE_PATTERNS and CONTENT_FIELDS constants,
+    isSensitiveKey(), isContentKey(), sanitizeLogData(), sanitizeArray(),
+    applyContentRedaction(), applyContentRedactionArray(), and
+    processLogContext() functions. Modified LoggerWrapper to accept
+    logMessageContent flag and apply sanitization to all log context. Updated
+    initializeLogger() and createLogger() to pass logMessageContent to
+    LoggerWrapper.
+  src/services/logger.test.ts: Added 51 new tests for sanitizeLogData (sensitive
+    pattern detection, non-sensitive data preservation, nested object handling,
+    array handling, mixed data), applyContentRedaction (all content fields,
+    nested objects, arrays, null/undefined handling), and Logger Privacy
+    Integration tests.
+log:
+  - >-
+    Research completed. Reviewed:
+
+    - src/services/logger.ts: Existing logger with LoggerWrapper,
+    initializeLogger(), createLogger(), and LoggerConfig already including
+    logMessageContent flag
+
+    - src/types/config.ts: AppConfig.logMessageContent defined, defaults to
+    false
+
+    - src/services/logger.test.ts: Existing tests (30 tests) using vitest with
+    mocked pino
+
+
+    Implementation plan:
+
+    1. Add SENSITIVE_PATTERNS constant with regex patterns
+
+    2. Add CONTENT_FIELDS constant for fields that represent user content
+
+    3. Implement sanitizeLogData() recursive function
+
+    4. Implement applyContentRedaction() for logMessageContent flag
+
+    5. Modify LoggerWrapper to apply sanitization before logging
+
+    6. Add comprehensive unit tests
+  - >-
+    Implemented privacy-aware logging with sanitization in the logger service.
+    Added:
+
+
+    1. **Sensitive Data Sanitization**: Created `sanitizeLogData()` function
+    that recursively detects and redacts sensitive patterns (api_key, apiKey,
+    password, secret, token, auth, credential, bearer) with case-insensitive
+    matching. Values are replaced with "[REDACTED]".
+
+
+    2. **Content Redaction**: Created `applyContentRedaction()` function that
+    redacts user-generated content fields (content, text, body, input,
+    transcript, etc.) when `logMessageContent: false`. Values are replaced with
+    "[CONTENT_REDACTED]".
+
+
+    3. **Logger Integration**: Modified `LoggerWrapper` to automatically apply
+    sanitization to all log context. The wrapper now accepts and respects the
+    `logMessageContent` configuration flag, which is passed through from
+    `initializeLogger()` and `createLogger()`.
+
+
+    4. **Recursive Processing**: Both sanitization functions handle nested
+    objects and arrays recursively, preserving null/undefined values
+    appropriately.
+
+
+    5. **Unit Tests**: Added 51 new tests covering all sensitive patterns,
+    content fields, nested objects, arrays, and integration with the logger.
 schema: v1.0
 childrenIds: []
 created: 2026-01-30T01:27:46.286Z

@@ -1,15 +1,76 @@
 ---
 id: F-logging-system
 title: Logging System
-status: open
+status: done
 priority: high
 parent: E-foundation-core-infrastructure
 prerequisites:
   - F-core-types-ipc-architecture
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/services/logger.ts: Created main logger implementation with Logger
+    interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
+    file transport with rotation, and child logger support; Added
+    SENSITIVE_PATTERNS and CONTENT_FIELDS constants, isSensitiveKey(),
+    isContentKey(), sanitizeLogData(), sanitizeArray(), applyContentRedaction(),
+    applyContentRedactionArray(), and processLogContext() functions. Modified
+    LoggerWrapper to accept logMessageContent flag and apply sanitization to all
+    log context. Updated initializeLogger() and createLogger() to pass
+    logMessageContent to LoggerWrapper.
+  src/services/index.ts: Created barrel export for services module
+  src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
+    logger configuration, level filtering, and child loggers; Added 51 new tests
+    for sanitizeLogData (sensitive pattern detection, non-sensitive data
+    preservation, nested object handling, array handling, mixed data),
+    applyContentRedaction (all content fields, nested objects, arrays,
+    null/undefined handling), and Logger Privacy Integration tests.
+  package.json: Added pino and pino-pretty dependencies
+  package-lock.json: Updated with new dependencies
+  src/main.ts: Added logger initialization early in startup, created IPC child
+    logger, registered IPC handler for LOG_MESSAGE channel, added application
+    startup logging
+  src/ipc/log-handler.ts: Created new module with createLogMessageHandler() and
+    processLogMessage() functions for handling renderer log messages with
+    payload validation and context enrichment
+  src/ipc/index.ts: Created barrel export for IPC module
+  src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
+    covering handler creation, payload validation, log level mapping, context
+    enrichment, and edge cases
+  src/services/logger.integration.test.ts: Created new integration test file with
+    21 tests covering file writing, log rotation, IPC flow, log level filtering,
+    and privacy features
+log:
+  - "Created feature branch feature/F-logging-system. Verified all 4 tasks exist
+    with correct dependencies. Execution order: T-implement-core-pino-logger →
+    T-implement-privacy-aware → T-implement-ipc-log-handler-in →
+    T-create-integration-tests-for"
+  - Completed T-implement-core-pino-logger. Created src/services/logger.ts with
+    Logger interface, initializeLogger(), getLogger(), createLogger(), file
+    transport with rotation (10MB), and child logger support. 30 tests passing.
+    Committed as af2525e. Proceeding to T-implement-privacy-aware.
+  - Completed T-implement-privacy-aware. Added SENSITIVE_PATTERNS,
+    CONTENT_FIELDS, sanitizeLogData(), applyContentRedaction(), and
+    processLogContext() to logger. LoggerWrapper now applies privacy
+    sanitization to all log calls. 51 new tests (81 total). Committed as
+    df9033c. Proceeding to T-implement-ipc-log-handler-in.
+  - Completed T-implement-ipc-log-handler-in. Added logger initialization in
+    main.ts, created src/ipc/log-handler.ts with createLogMessageHandler() and
+    processLogMessage(). Handler validates payloads, enriches context with
+    source:'renderer' and rendererTimestamp. 32 tests. Committed as 48e6810.
+    Proceeding to T-create-integration-tests-for.
+  - "Auto-completed: All child tasks are complete"
+  - Completed T-create-integration-tests-for. Created
+    src/services/logger.integration.test.ts with 21 integration tests covering
+    file transport, log rotation, IPC flow, log level filtering, and privacy
+    features. All tests use temp directories with proper cleanup. Committed as
+    70d3355. All 4 tasks complete.
+  - Documentation updated (CLAUDE.md and README.md). Feature complete with all 4
+    tasks done, 5 commits on feature branch, 706 tests passing.
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-create-integration-tests-for
+  - T-implement-core-pino-logger
+  - T-implement-ipc-log-handler-in
+  - T-implement-privacy-aware
 created: 2026-01-29T02:20:46.767Z
 updated: 2026-01-29T02:20:46.767Z
 ---

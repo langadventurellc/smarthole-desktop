@@ -90,7 +90,7 @@ affectedFiles:
   src/test-setup.ts: Created vitest setup file for jest-dom matchers
   vitest.config.ts: Updated to use jsdom environment, added React plugin, and setup file
   package.json: Added @testing-library/react, @testing-library/jest-dom, and jsdom
-    dev dependencies
+    dev dependencies; Added pino and pino-pretty dependencies
   src/utils/error-recovery.ts: Created error recovery utilities with
     retryWithBackoff(), withFallback(), withFallbackSync(),
     getRecoveryStrategy(), and isRetryable() functions
@@ -105,7 +105,36 @@ affectedFiles:
     handling, unhandledRejection handling, render-process-gone,
     child-process-gone, options handling, and error wrapping
   src/main.ts: Added import and early registration of process error handlers with
-    onFatalError callback
+    onFatalError callback; Added logger initialization early in startup, created
+    IPC child logger, registered IPC handler for LOG_MESSAGE channel, added
+    application startup logging
+  src/services/logger.ts: Created main logger implementation with Logger
+    interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
+    file transport with rotation, and child logger support; Added
+    SENSITIVE_PATTERNS and CONTENT_FIELDS constants, isSensitiveKey(),
+    isContentKey(), sanitizeLogData(), sanitizeArray(), applyContentRedaction(),
+    applyContentRedactionArray(), and processLogContext() functions. Modified
+    LoggerWrapper to accept logMessageContent flag and apply sanitization to all
+    log context. Updated initializeLogger() and createLogger() to pass
+    logMessageContent to LoggerWrapper.
+  src/services/index.ts: Created barrel export for services module
+  src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
+    logger configuration, level filtering, and child loggers; Added 51 new tests
+    for sanitizeLogData (sensitive pattern detection, non-sensitive data
+    preservation, nested object handling, array handling, mixed data),
+    applyContentRedaction (all content fields, nested objects, arrays,
+    null/undefined handling), and Logger Privacy Integration tests.
+  package-lock.json: Updated with new dependencies
+  src/ipc/log-handler.ts: Created new module with createLogMessageHandler() and
+    processLogMessage() functions for handling renderer log messages with
+    payload validation and context enrichment
+  src/ipc/index.ts: Created barrel export for IPC module
+  src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
+    covering handler creation, payload validation, log level mapping, context
+    enrichment, and edge cases
+  src/services/logger.integration.test.ts: Created new integration test file with
+    21 tests covering file writing, log rotation, IPC flow, log level filtering,
+    and privacy features
 log: []
 schema: v1.0
 childrenIds:
