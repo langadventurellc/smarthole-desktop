@@ -46,11 +46,13 @@ mise run test       # Run tests
 - `src/services/logger.ts` - Centralized logging service using pino
 - `src/services/notifications.ts` - Native OS notification service wrapping Electron's Notification API
 - `src/services/notification-queue.ts` - Notification queue with priority ordering, rate limiting, and coalescing
+- `src/services/websocket-server.ts` - WebSocket server for plugin client connections
 
 ### IPC Handlers
 
 - `src/ipc/log-handler.ts` - Handles log messages from renderer process
 - `src/ipc/notification-handler.ts` - Handles notification requests from renderer process
+- `src/ipc/websocket-status-handler.ts` - Handles WebSocket server status queries from renderer process
 
 ## Logging System
 
@@ -185,6 +187,111 @@ window.electronAPI.notify({
 - **Rate Limiting**: Configurable max per minute and minimum interval
 - **Coalescing**: Similar notifications combined (e.g., "3 occurrences")
 - **Queue Overflow**: Low priority dropped first when queue is full
+
+## WebSocket Server
+
+The application includes a WebSocket server for plugin client connections, providing secure local IPC with external plugins.
+
+### Server Initialization
+
+Initialize the WebSocket server after the logger, inside `app.whenReady()`:
+
+```typescript
+import { initializeWebSocketServer, shutdownWebSocketServer } from "./services/websocket-server";
+
+app.whenReady().then(async () => {
+  // Initialize logger first...
+
+  const wsServer = await initializeWebSocketServer({
+    port: 9473, // Default port
+    host: "127.0.0.1", // Localhost only (security)
+    maxConnections: 100, // Maximum concurrent connections
+  });
+});
+
+// Clean up on app quit
+app.on("will-quit", async () => {
+  await shutdownWebSocketServer();
+});
+```
+
+### Server Features
+
+- **Localhost-only binding**: Server only accepts connections from 127.0.0.1 for security
+- **Connection tracking**: Each connection gets a unique ID and is tracked with metadata (connected time, last activity, remote address)
+- **Heartbeat monitoring**: Ping-pong health checks with configurable intervals (default: 30s interval, 10s timeout)
+- **Graceful shutdown**: Proper cleanup of all connections on app quit
+- **Event-driven**: Emits events for connection, disconnection, and error
+
+### Server Configuration
+
+```typescript
+interface WebSocketServerConfig {
+  port: number; // Default: 9473
+  host: string; // Default: "127.0.0.1"
+  maxConnections: number; // Default: 100
+  heartbeatInterval: number; // Default: 30000ms
+  heartbeatTimeout: number; // Default: 10000ms
+}
+```
+
+### Using the Server from Main Process
+
+```typescript
+import { getWebSocketServer } from "./services/websocket-server";
+
+const wsServer = getWebSocketServer();
+
+// Check server status
+console.log(wsServer.isRunning()); // true if running
+console.log(wsServer.getConnectionCount()); // number of connected clients
+
+// Get all active connections
+const connections = wsServer.getActiveConnections();
+connections.forEach((conn) => {
+  console.log(`Client ${conn.id} connected at ${conn.connectedAt}`);
+});
+
+// Subscribe to events
+wsServer.on("connection", (info) => {
+  console.log(`New client: ${info.id}`);
+});
+
+wsServer.on("disconnection", (info, code, reason) => {
+  console.log(`Client ${info.id} disconnected: ${reason}`);
+});
+```
+
+### Querying Status from Renderer Process
+
+The renderer can query WebSocket server status via the preload API:
+
+```typescript
+// Get current status
+const status = await window.electronAPI.getWebSocketStatus();
+console.log(status.state); // "running" | "stopped" | "error"
+console.log(status.port); // 9473
+console.log(status.activeConnections); // number of connected clients
+
+// Subscribe to status changes
+const unsubscribe = window.electronAPI.onWebSocketStatusChange((status) => {
+  console.log(`Server state: ${status.state}, connections: ${status.activeConnections}`);
+});
+
+// Later: unsubscribe when no longer needed
+unsubscribe();
+```
+
+### Status Object
+
+```typescript
+interface WebSocketServerStatus {
+  state: "running" | "stopped" | "error";
+  port: number;
+  activeConnections: number;
+  error?: string; // Present when state is "error"
+}
+```
 
 ## Guidelines
 

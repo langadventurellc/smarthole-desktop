@@ -53,6 +53,13 @@ log:
     identifiers, event emitters, and heartbeat ping-pong monitoring. Review
     passed with no blocking issues.
   - "Auto-completed: All child tasks are complete"
+  - Completed T-expose-websocket-server. Committed as 8d246d4. Implementation
+    includes IPC handler for status queries, preload API exposure, and status
+    change event broadcasts. Review passed with no blocking issues. All 3 tasks
+    now complete.
+  - "Documentation updated: Added comprehensive WebSocket Server section to
+    CLAUDE.md covering server initialization, configuration, main process usage,
+    renderer process status queries, and status object interface."
 schema: v1.0
 childrenIds:
   - T-expose-websocket-server
