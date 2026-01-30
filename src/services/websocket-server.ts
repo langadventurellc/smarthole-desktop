@@ -5,7 +5,7 @@
  * @see F-websocket-server-foundation feature specification
  */
 
-import { WebSocketServer, WebSocket } from "ws";
+import { WebSocketServer, WebSocket, RawData } from "ws";
 import { IncomingMessage } from "http";
 import { EventEmitter } from "events";
 import { getLogger, Logger } from "./logger";
@@ -60,11 +60,13 @@ interface TrackedWebSocket extends WebSocket {
  */
 export interface WebSocketServerEvents {
   /** Emitted when a new client connects */
-  connection: (info: ConnectionInfo) => void;
+  connection: (info: ConnectionInfo, ws: WebSocket) => void;
   /** Emitted when a client disconnects */
   disconnection: (info: ConnectionInfo, code: number, reason: string) => void;
   /** Emitted when a client connection encounters an error */
   error: (info: ConnectionInfo, error: Error) => void;
+  /** Emitted when a message is received from a client */
+  message: (info: ConnectionInfo, ws: WebSocket, data: RawData) => void;
 }
 
 /**
@@ -515,7 +517,16 @@ class WebSocketServerImpl implements WebSocketServerService {
     });
 
     // Emit connection event
-    this.emitter.emit("connection", connectionInfo);
+    this.emitter.emit("connection", connectionInfo, ws);
+
+    // Handle incoming messages
+    trackedWs.on("message", (data: RawData) => {
+      const info = this.connections.get(connectionId);
+      if (info) {
+        info.lastActivity = new Date();
+        this.emitter.emit("message", info, ws, data);
+      }
+    });
 
     // Handle pong responses (heartbeat)
     trackedWs.on("pong", () => {

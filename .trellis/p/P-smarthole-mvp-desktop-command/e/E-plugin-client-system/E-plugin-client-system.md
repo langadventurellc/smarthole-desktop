@@ -14,7 +14,9 @@ affectedFiles:
     event emitters for connection/disconnection/error events, TrackedWebSocket
     interface for isAlive flag pattern, getActiveConnections() and
     getConnection() APIs, startHeartbeat/stopHeartbeat/performHeartbeat private
-    methods
+    methods; Added 'message' event to WebSocketServerEvents, updated
+    'connection' event signature, added message handler in handleConnection
+    method.
   src/services/websocket-server.test.ts: Added focused unit tests for
     initialization, lifecycle, and localhost validation; Added 9 new tests for
     connection tracking (track connections, remove on disconnect, emit events,
@@ -23,7 +25,9 @@ affectedFiles:
   src/main.ts: Integrated WebSocket server initialization in app.whenReady() and
     shutdown in will-quit event; Added WebSocket state tracking with wsState
     object, status change broadcasting on connection events, and registered
-    WebSocket status IPC handler with ipcMain.handle()
+    WebSocket status IPC handler with ipcMain.handle(); Added client registry
+    and registration handler initialization, wired up message event to
+    registration handler.
   package.json: Added @types/ws as a dev dependency (ws was already installed)
   src/types/ipc.ts: Added WEBSOCKET_STATUS_GET and WEBSOCKET_STATUS_CHANGED IPC
     channels, WebSocketServerState type, WebSocketServerStatus interface,
@@ -50,10 +54,16 @@ affectedFiles:
     EventEmitter pattern, Map-based storage, register/unregister operations,
     lookup methods, and singleton management (initializeClientRegistry,
     getClientRegistry, resetClientRegistry)
-  src/services/index.ts: Added export for client-registry service
+  src/services/index.ts: Added export for client-registry service; Added export
+    for registration-handler module.
   src/services/client-registry.test.ts: Added 14 unit tests covering
     initialization, registration, unregistration, lookup operations, and clear
     functionality
+  src/services/registration-handler.ts: Created new registration handler service
+    with message parsing, validation, and response sending. Includes singleton
+    pattern with initialize/get/reset functions.
+  src/services/registration-handler.test.ts: Added 13 unit tests covering
+    initialization, message parsing, validation, and registration flow.
 log: []
 schema: v1.0
 childrenIds:

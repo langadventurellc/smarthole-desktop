@@ -3,11 +3,16 @@ import { registerProcessErrorHandlers } from "./utils/process-error-handlers";
 import { initializeLogger, Logger } from "./services/logger";
 import { initializeNotificationService } from "./services/notifications";
 import { initializeNotificationQueue, getNotificationQueue } from "./services/notification-queue";
+import { initializeClientRegistry } from "./services/client-registry";
 import {
   initializeWebSocketServer,
   shutdownWebSocketServer,
   WebSocketServerService,
 } from "./services/websocket-server";
+import {
+  initializeRegistrationHandler,
+  RegistrationHandler,
+} from "./services/registration-handler";
 import { IPC_CHANNELS, LogLevel } from "./types";
 import { createLogMessageHandler } from "./ipc/log-handler";
 import { createNotificationHandler } from "./ipc/notification-handler";
@@ -30,9 +35,11 @@ const WS_DEFAULT_PORT = 9473;
  */
 const wsState: {
   server: WebSocketServerService | null;
+  registrationHandler: RegistrationHandler | null;
   lastError: string | undefined;
 } = {
   server: null,
+  registrationHandler: null,
   lastError: undefined,
 };
 
@@ -129,6 +136,10 @@ app.whenReady().then(async () => {
     minInterval: 1000,
   });
 
+  // Initialize client registry for tracking connected plugin clients
+  initializeClientRegistry();
+  logger.info("Client registry initialized");
+
   // Initialize WebSocket server for plugin client connections
   const wsLogger = logger.child({ component: "WebSocketIPC" });
   try {
@@ -142,6 +153,10 @@ app.whenReady().then(async () => {
       running: wsState.server.isRunning(),
     });
 
+    // Initialize registration handler for processing client registration messages
+    wsState.registrationHandler = initializeRegistrationHandler();
+    logger.info("Registration handler initialized");
+
     // Subscribe to connection events to broadcast status changes
     wsState.server.on("connection", () => {
       notifyWebSocketStatusChange();
@@ -151,6 +166,22 @@ app.whenReady().then(async () => {
     });
     wsState.server.on("error", () => {
       notifyWebSocketStatusChange();
+    });
+
+    // Wire up message handling for registration
+    wsState.server.on("message", (info, ws, data) => {
+      if (wsState.registrationHandler) {
+        const result = wsState.registrationHandler.processMessage(data, {
+          ws,
+          connectionId: info.id,
+        });
+        if (result.handled) {
+          logger.debug("Registration message processed", {
+            connectionId: info.id,
+            registered: result.registered,
+          });
+        }
+      }
     });
   } catch (error) {
     wsState.lastError = error instanceof Error ? error.message : String(error);
