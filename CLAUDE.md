@@ -30,7 +30,7 @@ src/
 ├── preload.ts           # Secure IPC bridge (contextBridge)
 ├── renderer.tsx         # React entry point
 ├── App.tsx              # Main React component
-├── services/            # Core services (logger, notifications, websocket, registry, message-delivery)
+├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state)
 ├── ipc/                 # IPC handlers for main/renderer communication
 └── types/               # TypeScript type definitions
 ```
@@ -71,4 +71,5 @@ src/
 - [Client Registration](docs/client-registration.md) - protocol, validation, registry API
 - [Client Status IPC](docs/client-status.md) - renderer API, tray menu integration, status events
 - [Message Delivery](docs/message-delivery.md) - routing messages to clients, response handling
+- [Global Hotkey System](docs/global-hotkey-system.md) - hotkey registration, input state machine, IPC events
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements

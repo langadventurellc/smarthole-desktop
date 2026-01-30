@@ -15,6 +15,13 @@ import {
 } from "./services/registration-handler";
 import { initializeMessageDelivery, MessageDeliveryService } from "./services/message-delivery";
 import {
+  initializeHotkeyManager,
+  getHotkeyManager,
+  HotkeyManagerService,
+} from "./services/hotkey-manager";
+import { initializeInputState, getInputState, InputStateService } from "./services/input-state";
+import { InputState } from "./types";
+import {
   IPC_CHANNELS,
   LogLevel,
   NotificationPayload,
@@ -36,6 +43,8 @@ import {
   createRegisteredEventHandler,
   createUnregisteredEventHandler,
 } from "./ipc/client-status-handler";
+import { wireHotkeyManagerToIpc } from "./ipc/hotkey-handler";
+import { createInputStateHandler, wireInputStateToIpc } from "./ipc/input-state-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -58,6 +67,17 @@ const wsState: {
   registrationHandler: null,
   messageDelivery: null,
   lastError: undefined,
+};
+
+/**
+ * Mutable state for input services.
+ */
+const inputState: {
+  hotkeyManager: HotkeyManagerService | null;
+  inputStateService: InputStateService | null;
+} = {
+  hotkeyManager: null,
+  inputStateService: null,
 };
 
 /**
@@ -415,6 +435,65 @@ app.whenReady().then(async () => {
   const messageLogger = logger.child({ component: "MessageDeliveryIPC" });
   registerMessageDeliveryHandlers(ipcMain, () => wsState.messageDelivery, messageLogger);
 
+  // Initialize hotkey manager and input state services
+  const hotkeyLogger = logger.child({ component: "HotkeyIPC" });
+  const inputStateLogger = logger.child({ component: "InputStateIPC" });
+
+  // Initialize input state service first (hotkey events will transition it)
+  inputState.inputStateService = initializeInputState();
+  logger.info("Input state service initialized");
+
+  // Wire input state to IPC for state change broadcasts
+  wireInputStateToIpc(inputState.inputStateService, inputStateLogger);
+
+  // Register input state IPC handler
+  const inputStateGetter = (): InputStateService => getInputState();
+  ipcMain.handle(
+    IPC_CHANNELS.INPUT_GET_STATE,
+    createInputStateHandler(inputStateGetter, inputStateLogger)
+  );
+
+  // Initialize hotkey manager
+  inputState.hotkeyManager = initializeHotkeyManager();
+  logger.info("Hotkey manager initialized");
+
+  // Wire hotkey manager to IPC for event broadcasts
+  wireHotkeyManagerToIpc(inputState.hotkeyManager, hotkeyLogger);
+
+  // Wire hotkey events to input state transitions
+  inputState.hotkeyManager.on("hotkey:activated", (event) => {
+    if (event.hotkeyType === "voiceInput") {
+      const stateService = inputState.inputStateService;
+      if (stateService && stateService.canTransitionTo(InputState.RECORDING)) {
+        stateService.transitionTo(InputState.RECORDING);
+        logger.debug("Voice input hotkey activated, transitioned to RECORDING");
+      }
+    }
+  });
+
+  inputState.hotkeyManager.on("hotkey:released", (event) => {
+    if (event.hotkeyType === "voiceInput") {
+      const stateService = inputState.inputStateService;
+      // In push-to-talk mode, releasing the hotkey should transition from RECORDING to PROCESSING
+      if (
+        stateService &&
+        stateService.getCurrentMode() === "push-to-talk" &&
+        stateService.getCurrentState() === InputState.RECORDING
+      ) {
+        stateService.transitionTo(InputState.PROCESSING);
+        logger.debug("Voice input hotkey released, transitioned to PROCESSING");
+      }
+    }
+  });
+
+  inputState.hotkeyManager.on("error", (event) => {
+    logger.error("Hotkey error", {
+      message: event.message,
+      code: event.code,
+      accelerator: event.accelerator,
+    });
+  });
+
   // Register error handlers
   registerProcessErrorHandlers({
     logger,
@@ -444,6 +523,13 @@ app.on("window-all-closed", () => {
 });
 
 app.on("will-quit", async () => {
+  // Clean up hotkey manager (unregisters global shortcuts)
+  try {
+    getHotkeyManager()?.unregisterAll();
+  } catch {
+    // Manager may not be initialized if app quits early
+  }
+
   // Clean up WebSocket server
   try {
     await shutdownWebSocketServer();
