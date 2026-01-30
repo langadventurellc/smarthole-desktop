@@ -52,6 +52,14 @@ log:
     registration handler in main process. Review passed with approval. 13 unit
     tests added.
   - "Auto-completed: All child tasks are complete"
+  - Completed T-implement-disconnection. Committed as d1385be. Implementation
+    wires WebSocket disconnection event to registry cleanup with duration
+    logging. All 3 tasks now complete.
+  - "Documentation updated: Added Client Registration System section to
+    CLAUDE.md with initialization instructions, registration protocol details,
+    name validation rules, error codes, registry usage examples, disconnection
+    handling behavior, and RegistryClientInfo object documentation. Also updated
+    Services list to include client-registry.ts and registration-handler.ts."
 schema: v1.0
 childrenIds:
   - T-implement-disconnection

@@ -47,6 +47,8 @@ mise run test       # Run tests
 - `src/services/notifications.ts` - Native OS notification service wrapping Electron's Notification API
 - `src/services/notification-queue.ts` - Notification queue with priority ordering, rate limiting, and coalescing
 - `src/services/websocket-server.ts` - WebSocket server for plugin client connections
+- `src/services/client-registry.ts` - In-memory registry for tracking connected and registered plugin clients
+- `src/services/registration-handler.ts` - WebSocket message handler for client registration protocol
 
 ### IPC Handlers
 
@@ -290,6 +292,127 @@ interface WebSocketServerStatus {
   port: number;
   activeConnections: number;
   error?: string; // Present when state is "error"
+}
+```
+
+## Client Registration System
+
+The application includes a client registration system for plugin clients to register with SmartHole and provide routing descriptions for the LLM routing agent.
+
+### Registry Initialization
+
+Initialize the client registry and registration handler after the WebSocket server, inside `app.whenReady()`:
+
+```typescript
+import { initializeClientRegistry } from "./services/client-registry";
+import { initializeRegistrationHandler } from "./services/registration-handler";
+
+app.whenReady().then(async () => {
+  // Initialize logger and WebSocket server first...
+
+  const registry = initializeClientRegistry();
+  const registrationHandler = initializeRegistrationHandler();
+});
+```
+
+### Registration Protocol
+
+Clients register by sending a WebSocket message with type `"registration"`:
+
+```typescript
+// Message sent by client
+interface WebSocketRegistrationMessage {
+  type: "registration";
+  payload: {
+    name: string; // Unique identifier (e.g., "notebook", "home-assistant")
+    description: string; // Free-form routing hint for the LLM
+    version?: string; // Optional client version for debugging
+    capabilities?: string[]; // Optional structured capability hints
+  };
+}
+
+// Response sent by server
+interface WebSocketRegistrationResponse {
+  type: "registration_response";
+  payload:
+    | {
+        success: true;
+        clientId: string; // Assigned connection ID
+        message: string; // "Registration successful"
+      }
+    | {
+        success: false;
+        code: RegistrationErrorCode;
+        message: string; // Human-readable error
+      };
+}
+```
+
+### Name Validation Rules
+
+Client names must:
+
+- Start with a letter (a-zA-Z)
+- Contain only alphanumeric characters, hyphens, and underscores
+- Be 64 characters or less
+- Be unique among registered clients
+
+### Error Codes
+
+| Code                  | Description                                     |
+| --------------------- | ----------------------------------------------- |
+| `INVALID_NAME`        | Name doesn't meet validation rules              |
+| `INVALID_DESCRIPTION` | Description is empty or too long (>1024 chars)  |
+| `DUPLICATE_NAME`      | A client with this name is already registered   |
+| `ALREADY_REGISTERED`  | This connection already has a registered client |
+| `VALIDATION_ERROR`    | General validation failure                      |
+
+### Using the Registry from Main Process
+
+```typescript
+import { getClientRegistry } from "./services/client-registry";
+
+const registry = getClientRegistry();
+
+// Check registered clients
+console.log(registry.getClientCount()); // number of registered clients
+console.log(registry.getAllClients()); // array of RegistryClientInfo
+
+// Look up a specific client
+const client = registry.getClient("notebook");
+if (client) {
+  console.log(`${client.name}: ${client.description}`);
+}
+
+// Subscribe to registry events
+registry.on("registered", (event) => {
+  console.log(`Client registered: ${event.client.name}`);
+});
+
+registry.on("unregistered", (event) => {
+  console.log(`Client unregistered: ${event.client.name}, reason: ${event.reason}`);
+});
+```
+
+### Disconnection Handling
+
+When a WebSocket connection closes, the registration handler automatically:
+
+1. Detects the disconnection via the WebSocket server's `disconnection` event
+2. Looks up the connection in the registry by connection ID
+3. Unregisters the client with reason `"disconnect"`
+4. Emits an `"unregistered"` event for any listeners
+
+### RegistryClientInfo Object
+
+```typescript
+interface RegistryClientInfo {
+  id: string; // Server-assigned connection ID
+  name: string; // Client-provided unique name
+  description: string; // Routing description for LLM
+  version?: string; // Optional client version
+  capabilities?: string[]; // Optional capability hints
+  registeredAt: string; // ISO 8601 timestamp
 }
 ```
 
