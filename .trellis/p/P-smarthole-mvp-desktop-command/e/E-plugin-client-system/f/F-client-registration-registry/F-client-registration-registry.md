@@ -1,15 +1,36 @@
 ---
 id: F-client-registration-registry
 title: Client Registration & Registry
-status: open
+status: in-progress
 priority: high
 parent: E-plugin-client-system
 prerequisites:
   - F-websocket-server-foundation
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/client-registry.ts: Created new type definitions file with
+    RegistryClient, RegistryClientInfo, RegistrationSuccess,
+    RegistrationFailure, RegistrationResponse, RegistrationErrorCode,
+    ClientRegisteredEvent, ClientUnregisteredEvent, ClientRegistryEvents,
+    WebSocketRegistrationResponse, and validation helpers
+  src/types/index.ts: Added export for client-registry types
+  src/services/client-registry.ts: Created ClientRegistry service with
+    EventEmitter pattern, Map-based storage, register/unregister operations,
+    lookup methods, and singleton management (initializeClientRegistry,
+    getClientRegistry, resetClientRegistry)
+  src/services/index.ts: Added export for client-registry service
+  src/services/client-registry.test.ts: Added 14 unit tests covering
+    initialization, registration, unregistration, lookup operations, and clear
+    functionality
+log:
+  - "Started implementation. Created feature branch
+    feature/F-client-registration-registry. Execution order:
+    T-implement-typescript-types → T-implement-registration →
+    T-implement-disconnection"
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-implement-disconnection
+  - T-implement-registration
+  - T-implement-typescript-types
 created: 2026-01-30T06:24:55.280Z
 updated: 2026-01-30T06:24:55.280Z
 ---

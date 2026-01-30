@@ -40,6 +40,20 @@ affectedFiles:
   src/types/ipc.test.ts: Updated tests to include new WebSocket channels,
     increased channel count from 7 to 9, and updated naming convention regex to
     allow domain:action:sub pattern
+  src/types/client-registry.ts: Created new type definitions file with
+    RegistryClient, RegistryClientInfo, RegistrationSuccess,
+    RegistrationFailure, RegistrationResponse, RegistrationErrorCode,
+    ClientRegisteredEvent, ClientUnregisteredEvent, ClientRegistryEvents,
+    WebSocketRegistrationResponse, and validation helpers
+  src/types/index.ts: Added export for client-registry types
+  src/services/client-registry.ts: Created ClientRegistry service with
+    EventEmitter pattern, Map-based storage, register/unregister operations,
+    lookup methods, and singleton management (initializeClientRegistry,
+    getClientRegistry, resetClientRegistry)
+  src/services/index.ts: Added export for client-registry service
+  src/services/client-registry.test.ts: Added 14 unit tests covering
+    initialization, registration, unregistration, lookup operations, and clear
+    functionality
 log: []
 schema: v1.0
 childrenIds:
