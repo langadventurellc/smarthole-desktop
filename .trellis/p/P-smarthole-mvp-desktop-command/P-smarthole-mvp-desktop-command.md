@@ -163,6 +163,13 @@ affectedFiles:
     invalid types), valid payload processing, notification enqueuing, error
     handling when queue throws, and edge cases (empty strings, long content,
     special characters).
+  src/services/notifications.integration.test.ts: "Created new integration test
+    file with 28 tests covering full notification system flow: IPC handler ->
+    NotificationQueue -> NotificationService. Tests include full flow
+    validation, high priority immediate display, rate limiting integration,
+    invalid payload rejection, graceful degradation when notifications not
+    supported, coalescing integration, content sanitization, and queue overflow
+    handling."
 log: []
 schema: v1.0
 childrenIds:

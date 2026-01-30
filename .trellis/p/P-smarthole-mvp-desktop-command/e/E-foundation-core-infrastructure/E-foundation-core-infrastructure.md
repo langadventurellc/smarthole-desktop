@@ -1,7 +1,7 @@
 ---
 id: E-foundation-core-infrastructure
 title: Foundation & Core Infrastructure
-status: in-progress
+status: done
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites: []
@@ -163,7 +163,15 @@ affectedFiles:
     invalid types), valid payload processing, notification enqueuing, error
     handling when queue throws, and edge cases (empty strings, long content,
     special characters).
-log: []
+  src/services/notifications.integration.test.ts: "Created new integration test
+    file with 28 tests covering full notification system flow: IPC handler ->
+    NotificationQueue -> NotificationService. Tests include full flow
+    validation, high priority immediate display, rate limiting integration,
+    invalid payload rejection, graceful degradation when notifications not
+    supported, coalescing integration, content sanitization, and queue overflow
+    handling."
+log:
+  - "Auto-completed: All child features are complete"
 schema: v1.0
 childrenIds:
   - F-core-types-ipc-architecture

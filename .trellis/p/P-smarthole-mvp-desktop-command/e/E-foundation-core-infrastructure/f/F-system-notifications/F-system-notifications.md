@@ -1,7 +1,7 @@
 ---
 id: F-system-notifications
 title: System Notifications
-status: in-progress
+status: done
 priority: medium
 parent: E-foundation-core-infrastructure
 prerequisites:
@@ -38,6 +38,13 @@ affectedFiles:
     initialization of notification service and queue after logger; child logger
     for notification IPC; IPC handler registration for NOTIFY_SHOW channel;
     cleanup on will-quit event to destroy the queue"
+  src/services/notifications.integration.test.ts: "Created new integration test
+    file with 28 tests covering full notification system flow: IPC handler ->
+    NotificationQueue -> NotificationService. Tests include full flow
+    validation, high priority immediate display, rate limiting integration,
+    invalid payload rejection, graceful degradation when notifications not
+    supported, coalescing integration, content sanitization, and queue overflow
+    handling."
 log:
   - "Starting feature implementation. Created feature branch
     feature/F-system-notifications. All 5 tasks verified with correct
@@ -59,13 +66,18 @@ log:
     testing. Uses isNotifyShowPayload() type guard, logs invalid payloads as
     warnings. 31 tests passing. Committed as adc7605. Proceeding to
     T-integrate-notification-system.
+  - Completed T-integrate-notification-system. Updated src/main.ts to initialize
+    and wire up NotificationService, NotificationQueue, and IPC handler. Added
+    cleanup on will-quit. Committed as 6232f86. Proceeding to final task
+    T-add-integration-tests-for.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
   - T-add-integration-tests-for
-  - T-integrate-notification-system
   - T-create-notification-ipc
   - T-create-notificationservice
   - T-implement-notificationqueue
+  - T-integrate-notification-system
 created: 2026-01-29T02:21:31.116Z
 updated: 2026-01-29T02:21:31.116Z
 ---
