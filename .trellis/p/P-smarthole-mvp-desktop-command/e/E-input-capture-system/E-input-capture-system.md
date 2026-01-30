@@ -13,8 +13,17 @@ affectedFiles:
     handling
   src/services/hotkey-manager.test.ts: Added unit tests for initialization,
     registration, event emission, unregistration, and accessibility permissions
-  src/services/index.ts: Added export for hotkey-manager module
+  src/services/index.ts: Added export for hotkey-manager module; Added export for
+    input-state service module
   package.json: Added uiohook-napi dependency (via npm install)
+  src/types/input.ts: "Created input state types: InputState enum, InputStateInfo
+    interface, InputStateChangedEvent, InputModeChangedEvent, and
+    InputStateEvents interface"
+  src/types/index.ts: Added export for input types module
+  src/services/input-state.ts: Created InputStateService with singleton pattern,
+    validated state machine, EventEmitter for events, mode tracking
+  src/services/input-state.test.ts: Added unit tests for state machine
+    transitions, event emission, mode changes, and getStateInfo
 log: []
 schema: v1.0
 childrenIds:

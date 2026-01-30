@@ -11,6 +11,7 @@
 export * from "./common";
 export * from "./config";
 export * from "./errors";
+export * from "./input";
 export * from "./ipc";
 export * from "./messages";
 export * from "./guards";

@@ -16,7 +16,8 @@ affectedFiles:
     barrel export to include messages module; Updated barrel export to include
     IPC types; Updated barrel export to include guards module; Added ElectronAPI
     type export from preload module; Added export for errors.ts to barrel
-    export; Added export for client-registry types
+    export; Added export for client-registry types; Added export for input types
+    module
   src/types/common.test.ts: Created comprehensive unit tests for all types and
     functions (37 tests) including type-level constraint verification
   src/types/config.ts: Created configuration type definitions including LogLevel,
@@ -172,7 +173,8 @@ affectedFiles:
   src/services/index.ts: Created barrel export for services module; Added export
     for notifications module; Added export for notification-queue module; Added
     export for client-registry service; Added export for registration-handler
-    module.; Added export for hotkey-manager module
+    module.; Added export for hotkey-manager module; Added export for
+    input-state service module
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -310,6 +312,13 @@ affectedFiles:
     handling
   src/services/hotkey-manager.test.ts: Added unit tests for initialization,
     registration, event emission, unregistration, and accessibility permissions
+  src/types/input.ts: "Created input state types: InputState enum, InputStateInfo
+    interface, InputStateChangedEvent, InputModeChangedEvent, and
+    InputStateEvents interface"
+  src/services/input-state.ts: Created InputStateService with singleton pattern,
+    validated state machine, EventEmitter for events, mode tracking
+  src/services/input-state.test.ts: Added unit tests for state machine
+    transitions, event emission, mode changes, and getStateInfo
 log: []
 schema: v1.0
 childrenIds:
