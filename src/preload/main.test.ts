@@ -353,16 +353,17 @@ describe("preload electronAPI", () => {
       // Get the registered handler
       const handler = mockOn.mock.calls[0][1] as (
         event: Electron.IpcRendererEvent,
-        config: AppConfig
+        payload: { config: AppConfig; changedKeys: string[] }
       ) => void;
 
       // Simulate config change event
       const mockEvent = {} as Electron.IpcRendererEvent;
       const mockConfig = { logLevel: "debug" } as AppConfig;
-      handler(mockEvent, mockConfig);
+      const changedKeys = ["logLevel"];
+      handler(mockEvent, { config: mockConfig, changedKeys });
 
       expect(callback).toHaveBeenCalledTimes(1);
-      expect(callback).toHaveBeenCalledWith(mockConfig);
+      expect(callback).toHaveBeenCalledWith(mockConfig, changedKeys);
     });
 
     it("should remove listener when unsubscribe is called", () => {

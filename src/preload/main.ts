@@ -12,6 +12,7 @@ import type {
   NotifyShowPayload,
   ConfigSetPayload,
   ConfigGetResponse,
+  ConfigChangedPayload,
   AppVersionResponse,
   WebSocketServerStatus,
   IpcRoutedMessage,
@@ -177,12 +178,12 @@ const electronAPI = {
    * Listen for configuration changes from main process.
    * Called whenever the configuration is updated from any source.
    *
-   * @param callback - Function called with the updated configuration
+   * @param callback - Function called with the updated configuration and changed keys
    * @returns Unsubscribe function to stop listening
    */
-  onConfigChanged: (callback: (config: AppConfig) => void): (() => void) => {
-    const handler = (_event: Electron.IpcRendererEvent, config: AppConfig): void => {
-      callback(config);
+  onConfigChanged: (callback: (config: AppConfig, changedKeys: string[]) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, payload: ConfigChangedPayload): void => {
+      callback(payload.config, payload.changedKeys);
     };
     ipcRenderer.on(IPC_CHANNELS.CONFIG_CHANGED, handler);
 
