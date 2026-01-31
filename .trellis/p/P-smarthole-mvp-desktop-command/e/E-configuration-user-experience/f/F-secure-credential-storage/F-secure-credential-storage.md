@@ -39,6 +39,8 @@ log:
   - "Auto-completed: All child tasks are complete"
   - Completed T-add-credential-ipc-handlers. Committed as 2928d32. Both tasks
     complete. Running docs-updater.
+  - Feature complete. Documentation updated and committed as 592367d. All 2
+    tasks implemented, reviewed, and committed.
 schema: v1.0
 childrenIds:
   - T-add-credential-ipc-handlers
