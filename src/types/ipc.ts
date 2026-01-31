@@ -101,6 +101,9 @@ export const IPC_CHANNELS = {
   PERMISSION_REQUEST_MICROPHONE: "permission:requestMicrophone", // Request microphone access
   PERMISSION_CHECK_ACCESSIBILITY: "permission:checkAccessibility", // Check accessibility permission (macOS)
   PERMISSION_OPEN_ACCESSIBILITY_SETTINGS: "permission:openAccessibilitySettings", // Open System Preferences to Accessibility pane (macOS)
+
+  // Onboarding channels
+  ONBOARDING_CLOSE: "onboarding:close", // Request to close onboarding window
 } as const;
 
 /**
@@ -524,6 +527,7 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.PERMISSION_REQUEST_MICROPHONE]: void; // No payload needed
   [IPC_CHANNELS.PERMISSION_CHECK_ACCESSIBILITY]: void; // No payload needed
   [IPC_CHANNELS.PERMISSION_OPEN_ACCESSIBILITY_SETTINGS]: void; // No payload needed
+  [IPC_CHANNELS.ONBOARDING_CLOSE]: void; // No payload needed
 }
 
 /**

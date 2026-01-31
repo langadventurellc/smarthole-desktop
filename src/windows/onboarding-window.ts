@@ -45,9 +45,10 @@ const ONBOARDING_HEIGHT = 500;
 /**
  * Gets the path to the main preload script.
  * Onboarding window uses the main preload since it already has all needed APIs.
+ * Note: The preload entry (src/preload/main.ts) builds to preload.js, not main.js.
  */
 function getPreloadPath(): string {
-  return path.join(__dirname, "main.js");
+  return path.join(__dirname, "preload.js");
 }
 
 /**

@@ -37,8 +37,8 @@ vi.mock("electron", () => ({
 }));
 
 // Import the module after mocking - this triggers the contextBridge.exposeInMainWorld call
-import "./main";
-import type { ElectronAPI } from "./main";
+import "./preload";
+import type { ElectronAPI } from "./preload";
 import type { AppConfig, NotifyShowPayload } from "../types";
 
 // Get the electronAPI that was passed to exposeInMainWorld during module initialization

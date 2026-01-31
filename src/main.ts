@@ -99,6 +99,7 @@ import {
   createAccessibilityCheckHandler,
   createAccessibilitySettingsHandler,
 } from "./ipc/permission-handler";
+import { registerOnboardingHandlers } from "./ipc/onboarding-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -905,6 +906,10 @@ app.whenReady().then(async () => {
   onboardingState.onboardingWindow = initializeOnboardingWindow();
   logger.info("Onboarding window service initialized");
 
+  // Register onboarding IPC handlers
+  const onboardingLogger = logger.child({ component: "OnboardingIPC" });
+  registerOnboardingHandlers(ipcMain, () => getOnboardingWindow(), onboardingLogger);
+
   // Check if first-run experience is needed
   const config = configState.configManager.getConfig();
   if (!config.firstRunCompleted) {
@@ -923,21 +928,22 @@ app.whenReady().then(async () => {
         logger.info("Onboarding window closed");
         onboardingState.isOnboarding = false;
 
-        // Check if firstRunCompleted was set (user finished or skipped)
+        // Always transition to tray mode, regardless of completion status
+        // The setupIncomplete flag in tray menu will remind user to configure
         const updatedConfig = getConfigManager().getConfig();
-        if (updatedConfig.firstRunCompleted) {
-          logger.info("Onboarding completed, transitioning to normal operation");
-          initializeNormalOperation().catch((error) => {
-            logger.error("Failed to initialize normal operation", {
-              error: error instanceof Error ? error.message : String(error),
-            });
-            app.quit();
-          });
-        } else {
-          // User closed without completing - quit the app
-          logger.info("Onboarding closed without completion, quitting");
-          app.quit();
+        if (!updatedConfig.firstRunCompleted) {
+          logger.info("Onboarding closed without completion, marking first run complete");
+          // Mark first run complete so onboarding doesn't show again
+          getConfigManager().setConfig({ firstRunCompleted: true });
         }
+
+        logger.info("Transitioning to normal operation");
+        initializeNormalOperation().catch((error) => {
+          logger.error("Failed to initialize normal operation", {
+            error: error instanceof Error ? error.message : String(error),
+          });
+          app.quit();
+        });
       });
     }
   } else {

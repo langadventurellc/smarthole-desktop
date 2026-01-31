@@ -100,8 +100,8 @@ export function OnboardingApp(): React.ReactNode {
   }, []);
 
   const handleFinish = useCallback(() => {
-    // Close the onboarding window
-    window.close();
+    // Close the onboarding window via IPC
+    window.electronAPI.closeOnboardingWindow();
   }, []);
 
   const handleSkip = useCallback(() => {

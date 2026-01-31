@@ -29,8 +29,9 @@ For pretty-printed logs in dev: `mise run dev 2>&1 | npx pino-pretty`
 src/
 ├── main.ts              # Electron main process, tray setup
 ├── tray-menu.ts         # Tray menu template building (testable, no Electron deps)
-├── preload.ts           # Secure IPC bridge for main renderer (contextBridge)
-├── preload-popup.ts     # Secure IPC bridge for popup window (popupAPI)
+├── preload/             # Secure IPC bridges (contextBridge)
+│   ├── preload.ts       # Main preload for settings, onboarding, main window
+│   └── popup.ts         # Popup-specific preload (popupAPI)
 ├── renderer.tsx         # React entry point (main window)
 ├── App.tsx              # Main React component
 ├── popup/               # Text input popup UI (React)
@@ -88,3 +89,8 @@ src/
 - [Settings Window](docs/settings-window.md) - React settings UI, tab navigation, input components
 - [Onboarding System](docs/onboarding-system.md) - first-run wizard, permission requests, setup flow
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements
+
+## IMPORTANT RULES ABOUT SPAWN SUBAGENT TASKS
+
+- **NEVER USE HAIKU**
+- **ALWAYS USE OPUS 4.5** - All of our sub-agents are performing critical pieces of work to complete a project that needs to be of high quality. In order to achieve this, we must use OPUS 4.5 for all the agents that we spawn to do the development work or any of the work surrounding the development process.
