@@ -9,6 +9,13 @@
 import { LogLevel, AppConfig, PartialAppConfig } from "./config";
 import { InputStateInfo, InputStateChangedEvent } from "./input";
 import { HotkeyActivatedEvent, HotkeyReleasedEvent } from "./hotkey";
+import {
+  AudioCaptureConfig,
+  AudioCaptureResult,
+  AudioPermissionStatus,
+  AudioStateChangedEvent,
+  AudioPermissionChangedEvent,
+} from "./audio";
 
 // ============================================================================
 // IPC Channel Definitions
@@ -71,6 +78,14 @@ export const IPC_CHANNELS = {
   TEXT_INPUT_SUBMIT: "textInput:submit", // Popup -> main with entered text
   TEXT_INPUT_FOCUSED: "textInput:focused", // Popup gained focus
   TEXT_INPUT_DISMISSED: "textInput:dismissed", // Popup closed without submit
+
+  // Audio capture channels
+  AUDIO_START: "audio:start", // Trigger recording start
+  AUDIO_STOP: "audio:stop", // Trigger recording stop
+  AUDIO_DATA: "audio:data", // Renderer -> Main with captured audio
+  AUDIO_PERMISSION_GET: "audio:permission:get", // Query microphone permission status
+  AUDIO_PERMISSION_CHANGED: "audio:permission:changed", // Main -> Renderer broadcast permission changes
+  AUDIO_STATE_CHANGED: "audio:stateChanged", // Main -> Renderer broadcast capture state changes
 } as const;
 
 /**
@@ -418,6 +433,31 @@ export interface TextInputOpenPayload {
 }
 
 // ============================================================================
+// Audio Capture IPC Types
+// ============================================================================
+
+// Re-export audio event types for IPC consumers
+export type { AudioStateChangedEvent, AudioPermissionChangedEvent };
+
+/**
+ * Payload for audio:start IPC channel.
+ * Triggers recording start with optional configuration override.
+ */
+export interface AudioStartPayload {
+  /** Optional configuration override for this recording session */
+  config?: Partial<AudioCaptureConfig>;
+}
+
+/**
+ * Payload for audio:data IPC channel.
+ * Sends captured audio data from renderer to main process.
+ */
+export interface AudioDataPayload {
+  /** The captured audio result */
+  result: AudioCaptureResult;
+}
+
+// ============================================================================
 // IPC Type Maps (for type-safe handlers)
 // ============================================================================
 
@@ -455,6 +495,12 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.TEXT_INPUT_SUBMIT]: TextInputSubmitPayload;
   [IPC_CHANNELS.TEXT_INPUT_FOCUSED]: void;
   [IPC_CHANNELS.TEXT_INPUT_DISMISSED]: void;
+  [IPC_CHANNELS.AUDIO_START]: AudioStartPayload | void;
+  [IPC_CHANNELS.AUDIO_STOP]: void;
+  [IPC_CHANNELS.AUDIO_DATA]: AudioDataPayload;
+  [IPC_CHANNELS.AUDIO_PERMISSION_GET]: void;
+  [IPC_CHANNELS.AUDIO_PERMISSION_CHANGED]: AudioPermissionChangedEvent;
+  [IPC_CHANNELS.AUDIO_STATE_CHANGED]: AudioStateChangedEvent;
 }
 
 /**
@@ -476,6 +522,7 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.CLIENTS_GET_LIST]: ClientSummary[];
   [IPC_CHANNELS.CLIENTS_GET_DETAILS]: ClientDetails | null;
   [IPC_CHANNELS.INPUT_GET_STATE]: InputStateInfo;
+  [IPC_CHANNELS.AUDIO_PERMISSION_GET]: AudioPermissionStatus;
 }
 
 // ============================================================================

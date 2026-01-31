@@ -1,15 +1,55 @@
 ---
 id: F-voice-recording-service
 title: Voice Recording Service
-status: open
+status: in-progress
 priority: high
 parent: E-input-capture-system
 prerequisites:
   - F-global-hotkey-system
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/audio.ts: Created new file with AudioCaptureState enum,
+    AudioCapturePermission enum, AudioBuffer, AudioCaptureConfig (with
+    DEFAULT_AUDIO_CAPTURE_CONFIG), AudioCaptureResult, AudioPermissionStatus
+    interfaces, AudioCaptureEvents interface with all event types, and type
+    guards (isAudioCaptureState, isAudioCapturePermission, isAudioFormat,
+    isAudioBuffer, isAudioCaptureResult, isAudioPermissionStatus,
+    isAudioErrorCode, isAudioStateChangedEvent, isAudioPermissionChangedEvent)
+  src/types/ipc.ts: Added import for audio types, added 6 new IPC channels
+    (AUDIO_START, AUDIO_STOP, AUDIO_DATA, AUDIO_PERMISSION_GET,
+    AUDIO_PERMISSION_CHANGED, AUDIO_STATE_CHANGED), added AudioStartPayload and
+    AudioDataPayload interfaces, re-exported AudioStateChangedEvent and
+    AudioPermissionChangedEvent, updated IpcPayloadMap with audio channels,
+    updated IpcResponseMap with AUDIO_PERMISSION_GET response type
+  src/types/index.ts: Added export for audio types module
+  src/types/audio.test.ts: Created new file with 47 unit tests for all audio type guards
+  src/types/ipc.test.ts: Added test for audio capture channels, updated channel count from 26 to 32
+log:
+  - >-
+    Started feature implementation. Created feature branch
+    feature/F-voice-recording-service.
+
+
+    Execution order based on prerequisites:
+
+    1. T-add-audio-types-and-ipc (no prerequisites)
+
+    2. T-create-srcrenderer-directory (no prerequisites) 
+
+    3. T-implement-main-process-audio (depends on #1)
+
+    4. T-implement-renderer-side-audio (depends on #1 and #2)
+
+    5. T-add-audio-capture-preload-api (depends on #3 and #4)
+
+
+    Starting with T-add-audio-types-and-ipc first.
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-add-audio-capture-preload-api
+  - T-add-audio-types-and-ipc
+  - T-create-srcrenderer-directory
+  - T-implement-main-process-audio
+  - T-implement-renderer-side-audio
 created: 2026-01-30T22:15:08.998Z
 updated: 2026-01-30T22:15:08.998Z
 ---

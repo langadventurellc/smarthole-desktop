@@ -17,7 +17,7 @@ affectedFiles:
     IPC types; Updated barrel export to include guards module; Added ElectronAPI
     type export from preload module; Added export for errors.ts to barrel
     export; Added export for client-registry types; Added export for input types
-    module
+    module; Added export for audio types module
   src/types/common.test.ts: Created comprehensive unit tests for all types and
     functions (37 tests) including type-level constraint verification
   src/types/config.ts: Created configuration type definitions including LogLevel,
@@ -53,7 +53,12 @@ affectedFiles:
     updated IpcPayloadMap and IpcResponseMap; Added 5 text input popup IPC
     channels, TextInputSubmitPayload and TextInputOpenPayload interfaces,
     updated IpcPayloadMap with new channel mappings, added
-    isTextInputSubmitPayload type guard
+    isTextInputSubmitPayload type guard; Added import for audio types, added 6
+    new IPC channels (AUDIO_START, AUDIO_STOP, AUDIO_DATA, AUDIO_PERMISSION_GET,
+    AUDIO_PERMISSION_CHANGED, AUDIO_STATE_CHANGED), added AudioStartPayload and
+    AudioDataPayload interfaces, re-exported AudioStateChangedEvent and
+    AudioPermissionChangedEvent, updated IpcPayloadMap with audio channels,
+    updated IpcResponseMap with AUDIO_PERMISSION_GET response type
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -65,7 +70,8 @@ affectedFiles:
     added tests for new hotkey and input state channels; Added tests for new
     text input popup channels, TextInputSubmitPayload type guard tests,
     TextInputOpenPayload interface tests, updated channel count test from 21 to
-    26, updated naming convention regex to allow camelCase domains
+    26, updated naming convention regex to allow camelCase domains; Added test
+    for audio capture channels, updated channel count from 26 to 32
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -392,6 +398,14 @@ affectedFiles:
     pre-existing production build issue
   popup.html: Created at project root as popup window entry point
   src/index.html: Deleted - moved to project root
+  src/types/audio.ts: Created new file with AudioCaptureState enum,
+    AudioCapturePermission enum, AudioBuffer, AudioCaptureConfig (with
+    DEFAULT_AUDIO_CAPTURE_CONFIG), AudioCaptureResult, AudioPermissionStatus
+    interfaces, AudioCaptureEvents interface with all event types, and type
+    guards (isAudioCaptureState, isAudioCapturePermission, isAudioFormat,
+    isAudioBuffer, isAudioCaptureResult, isAudioPermissionStatus,
+    isAudioErrorCode, isAudioStateChangedEvent, isAudioPermissionChangedEvent)
+  src/types/audio.test.ts: Created new file with 47 unit tests for all audio type guards
 log: []
 schema: v1.0
 childrenIds:
