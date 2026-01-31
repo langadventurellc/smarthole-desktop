@@ -73,11 +73,15 @@ affectedFiles:
   src/ipc/dialog-handler.ts: Created file dialog IPC handler for native open file/directory dialog
   src/tray-menu.ts: Added onSettings action to TrayMenuActions and Settings... menu item
   src/tray-menu.test.ts: Updated mock actions and menu structure tests to include Settings menu item
-  src/windows/index.ts: Exported settings window service types and functions
+  src/windows/index.ts: Exported settings window service types and functions;
+    Added exports for initializeOnboardingWindow, getOnboardingWindow,
+    resetOnboardingWindow, and OnboardingWindowService type
   src/ipc/index.ts: Exported dialog handler; Added export for permission-handler module
   src/settings/index.html: Updated title to SmartHole Settings
   vite.settings-renderer.config.ts: "Created Vite config for settings window renderer with root: src/settings"
-  forge.config.ts: Added settings_window renderer entry to VitePlugin configuration
+  forge.config.ts: Added settings_window renderer entry to VitePlugin
+    configuration; Added onboarding_window entry to renderer array in VitePlugin
+    configuration
   src/windows/settings-window.test.ts: Created unit tests for settings window service (23 tests)
   src/settings/App.tsx: "Replaced stub with full settings container: tab
     navigation, config state management, validation, save/cancel handlers,
@@ -100,6 +104,18 @@ affectedFiles:
     createAccessibilityCheckHandler, createAccessibilitySettingsHandler"
   src/ipc/permission-handler.test.ts: Created new test file with 16 comprehensive
     unit tests covering all handlers across macOS, Windows, and Linux platforms
+  src/windows/onboarding-window.ts: Created onboarding window service with
+    BrowserWindow management, singleton pattern, show/hide/isVisible/getWindow
+    methods, escape key handling, and cleanup on app quit
+  src/windows/onboarding-window.test.ts: Created 23 unit tests covering singleton
+    lifecycle, show behavior, hide behavior, visibility, getWindow, escape key
+    handling, window closed events, and app cleanup
+  vite.onboarding-renderer.config.ts: Created Vite config for onboarding renderer
+    with react plugin and root set to src/onboarding
+  src/onboarding/index.html: Created HTML entry point for onboarding window
+  src/onboarding/renderer.tsx: Created React renderer entry point
+  src/onboarding/OnboardingApp.tsx: Created minimal OnboardingApp component placeholder
+  src/onboarding/index.css: Created CSS styles for onboarding window with light/dark theme support
 log: []
 schema: v1.0
 childrenIds:

@@ -23,17 +23,34 @@ affectedFiles:
     checkAccessibilityPermission, openAccessibilitySettings"
   src/main.ts: Registered permission IPC handlers in app.whenReady() callback
   src/types/ipc.test.ts: Updated channel count assertion from 36 to 40
+  src/windows/onboarding-window.ts: Created onboarding window service with
+    BrowserWindow management, singleton pattern, show/hide/isVisible/getWindow
+    methods, escape key handling, and cleanup on app quit
+  src/windows/onboarding-window.test.ts: Created 23 unit tests covering singleton
+    lifecycle, show behavior, hide behavior, visibility, getWindow, escape key
+    handling, window closed events, and app cleanup
+  src/windows/index.ts: Added exports for initializeOnboardingWindow,
+    getOnboardingWindow, resetOnboardingWindow, and OnboardingWindowService type
+  vite.onboarding-renderer.config.ts: Created Vite config for onboarding renderer
+    with react plugin and root set to src/onboarding
+  forge.config.ts: Added onboarding_window entry to renderer array in VitePlugin configuration
+  src/onboarding/index.html: Created HTML entry point for onboarding window
+  src/onboarding/renderer.tsx: Created React renderer entry point
+  src/onboarding/OnboardingApp.tsx: Created minimal OnboardingApp component placeholder
+  src/onboarding/index.css: Created CSS styles for onboarding window with light/dark theme support
 log:
   - "Started orchestration. Created feature branch
     feature/F-first-run-experience. Tasks to execute in order:
     T-add-permission-ipc-infrastruct → T-create-onboarding-window →
     T-implement-onboarding-wizard → T-integrate-first-run-detection"
+  - Completed T-add-permission-ipc-infrastruct. Committed as f9b2a32. Moving to
+    T-create-onboarding-window.
 schema: v1.0
 childrenIds:
-  - T-add-permission-ipc-infrastruct
   - T-create-onboarding-window
   - T-implement-onboarding-wizard
   - T-integrate-first-run-detection
+  - T-add-permission-ipc-infrastruct
 created: 2026-01-31T06:21:18.472Z
 updated: 2026-01-31T06:21:18.472Z
 ---

@@ -413,7 +413,9 @@ affectedFiles:
     isShowing flag, updated destroy() to reset isShowing
   src/windows/index.ts: Created module exports for TextInputPopupService,
     functions (initialize, get, reset, getImpl), calculateCenteredPosition, and
-    event types; Exported settings window service types and functions
+    event types; Exported settings window service types and functions; Added
+    exports for initializeOnboardingWindow, getOnboardingWindow,
+    resetOnboardingWindow, and OnboardingWindowService type
   src/windows/text-input-popup.test.ts: Added 20 unit tests covering singleton
     lifecycle, show (positioning, focus, placeholder, events), hide (window,
     input clearing, focus restoration), isVisible, event
@@ -440,7 +442,8 @@ affectedFiles:
     React plugin and rollupOptions.input pointing to popup.html
   forge.config.ts: Added popup preload entry (src/preload-popup.ts) and
     popup_window renderer entry to VitePlugin configuration; Added
-    settings_window renderer entry to VitePlugin configuration
+    settings_window renderer entry to VitePlugin configuration; Added
+    onboarding_window entry to renderer array in VitePlugin configuration
   index.html: Created at project root (moved from src/index.html) - fixes
     pre-existing production build issue
   popup.html: Created at project root as popup window entry point
@@ -556,6 +559,18 @@ affectedFiles:
     createAccessibilityCheckHandler, createAccessibilitySettingsHandler"
   src/ipc/permission-handler.test.ts: Created new test file with 16 comprehensive
     unit tests covering all handlers across macOS, Windows, and Linux platforms
+  src/windows/onboarding-window.ts: Created onboarding window service with
+    BrowserWindow management, singleton pattern, show/hide/isVisible/getWindow
+    methods, escape key handling, and cleanup on app quit
+  src/windows/onboarding-window.test.ts: Created 23 unit tests covering singleton
+    lifecycle, show behavior, hide behavior, visibility, getWindow, escape key
+    handling, window closed events, and app cleanup
+  vite.onboarding-renderer.config.ts: Created Vite config for onboarding renderer
+    with react plugin and root set to src/onboarding
+  src/onboarding/index.html: Created HTML entry point for onboarding window
+  src/onboarding/renderer.tsx: Created React renderer entry point
+  src/onboarding/OnboardingApp.tsx: Created minimal OnboardingApp component placeholder
+  src/onboarding/index.css: Created CSS styles for onboarding window with light/dark theme support
 log: []
 schema: v1.0
 childrenIds:
