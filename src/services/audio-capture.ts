@@ -107,6 +107,10 @@ class AudioCaptureServiceImpl implements AudioCaptureService {
   private currentState: AudioCaptureState = AudioCaptureState.IDLE;
   private currentMode: VoiceInputMode = "push-to-talk";
   private lastPermission: AudioCapturePermission = AudioCapturePermission.UNKNOWN;
+  private noAudioTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  /** Timeout in ms to wait for audio data before transitioning to IDLE */
+  private static readonly NO_AUDIO_TIMEOUT_MS = 500;
 
   constructor() {
     this.logger = getLogger().child({ component: "AudioCapture" });
@@ -168,6 +172,40 @@ class AudioCaptureServiceImpl implements AudioCaptureService {
 
     // Emit state change
     this.emitStateChanged(previousState, AudioCaptureState.STOPPED);
+
+    // Set a timeout to transition to IDLE if no audio data is received.
+    // This handles the case where no renderer is actively capturing audio.
+    this.noAudioTimeoutId = setTimeout(() => {
+      this.handleNoAudioReceived();
+    }, AudioCaptureServiceImpl.NO_AUDIO_TIMEOUT_MS);
+  }
+
+  /**
+   * Handle the case where no audio data was received after stopping recording.
+   * Transitions state back to IDLE so the app remains usable.
+   */
+  private handleNoAudioReceived(): void {
+    this.noAudioTimeoutId = null;
+
+    // Only transition if we're still in STOPPED state waiting for audio
+    if (this.currentState !== AudioCaptureState.STOPPED) {
+      return;
+    }
+
+    this.logger.warn("No audio data received after recording stopped, returning to idle");
+
+    // Transition to idle
+    const previousState = this.currentState;
+    this.currentState = AudioCaptureState.IDLE;
+
+    // Update InputState to IDLE
+    const inputState = getInputState();
+    if (inputState.canTransitionTo(InputState.IDLE)) {
+      inputState.transitionTo(InputState.IDLE);
+    }
+
+    // Emit state change
+    this.emitStateChanged(previousState, AudioCaptureState.IDLE);
   }
 
   isRecording(): boolean {
@@ -241,6 +279,12 @@ class AudioCaptureServiceImpl implements AudioCaptureService {
   }
 
   handleAudioData(result: AudioCaptureResult): void {
+    // Cancel the no-audio timeout since we received audio data
+    if (this.noAudioTimeoutId) {
+      clearTimeout(this.noAudioTimeoutId);
+      this.noAudioTimeoutId = null;
+    }
+
     this.logger.info("Audio data received", {
       durationMs: result.audio.durationMs,
       format: result.audio.format,
@@ -276,6 +320,11 @@ class AudioCaptureServiceImpl implements AudioCaptureService {
   }
 
   reset(): void {
+    // Clear any pending no-audio timeout
+    if (this.noAudioTimeoutId) {
+      clearTimeout(this.noAudioTimeoutId);
+      this.noAudioTimeoutId = null;
+    }
     this.currentState = AudioCaptureState.IDLE;
     this.currentMode = "push-to-talk";
     this.lastPermission = AudioCapturePermission.UNKNOWN;

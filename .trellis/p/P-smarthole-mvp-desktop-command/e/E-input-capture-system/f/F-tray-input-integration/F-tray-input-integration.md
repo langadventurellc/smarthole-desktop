@@ -25,6 +25,20 @@ affectedFiles:
     interfaces and buildTrayMenuTemplate() function."
   src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
     building logic covering all input states and menu structure."
+  src/services/audio-capture.ts: "Added no-audio timeout mechanism:
+    noAudioTimeoutId field, NO_AUDIO_TIMEOUT_MS constant (500ms),
+    handleNoAudioReceived() method, timeout scheduling in stopRecording(),
+    timeout cancellation in handleAudioData() and reset()"
+  src/services/audio-capture.test.ts: "Added 4 new tests for no-audio timeout
+    behavior: transition to IDLE after timeout, InputState transition,
+    handleAudioData cancels timeout, reset clears timeout"
+  src/windows/text-input-popup.ts: Added isShowing flag to prevent blur during
+    show, added activateAndShow() private method, modified show() to wait for
+    content load and use isShowing protection, modified blur handler to check
+    isShowing flag, updated destroy() to reset isShowing
+  src/windows/text-input-popup.test.ts: Added isLoading and once mocks to
+    webContents, updated blur event test to use fake timers, added new test for
+    blur-during-show race condition prevention
 log:
   - >-
     Started feature implementation. Created feature branch
@@ -88,10 +102,13 @@ log:
 
 
     Committing documentation changes.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
   - T-add-input-menu-items-and
   - T-add-tray-icon-state
+  - T-fix-state-stuck-in-processing
+  - T-fix-text-input-popup-not
 created: 2026-01-30T22:15:47.857Z
 updated: 2026-01-30T22:15:47.857Z
 ---

@@ -383,14 +383,19 @@ affectedFiles:
     calculateCenteredPosition(), focus management, EventEmitter for callbacks,
     path resolution for preload/popup URL, and app cleanup handlers; Updated
     getPopupUrl() to use POPUP_WINDOW_VITE_DEV_SERVER_URL env var and correct
-    production path to popup.html
+    production path to popup.html; Added isShowing flag to prevent blur during
+    show, added activateAndShow() private method, modified show() to wait for
+    content load and use isShowing protection, modified blur handler to check
+    isShowing flag, updated destroy() to reset isShowing
   src/windows/index.ts: Created module exports for TextInputPopupService,
     functions (initialize, get, reset, getImpl), calculateCenteredPosition, and
     event types
   src/windows/text-input-popup.test.ts: Added 20 unit tests covering singleton
     lifecycle, show (positioning, focus, placeholder, events), hide (window,
     input clearing, focus restoration), isVisible, event
-    subscription/unsubscription, and getWindow accessor
+    subscription/unsubscription, and getWindow accessor; Added isLoading and
+    once mocks to webContents, updated blur event test to use fake timers, added
+    new test for blur-during-show race condition prevention
   src/preload-popup.ts: Created preload script with PopupAPI exposing submit,
     dismiss, notifyFocused methods and onPlaceholderChange, onClear event
     listeners via contextBridge
@@ -427,15 +432,20 @@ affectedFiles:
     explaining the directory purpose - holds renderer-side modules that use
     browser/Web APIs and run in renderer context; Updated barrel export to
     include all audio capture module exports
-  src/services/audio-capture.ts: Created main process audio capture service with
+  src/services/audio-capture.ts: "Created main process audio capture service with
     singleton pattern, recording lifecycle management (start/stop/isRecording),
     macOS permission checking, push-to-talk and toggle mode support,
     handleAudioData for receiving audio from renderer, and EventEmitter for
-    state/permission/audioReady/error events
-  src/services/audio-capture.test.ts: Created 24 unit tests covering singleton
+    state/permission/audioReady/error events; Added no-audio timeout mechanism:
+    noAudioTimeoutId field, NO_AUDIO_TIMEOUT_MS constant (500ms),
+    handleNoAudioReceived() method, timeout scheduling in stopRecording(),
+    timeout cancellation in handleAudioData() and reset()"
+  src/services/audio-capture.test.ts: "Created 24 unit tests covering singleton
     management, recording lifecycle, audio data handling, voice input modes,
     permission status, permission denied scenarios, event subscription, and
-    reset functionality
+    reset functionality; Added 4 new tests for no-audio timeout behavior:
+    transition to IDLE after timeout, InputState transition, handleAudioData
+    cancels timeout, reset clears timeout"
   src/ipc/audio-handler.ts: Created IPC handlers including broadcast functions
     (broadcastAudioStateChanged, broadcastAudioPermissionChanged,
     broadcastAudioStart, broadcastAudioStop), createAudioDataHandler for

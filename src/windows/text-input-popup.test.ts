@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 const { mockBrowserWindowInstance, mockGetFocusedWindow, mockScreen, mockApp } = vi.hoisted(() => {
   const mockBrowserWindowInstance = {
     loadURL: vi.fn(),
+    loadFile: vi.fn(),
     on: vi.fn(),
     show: vi.fn(),
     hide: vi.fn(),
@@ -16,9 +17,14 @@ const { mockBrowserWindowInstance, mockGetFocusedWindow, mockScreen, mockApp } =
     destroy: vi.fn(),
     isVisible: vi.fn().mockReturnValue(false),
     isDestroyed: vi.fn().mockReturnValue(false),
+    isFocused: vi.fn().mockReturnValue(true),
     setPosition: vi.fn(),
+    getBounds: vi.fn().mockReturnValue({ x: 660, y: 510, width: 600, height: 60 }),
     webContents: {
       send: vi.fn(),
+      isLoading: vi.fn().mockReturnValue(false),
+      once: vi.fn(),
+      on: vi.fn(),
     },
   };
 
@@ -207,10 +213,14 @@ describe("TextInputPopup", () => {
 
   describe("event subscription", () => {
     it("allows subscribing to dismissed event", () => {
+      vi.useFakeTimers();
       const handler = vi.fn();
       popupService.on("dismissed", handler);
 
       popupService.show();
+
+      // Wait for the isShowing flag to be cleared (100ms timeout)
+      vi.advanceTimersByTime(100);
 
       // Simulate blur event
       const blurHandler = mockBrowserWindowInstance.on.mock.calls.find(
@@ -219,6 +229,23 @@ describe("TextInputPopup", () => {
       blurHandler?.();
 
       expect(handler).toHaveBeenCalled();
+      vi.useRealTimers();
+    });
+
+    it("ignores blur event during show (prevents race condition)", () => {
+      const handler = vi.fn();
+      popupService.on("dismissed", handler);
+
+      popupService.show();
+
+      // Simulate blur event immediately (before timeout clears isShowing)
+      const blurHandler = mockBrowserWindowInstance.on.mock.calls.find(
+        (call: unknown[]) => call[0] === "blur"
+      )?.[1] as (() => void) | undefined;
+      blurHandler?.();
+
+      // Should NOT be called because isShowing is still true
+      expect(handler).not.toHaveBeenCalled();
     });
 
     it("allows unsubscribing from events", () => {

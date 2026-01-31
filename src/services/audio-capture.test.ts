@@ -390,4 +390,92 @@ describe("audio-capture service", () => {
       expect(mockInputState.transitionTo).not.toHaveBeenCalled();
     });
   });
+
+  describe("no-audio timeout", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("transitions to IDLE after timeout if no audio data received", async () => {
+      await service.startRecording();
+      await service.stopRecording();
+
+      expect(service.getState()).toBe(AudioCaptureState.STOPPED);
+
+      const stateListener = vi.fn();
+      service.on("stateChanged", stateListener);
+
+      // Fast-forward past the no-audio timeout (500ms)
+      vi.advanceTimersByTime(500);
+
+      expect(service.getState()).toBe(AudioCaptureState.IDLE);
+      expect(stateListener).toHaveBeenCalledWith({
+        previousState: AudioCaptureState.STOPPED,
+        newState: AudioCaptureState.IDLE,
+        timestamp: expect.any(Number),
+      });
+    });
+
+    it("transitions InputState to IDLE after timeout", async () => {
+      await service.startRecording();
+      await service.stopRecording();
+      mockInputState.canTransitionTo.mockClear();
+      mockInputState.transitionTo.mockClear();
+
+      vi.advanceTimersByTime(500);
+
+      expect(mockInputState.canTransitionTo).toHaveBeenCalledWith("idle");
+      expect(mockInputState.transitionTo).toHaveBeenCalledWith("idle");
+    });
+
+    it("does not trigger timeout if handleAudioData is called first", async () => {
+      await service.startRecording();
+      await service.stopRecording();
+
+      const stateListener = vi.fn();
+      service.on("stateChanged", stateListener);
+
+      // Receive audio data before timeout
+      const mockResult: AudioCaptureResult = {
+        audio: {
+          data: new ArrayBuffer(100),
+          format: "wav",
+          sampleRate: 16000,
+          channels: 1,
+          durationMs: 1000,
+        },
+        startedAt: "2024-01-01T00:00:00Z",
+        stoppedAt: "2024-01-01T00:00:01Z",
+      };
+
+      service.handleAudioData(mockResult);
+      expect(service.getState()).toBe(AudioCaptureState.IDLE);
+      stateListener.mockClear();
+
+      // Fast-forward past the timeout - should not trigger again
+      vi.advanceTimersByTime(500);
+
+      expect(stateListener).not.toHaveBeenCalled();
+      expect(service.getState()).toBe(AudioCaptureState.IDLE);
+    });
+
+    it("clears timeout on reset", async () => {
+      await service.startRecording();
+      await service.stopRecording();
+
+      service.reset();
+
+      const stateListener = vi.fn();
+      service.on("stateChanged", stateListener);
+
+      // Fast-forward past timeout - should not trigger after reset
+      vi.advanceTimersByTime(500);
+
+      expect(stateListener).not.toHaveBeenCalled();
+    });
+  });
 });
