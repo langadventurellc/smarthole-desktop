@@ -100,8 +100,14 @@ describe("IPC_CHANNELS", () => {
       expect(IPC_CHANNELS.AUDIO_STATE_CHANGED).toBe("audio:stateChanged");
     });
 
-    it("should have exactly 32 channels", () => {
-      expect(Object.keys(IPC_CHANNELS)).toHaveLength(32);
+    it("should have all expected credential channels", () => {
+      expect(IPC_CHANNELS.CREDENTIAL_STORE).toBe("credential:store");
+      expect(IPC_CHANNELS.CREDENTIAL_DELETE).toBe("credential:delete");
+      expect(IPC_CHANNELS.CREDENTIAL_HAS).toBe("credential:has");
+    });
+
+    it("should have exactly 35 channels", () => {
+      expect(Object.keys(IPC_CHANNELS)).toHaveLength(35);
     });
 
     it("should follow the domain:action naming convention", () => {

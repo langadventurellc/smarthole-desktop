@@ -147,7 +147,8 @@ interface ConfigChangedPayload {
 
 ## Security Notes
 
-- API keys in config are placeholders for secure storage (future: keychain integration)
+- **API keys are stored in the OS keychain**, not in config files (see [Credential System](credential-system.md))
+- The `apiKey` fields in the config schema remain for backward compatibility but should be migrated to the credential system
 - Logger auto-redacts sensitive fields (apiKey, password, token, secret, auth, credential, bearer)
 - Config file should not be committed to version control
 

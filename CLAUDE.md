@@ -33,7 +33,7 @@ src/
 ├── renderer.tsx         # React entry point (main window)
 ├── App.tsx              # Main React component
 ├── popup/               # Text input popup UI (React)
-├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state, audio-capture, config-manager)
+├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state, audio-capture, config-manager, credential-manager)
 ├── renderer/            # Renderer-side modules (audio-capture)
 ├── windows/             # Window management (text-input-popup)
 ├── ipc/                 # IPC handlers for main/renderer communication
@@ -81,4 +81,5 @@ src/
 - [Voice Recording Service](docs/voice-recording-service.md) - microphone capture, WAV encoding, hotkey integration
 - [Tray Input Integration](docs/tray-input-integration.md) - tray menu input controls, icon state indication
 - [Configuration System](docs/configuration-system.md) - persistent config storage, IPC, electron-store
+- [Credential System](docs/credential-system.md) - secure credential storage, OS keychain, keytar
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements

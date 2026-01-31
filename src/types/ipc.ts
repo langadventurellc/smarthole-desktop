@@ -16,6 +16,7 @@ import {
   AudioStateChangedEvent,
   AudioPermissionChangedEvent,
 } from "./audio";
+import type { CredentialKey } from "./credentials";
 
 // ============================================================================
 // IPC Channel Definitions
@@ -86,6 +87,11 @@ export const IPC_CHANNELS = {
   AUDIO_PERMISSION_GET: "audio:permission:get", // Query microphone permission status
   AUDIO_PERMISSION_CHANGED: "audio:permission:changed", // Main -> Renderer broadcast permission changes
   AUDIO_STATE_CHANGED: "audio:stateChanged", // Main -> Renderer broadcast capture state changes
+
+  // Credential channels (NOTE: no CREDENTIAL_GET - credentials stay in main process)
+  CREDENTIAL_STORE: "credential:store", // Store a credential in OS keychain
+  CREDENTIAL_DELETE: "credential:delete", // Delete a credential from OS keychain
+  CREDENTIAL_HAS: "credential:has", // Check if a credential exists
 } as const;
 
 /**
@@ -501,6 +507,9 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.AUDIO_PERMISSION_GET]: void;
   [IPC_CHANNELS.AUDIO_PERMISSION_CHANGED]: AudioPermissionChangedEvent;
   [IPC_CHANNELS.AUDIO_STATE_CHANGED]: AudioStateChangedEvent;
+  [IPC_CHANNELS.CREDENTIAL_STORE]: CredentialStorePayload;
+  [IPC_CHANNELS.CREDENTIAL_DELETE]: CredentialKeyPayload;
+  [IPC_CHANNELS.CREDENTIAL_HAS]: CredentialKeyPayload;
 }
 
 /**
@@ -523,6 +532,9 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.CLIENTS_GET_DETAILS]: ClientDetails | null;
   [IPC_CHANNELS.INPUT_GET_STATE]: InputStateInfo;
   [IPC_CHANNELS.AUDIO_PERMISSION_GET]: AudioPermissionStatus;
+  [IPC_CHANNELS.CREDENTIAL_STORE]: void;
+  [IPC_CHANNELS.CREDENTIAL_DELETE]: void;
+  [IPC_CHANNELS.CREDENTIAL_HAS]: boolean;
 }
 
 // ============================================================================
@@ -802,4 +814,19 @@ export function isTextInputSubmitPayload(value: unknown): value is TextInputSubm
 
   // Required fields: text and timestamp must be strings
   return typeof obj.text === "string" && typeof obj.timestamp === "string";
+}
+
+// ============================================================================
+// Credential IPC Types
+// ============================================================================
+
+export type { CredentialKey };
+
+export interface CredentialStorePayload {
+  key: CredentialKey;
+  value: string;
+}
+
+export interface CredentialKeyPayload {
+  key: CredentialKey;
 }

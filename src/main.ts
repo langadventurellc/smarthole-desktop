@@ -35,6 +35,11 @@ import {
   getConfigManager,
   ConfigManagerService,
 } from "./services/config-manager";
+import {
+  initializeCredentialManager,
+  getCredentialManager,
+  CredentialManagerService,
+} from "./services/credential-manager";
 import { InputState } from "./types";
 import { buildTrayMenuTemplate, TrayMenuActions } from "./tray-menu";
 import {
@@ -72,6 +77,11 @@ import {
   createConfigSetHandler,
   broadcastConfigChange,
 } from "./ipc/config-handler";
+import {
+  createCredentialStoreHandler,
+  createCredentialDeleteHandler,
+  createCredentialHasHandler,
+} from "./ipc/credential-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -132,6 +142,15 @@ const configState: {
   configManager: ConfigManagerService | null;
 } = {
   configManager: null,
+};
+
+/**
+ * Mutable state for credential manager.
+ */
+const credentialState: {
+  credentialManager: CredentialManagerService | null;
+} = {
+  credentialManager: null,
 };
 
 /**
@@ -430,6 +449,25 @@ app.whenReady().then(async () => {
   configState.configManager.on("configChanged", (config, changedKeys) => {
     broadcastConfigChange({ config, changedKeys }, configLogger);
   });
+
+  // Initialize credential manager (after config manager, before services that need credentials)
+  credentialState.credentialManager = initializeCredentialManager();
+  logger.info("Credential manager initialized");
+
+  // Register credential IPC handlers
+  const credentialLogger = logger.child({ component: "CredentialIPC" });
+  ipcMain.handle(
+    IPC_CHANNELS.CREDENTIAL_STORE,
+    createCredentialStoreHandler(() => getCredentialManager(), credentialLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.CREDENTIAL_DELETE,
+    createCredentialDeleteHandler(() => getCredentialManager(), credentialLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.CREDENTIAL_HAS,
+    createCredentialHasHandler(() => getCredentialManager(), credentialLogger)
+  );
 
   // Initialize notification services
   const notificationService = initializeNotificationService();

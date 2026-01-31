@@ -11,6 +11,7 @@
 export * from "./audio";
 export * from "./common";
 export * from "./config";
+export * from "./credentials";
 export * from "./errors";
 export * from "./hotkey";
 export * from "./input";
@@ -19,5 +20,5 @@ export * from "./messages";
 export * from "./guards";
 export * from "./client-registry";
 
-// Re-export ElectronAPI type from preload for external use
-export type { ElectronAPI } from "../preload/main";
+// NOTE: ElectronAPI is NOT exported here to avoid bundling preload into main.
+// Import directly from "../preload/main" if needed in renderer code.

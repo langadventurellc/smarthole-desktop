@@ -17,3 +17,4 @@ export * from "./hotkey-manager";
 export * from "./input-state";
 export * from "./audio-capture";
 export * from "./config-manager";
+export * from "./credential-manager";

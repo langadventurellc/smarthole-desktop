@@ -60,7 +60,10 @@ affectedFiles:
     AUDIO_PERMISSION_CHANGED, AUDIO_STATE_CHANGED), added AudioStartPayload and
     AudioDataPayload interfaces, re-exported AudioStateChangedEvent and
     AudioPermissionChangedEvent, updated IpcPayloadMap with audio channels,
-    updated IpcResponseMap with AUDIO_PERMISSION_GET response type
+    updated IpcResponseMap with AUDIO_PERMISSION_GET response type; Added
+    CREDENTIAL_STORE, CREDENTIAL_DELETE, CREDENTIAL_HAS channels. Added
+    CredentialStorePayload and CredentialKeyPayload types. Added entries to
+    IpcPayloadMap and IpcResponseMap. Re-exported CredentialKey type.
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -73,7 +76,8 @@ affectedFiles:
     text input popup channels, TextInputSubmitPayload type guard tests,
     TextInputOpenPayload interface tests, updated channel count test from 21 to
     26, updated naming convention regex to allow camelCase domains; Added test
-    for audio capture channels, updated channel count from 26 to 32
+    for audio capture channels, updated channel count from 26 to 32; Added test
+    for credential channels and updated channel count from 32 to 35.
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -138,7 +142,7 @@ affectedFiles:
     dev dependencies; Added pino and pino-pretty dependencies; Added @types/ws
     as a dev dependency (ws was already installed); Added uiohook-napi
     dependency (via npm install); Added electron-store ^11.0.2 as dependency
-    (via npm install)
+    (via npm install); Added keytar dependency.
   src/utils/error-recovery.ts: Created error recovery utilities with
     retryWithBackoff(), withFallback(), withFallbackSync(),
     getRecoveryStrategy(), and isRetryable() functions
@@ -204,7 +208,9 @@ affectedFiles:
     createIdleIcon(). Extended stateChanged subscription to call
     updateTrayIcon().; Added config manager imports, state tracking,
     initialization in app.whenReady(), IPC handler registration, and config
-    change event wiring to broadcast"
+    change event wiring to broadcast; Added credential manager imports, state
+    object, initialization after config manager, and registered IPC handlers
+    with child logger."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -219,7 +225,8 @@ affectedFiles:
     export for client-registry service; Added export for registration-handler
     module.; Added export for hotkey-manager module; Added export for
     input-state service module; Added export for audio-capture service; Added
-    export for config-manager module; Added export for config-manager module
+    export for config-manager module; Added export for config-manager module;
+    Added export for credential-manager module.
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -227,7 +234,7 @@ affectedFiles:
     applyContentRedaction (all content fields, nested objects, arrays,
     null/undefined handling), and Logger Privacy Integration tests.
   package-lock.json: Updated with new dependencies; Updated with electron-store
-    and its dependencies
+    and its dependencies; Updated lockfile with keytar and its dependencies.
   src/ipc/log-handler.ts: Created new module with createLogMessageHandler() and
     processLogMessage() functions for handling renderer log messages with
     payload validation and context enrichment
@@ -489,6 +496,20 @@ affectedFiles:
     createConfigGetHandler, createConfigSetHandler, and broadcastConfigChange
     functions
   src/ipc/config-handler.test.ts: Created 11 unit tests covering get/set handlers and broadcast functionality
+  src/services/credential-manager.ts: New service implementing
+    CredentialManagerService interface with keytar for OS keychain access.
+    Follows singleton pattern with
+    initializeCredentialManager/getCredentialManager/resetCredentialManager.
+  src/services/credential-manager.test.ts: Unit tests covering singleton
+    management, all CRUD operations, error handling for keytar failures, and
+    type coverage for all CredentialKey variants.
+  src/ipc/credential-handler.ts: New file implementing
+    createCredentialStoreHandler, createCredentialDeleteHandler, and
+    createCredentialHasHandler factory functions following existing patterns.
+  src/ipc/credential-handler.test.ts: New test file with 13 tests covering all
+    three handlers, error propagation, and credential key type coverage.
+  src/preload/main.ts: Extended electronAPI with storeCredential,
+    deleteCredential, and hasCredential methods using ipcRenderer.invoke.
 log: []
 schema: v1.0
 childrenIds:
