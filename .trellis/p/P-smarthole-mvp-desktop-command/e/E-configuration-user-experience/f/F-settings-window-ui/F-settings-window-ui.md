@@ -51,6 +51,11 @@ log:
   - Completed T-create-settings-window. Committed as 610668b. Moving to
     T-build-settings-react-ui-with.
   - "Auto-completed: All child tasks are complete"
+  - Completed T-build-settings-react-ui-with. Committed as 5b9f341. Both tasks
+    complete. Running docs-updater.
+  - "Documentation updated: Created docs/settings-window.md, updated CLAUDE.md,
+    docs/configuration-system.md, and docs/credential-system.md with
+    cross-references."
 schema: v1.0
 childrenIds:
   - T-build-settings-react-ui-with
