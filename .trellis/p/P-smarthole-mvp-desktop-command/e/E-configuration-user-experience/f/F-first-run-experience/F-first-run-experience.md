@@ -85,6 +85,8 @@ log:
   - "Auto-completed: All child tasks are complete"
   - Completed T-integrate-first-run-detection. Committed as f419a34. All 4 tasks
     complete. Running docs-updater.
+  - Feature complete. Documentation updated and committed as 4a82ad5. All 4
+    tasks implemented, reviewed, and committed.
 schema: v1.0
 childrenIds:
   - T-add-permission-ipc-infrastruct
