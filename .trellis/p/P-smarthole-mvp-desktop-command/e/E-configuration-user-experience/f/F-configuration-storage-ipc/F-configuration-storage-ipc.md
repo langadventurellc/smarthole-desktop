@@ -40,6 +40,8 @@ log:
   - "Completed T-implement-config-manager. Committed as 15a3601. Moving to final
     task: T-implement-config-ipc-handlers."
   - "Auto-completed: All child tasks are complete"
+  - Completed T-implement-config-ipc-handlers. Committed as 92716eb. All 3 tasks
+    complete. Running docs-updater.
 schema: v1.0
 childrenIds:
   - T-implement-config-ipc-handlers
