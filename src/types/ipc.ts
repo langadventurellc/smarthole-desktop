@@ -64,6 +64,13 @@ export const IPC_CHANNELS = {
   // Input state channels
   INPUT_STATE_CHANGED: "input:stateChanged", // Main -> Renderer broadcast when input state changes
   INPUT_GET_STATE: "input:getState", // Renderer -> Main invoke to get current state
+
+  // Text input popup channels
+  TEXT_INPUT_OPEN: "textInput:open", // Request to open the popup
+  TEXT_INPUT_CLOSE: "textInput:close", // Request to close the popup
+  TEXT_INPUT_SUBMIT: "textInput:submit", // Popup -> main with entered text
+  TEXT_INPUT_FOCUSED: "textInput:focused", // Popup gained focus
+  TEXT_INPUT_DISMISSED: "textInput:dismissed", // Popup closed without submit
 } as const;
 
 /**
@@ -387,6 +394,30 @@ export type { HotkeyActivatedEvent, HotkeyReleasedEvent };
 export type { InputStateInfo, InputStateChangedEvent };
 
 // ============================================================================
+// Text Input Popup IPC Types
+// ============================================================================
+
+/**
+ * Payload for text input submission from the popup.
+ * Sent when the user submits text via the text input popup.
+ */
+export interface TextInputSubmitPayload {
+  /** The text entered by the user */
+  text: string;
+  /** ISO 8601 timestamp when submitted */
+  timestamp: string;
+}
+
+/**
+ * Payload for opening the text input popup.
+ * Allows customization of the popup appearance.
+ */
+export interface TextInputOpenPayload {
+  /** Optional placeholder text override */
+  placeholder?: string;
+}
+
+// ============================================================================
 // IPC Type Maps (for type-safe handlers)
 // ============================================================================
 
@@ -419,6 +450,11 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.HOTKEY_RELEASED]: HotkeyReleasedEvent;
   [IPC_CHANNELS.INPUT_STATE_CHANGED]: InputStateChangedEvent;
   [IPC_CHANNELS.INPUT_GET_STATE]: void; // No payload needed
+  [IPC_CHANNELS.TEXT_INPUT_OPEN]: TextInputOpenPayload | void;
+  [IPC_CHANNELS.TEXT_INPUT_CLOSE]: void;
+  [IPC_CHANNELS.TEXT_INPUT_SUBMIT]: TextInputSubmitPayload;
+  [IPC_CHANNELS.TEXT_INPUT_FOCUSED]: void;
+  [IPC_CHANNELS.TEXT_INPUT_DISMISSED]: void;
 }
 
 /**
@@ -702,4 +738,21 @@ export function isWebSocketServerStatus(value: unknown): value is WebSocketServe
   }
 
   return true;
+}
+
+/**
+ * Checks if a value is a valid TextInputSubmitPayload.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid text input submit payload
+ */
+export function isTextInputSubmitPayload(value: unknown): value is TextInputSubmitPayload {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // Required fields: text and timestamp must be strings
+  return typeof obj.text === "string" && typeof obj.timestamp === "string";
 }

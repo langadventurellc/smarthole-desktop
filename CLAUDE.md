@@ -27,10 +27,13 @@ For pretty-printed logs in dev: `mise run dev 2>&1 | npx pino-pretty`
 ```
 src/
 ├── main.ts              # Electron main process, tray setup
-├── preload.ts           # Secure IPC bridge (contextBridge)
-├── renderer.tsx         # React entry point
+├── preload.ts           # Secure IPC bridge for main renderer (contextBridge)
+├── preload-popup.ts     # Secure IPC bridge for popup window (popupAPI)
+├── renderer.tsx         # React entry point (main window)
 ├── App.tsx              # Main React component
+├── popup/               # Text input popup UI (React)
 ├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state)
+├── windows/             # Window management (text-input-popup)
 ├── ipc/                 # IPC handlers for main/renderer communication
 └── types/               # TypeScript type definitions
 ```
@@ -72,4 +75,5 @@ src/
 - [Client Status IPC](docs/client-status.md) - renderer API, tray menu integration, status events
 - [Message Delivery](docs/message-delivery.md) - routing messages to clients, response handling
 - [Global Hotkey System](docs/global-hotkey-system.md) - hotkey registration, input state machine, IPC events
+- [Text Input Popup](docs/text-input-popup.md) - Spotlight-style text input window, IPC integration
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements

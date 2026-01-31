@@ -50,7 +50,10 @@ affectedFiles:
     ClientStatusChangedPayload types, plus payload/response map entries; Added 4
     new IPC channels (HOTKEY_ACTIVATED, HOTKEY_RELEASED, INPUT_STATE_CHANGED,
     INPUT_GET_STATE), imported and re-exported hotkey and input state types,
-    updated IpcPayloadMap and IpcResponseMap
+    updated IpcPayloadMap and IpcResponseMap; Added 5 text input popup IPC
+    channels, TextInputSubmitPayload and TextInputOpenPayload interfaces,
+    updated IpcPayloadMap with new channel mappings, added
+    isTextInputSubmitPayload type guard
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -59,7 +62,10 @@ affectedFiles:
     updated naming convention regex to allow camelCase actions, added test for
     new message delivery channels.; Updated channel count test and added tests
     for new client status channels; Updated channel count test from 17 to 21,
-    added tests for new hotkey and input state channels
+    added tests for new hotkey and input state channels; Added tests for new
+    text input popup channels, TextInputSubmitPayload type guard tests,
+    TextInputOpenPayload interface tests, updated channel count test from 21 to
+    26, updated naming convention regex to allow camelCase domains
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -81,7 +87,8 @@ affectedFiles:
     methods to the preload API; Added onHotkeyActivated, onHotkeyReleased,
     getInputState, and onInputStateChanged APIs to electronAPI"
   src/types/electron.d.ts: Created global Window interface augmentation declaring
-    electronAPI property with ElectronAPI type
+    electronAPI property with ElectronAPI type; Added PopupAPI type import and
+    Window.popupAPI declaration for type-safe popup renderer code
   src/preload.test.ts: Created comprehensive unit tests (29 tests) mocking
     ipcRenderer to verify IPC channels, payload structures, convenience methods,
     and onConfigChanged unsubscribe functionality
@@ -167,7 +174,10 @@ affectedFiles:
     notifications. Added response:notification event listener that validates,
     maps, and enqueues client notifications.; Added imports for services and
     handlers, initialized hotkey manager and input state service, wired events
-    to IPC broadcasts and state transitions, added cleanup in will-quit handler"
+    to IPC broadcasts and state transitions, added cleanup in will-quit handler;
+    Added popup service imports, popupState tracking, TextInputPopup
+    initialization, IPC handler registration, hotkey wiring, and submitted event
+    subscription"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -195,7 +205,7 @@ affectedFiles:
   src/ipc/index.ts: Created barrel export for IPC module; Added export for
     notification-handler module to barrel export file.; Added export for
     client-status-handler module; Added exports for hotkey-handler and
-    input-state-handler modules
+    input-state-handler modules; Added export for text-input-handler module
   src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
     covering handler creation, payload validation, log level mapping, context
     enrichment, and edge cases
@@ -345,6 +355,43 @@ affectedFiles:
     hotkey system covering architecture, services (HotkeyManager, InputState),
     IPC channels, renderer API, types, configuration, platform notes, and error
     handling
+  src/windows/text-input-popup.ts: Created singleton service with
+    TextInputPopupService interface, show/hide methods, screen positioning via
+    calculateCenteredPosition(), focus management, EventEmitter for callbacks,
+    path resolution for preload/popup URL, and app cleanup handlers; Updated
+    getPopupUrl() to use POPUP_WINDOW_VITE_DEV_SERVER_URL env var and correct
+    production path to popup.html
+  src/windows/index.ts: Created module exports for TextInputPopupService,
+    functions (initialize, get, reset, getImpl), calculateCenteredPosition, and
+    event types
+  src/windows/text-input-popup.test.ts: Added 20 unit tests covering singleton
+    lifecycle, show (positioning, focus, placeholder, events), hide (window,
+    input clearing, focus restoration), isVisible, event
+    subscription/unsubscription, and getWindow accessor
+  src/preload-popup.ts: Created preload script with PopupAPI exposing submit,
+    dismiss, notifyFocused methods and onPlaceholderChange, onClear event
+    listeners via contextBridge
+  src/popup/index.html: Created minimal HTML entry point for popup window with
+    module script reference; Deleted - replaced by popup.html at project root
+  src/popup/popup.tsx: Created React component with auto-focus, keyboard handling
+    (Enter submits, Escape dismisses), placeholder/clear subscriptions
+  src/popup/popup.css: Created Spotlight-like styling with semi-transparent
+    background, blur, dark mode and high contrast support
+  src/ipc/text-input-handler.ts: Created IPC handlers for text input popup
+    (createTextInputSubmitHandler, createTextInputDismissedHandler,
+    createTextInputFocusedHandler, wireTextInputToHotkey,
+    registerTextInputHandlers)
+  src/ipc/text-input-handler.test.ts: Created 10 unit tests for submit handler
+    validation, dismissed handler, focused handler, and hotkey wiring scenarios
+  vite.popup-preload.config.ts: Created new Vite config for popup preload script with electron external
+  vite.popup-renderer.config.ts: Created new Vite config for popup renderer with
+    React plugin and rollupOptions.input pointing to popup.html
+  forge.config.ts: Added popup preload entry (src/preload-popup.ts) and
+    popup_window renderer entry to VitePlugin configuration
+  index.html: Created at project root (moved from src/index.html) - fixes
+    pre-existing production build issue
+  popup.html: Created at project root as popup window entry point
+  src/index.html: Deleted - moved to project root
 log: []
 schema: v1.0
 childrenIds:

@@ -32,11 +32,20 @@ const config: ForgeConfig = {
           config: "vite.preload.config.ts",
           target: "preload",
         },
+        {
+          entry: "src/preload-popup.ts",
+          config: "vite.popup-preload.config.ts",
+          target: "preload",
+        },
       ],
       renderer: [
         {
           name: "main_window",
           config: "vite.renderer.config.ts",
+        },
+        {
+          name: "popup_window",
+          config: "vite.popup-renderer.config.ts",
         },
       ],
     }),

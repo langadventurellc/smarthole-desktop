@@ -11,6 +11,7 @@
  */
 
 import type { ElectronAPI } from "../preload";
+import type { PopupAPI } from "../preload-popup";
 
 declare global {
   interface Window {
@@ -19,6 +20,12 @@ declare global {
      * Provides type-safe access to main process functionality.
      */
     electronAPI: ElectronAPI;
+
+    /**
+     * The Popup API exposed via contextBridge in preload-popup.ts.
+     * Provides type-safe access for the text input popup window.
+     */
+    popupAPI: PopupAPI;
   }
 }
 

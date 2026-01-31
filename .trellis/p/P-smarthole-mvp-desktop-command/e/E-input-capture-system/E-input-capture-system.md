@@ -29,21 +29,30 @@ affectedFiles:
     transitions, event emission, mode changes, and getStateInfo
   src/types/ipc.ts: Added 4 new IPC channels (HOTKEY_ACTIVATED, HOTKEY_RELEASED,
     INPUT_STATE_CHANGED, INPUT_GET_STATE), imported and re-exported hotkey and
-    input state types, updated IpcPayloadMap and IpcResponseMap
+    input state types, updated IpcPayloadMap and IpcResponseMap; Added 5 text
+    input popup IPC channels, TextInputSubmitPayload and TextInputOpenPayload
+    interfaces, updated IpcPayloadMap with new channel mappings, added
+    isTextInputSubmitPayload type guard
   src/ipc/hotkey-handler.ts: Created new IPC handler with
     broadcastHotkeyActivated, broadcastHotkeyReleased, and
     wireHotkeyManagerToIpc functions
   src/ipc/input-state-handler.ts: Created new IPC handler with
     broadcastInputStateChanged, createInputStateHandler, and wireInputStateToIpc
     functions
-  src/ipc/index.ts: Added exports for hotkey-handler and input-state-handler modules
+  src/ipc/index.ts: Added exports for hotkey-handler and input-state-handler
+    modules; Added export for text-input-handler module
   src/preload.ts: Added onHotkeyActivated, onHotkeyReleased, getInputState, and
     onInputStateChanged APIs to electronAPI
   src/main.ts: Added imports for services and handlers, initialized hotkey manager
     and input state service, wired events to IPC broadcasts and state
-    transitions, added cleanup in will-quit handler
+    transitions, added cleanup in will-quit handler; Added popup service
+    imports, popupState tracking, TextInputPopup initialization, IPC handler
+    registration, hotkey wiring, and submitted event subscription
   src/types/ipc.test.ts: Updated channel count test from 17 to 21, added tests for
-    new hotkey and input state channels
+    new hotkey and input state channels; Added tests for new text input popup
+    channels, TextInputSubmitPayload type guard tests, TextInputOpenPayload
+    interface tests, updated channel count test from 21 to 26, updated naming
+    convention regex to allow camelCase domains
   src/types/hotkey.ts: Created new types file for hotkey event types (HotkeyType,
     HotkeyActivatedEvent, HotkeyReleasedEvent, HotkeyErrorCode,
     HotkeyErrorEvent) to avoid circular dependency between types and services
@@ -53,6 +62,45 @@ affectedFiles:
     handling
   CLAUDE.md: Updated services list to include hotkey-manager and input-state;
     added link to global-hotkey-system.md in Detailed Documentation section
+  src/windows/text-input-popup.ts: Created singleton service with
+    TextInputPopupService interface, show/hide methods, screen positioning via
+    calculateCenteredPosition(), focus management, EventEmitter for callbacks,
+    path resolution for preload/popup URL, and app cleanup handlers; Updated
+    getPopupUrl() to use POPUP_WINDOW_VITE_DEV_SERVER_URL env var and correct
+    production path to popup.html
+  src/windows/index.ts: Created module exports for TextInputPopupService,
+    functions (initialize, get, reset, getImpl), calculateCenteredPosition, and
+    event types
+  src/windows/text-input-popup.test.ts: Added 20 unit tests covering singleton
+    lifecycle, show (positioning, focus, placeholder, events), hide (window,
+    input clearing, focus restoration), isVisible, event
+    subscription/unsubscription, and getWindow accessor
+  src/preload-popup.ts: Created preload script with PopupAPI exposing submit,
+    dismiss, notifyFocused methods and onPlaceholderChange, onClear event
+    listeners via contextBridge
+  src/popup/index.html: Created minimal HTML entry point for popup window with
+    module script reference; Deleted - replaced by popup.html at project root
+  src/popup/popup.tsx: Created React component with auto-focus, keyboard handling
+    (Enter submits, Escape dismisses), placeholder/clear subscriptions
+  src/popup/popup.css: Created Spotlight-like styling with semi-transparent
+    background, blur, dark mode and high contrast support
+  src/types/electron.d.ts: Added PopupAPI type import and Window.popupAPI
+    declaration for type-safe popup renderer code
+  src/ipc/text-input-handler.ts: Created IPC handlers for text input popup
+    (createTextInputSubmitHandler, createTextInputDismissedHandler,
+    createTextInputFocusedHandler, wireTextInputToHotkey,
+    registerTextInputHandlers)
+  src/ipc/text-input-handler.test.ts: Created 10 unit tests for submit handler
+    validation, dismissed handler, focused handler, and hotkey wiring scenarios
+  vite.popup-preload.config.ts: Created new Vite config for popup preload script with electron external
+  vite.popup-renderer.config.ts: Created new Vite config for popup renderer with
+    React plugin and rollupOptions.input pointing to popup.html
+  forge.config.ts: Added popup preload entry (src/preload-popup.ts) and
+    popup_window renderer entry to VitePlugin configuration
+  index.html: Created at project root (moved from src/index.html) - fixes
+    pre-existing production build issue
+  popup.html: Created at project root as popup window entry point
+  src/index.html: Deleted - moved to project root
 log: []
 schema: v1.0
 childrenIds:

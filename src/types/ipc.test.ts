@@ -13,6 +13,7 @@ import {
   isConfigSetPayload,
   isConfigChangedPayload,
   isAppVersionResponse,
+  isTextInputSubmitPayload,
   // Payload types
   type LogMessagePayload,
   type NotificationType,
@@ -24,6 +25,8 @@ import {
   type ConfigSetPayload,
   type ConfigChangedPayload,
   type AppVersionResponse,
+  type TextInputSubmitPayload,
+  type TextInputOpenPayload,
   // Type maps
   type IpcPayloadMap,
   type IpcResponseMap,
@@ -80,14 +83,22 @@ describe("IPC_CHANNELS", () => {
       expect(IPC_CHANNELS.INPUT_GET_STATE).toBe("input:getState");
     });
 
-    it("should have exactly 21 channels", () => {
-      expect(Object.keys(IPC_CHANNELS)).toHaveLength(21);
+    it("should have all expected text input popup channels", () => {
+      expect(IPC_CHANNELS.TEXT_INPUT_OPEN).toBe("textInput:open");
+      expect(IPC_CHANNELS.TEXT_INPUT_CLOSE).toBe("textInput:close");
+      expect(IPC_CHANNELS.TEXT_INPUT_SUBMIT).toBe("textInput:submit");
+      expect(IPC_CHANNELS.TEXT_INPUT_FOCUSED).toBe("textInput:focused");
+      expect(IPC_CHANNELS.TEXT_INPUT_DISMISSED).toBe("textInput:dismissed");
+    });
+
+    it("should have exactly 26 channels", () => {
+      expect(Object.keys(IPC_CHANNELS)).toHaveLength(26);
     });
 
     it("should follow the domain:action naming convention", () => {
       for (const channel of Object.values(IPC_CHANNELS)) {
-        // Allows domain:action or domain:action:sub patterns (action can be camelCase)
-        expect(channel).toMatch(/^[a-z]+:[a-zA-Z]+(:[a-zA-Z]+)?$/);
+        // Allows domain:action or domain:action:sub patterns (domain and action can be camelCase)
+        expect(channel).toMatch(/^[a-zA-Z]+:[a-zA-Z]+(:[a-zA-Z]+)?$/);
       }
     });
   });
@@ -599,6 +610,86 @@ describe("AppVersionResponse", () => {
       expect(response.version).toBe("2.1.0");
       expect(response.electronVersion).toBe("40.2.1");
       expect(response.nodeVersion).toBe("20.11.0");
+    });
+  });
+});
+
+describe("TextInputSubmitPayload", () => {
+  describe("isTextInputSubmitPayload type guard", () => {
+    it("should return true for valid payloads", () => {
+      const payload = {
+        text: "Hello world",
+        timestamp: "2024-01-15T10:30:00.000Z",
+      };
+      expect(isTextInputSubmitPayload(payload)).toBe(true);
+    });
+
+    it("should return true for empty text", () => {
+      const payload = {
+        text: "",
+        timestamp: "2024-01-15T10:30:00.000Z",
+      };
+      expect(isTextInputSubmitPayload(payload)).toBe(true);
+    });
+
+    it("should return false when text is missing", () => {
+      expect(isTextInputSubmitPayload({ timestamp: "2024-01-15T10:30:00.000Z" })).toBe(false);
+    });
+
+    it("should return false when timestamp is missing", () => {
+      expect(isTextInputSubmitPayload({ text: "Hello" })).toBe(false);
+    });
+
+    it("should return false when text is not a string", () => {
+      expect(isTextInputSubmitPayload({ text: 123, timestamp: "2024-01-15T10:30:00.000Z" })).toBe(
+        false
+      );
+    });
+
+    it("should return false when timestamp is not a string", () => {
+      expect(isTextInputSubmitPayload({ text: "Hello", timestamp: 123 })).toBe(false);
+    });
+
+    it("should return false for non-object values", () => {
+      expect(isTextInputSubmitPayload(null)).toBe(false);
+      expect(isTextInputSubmitPayload("string")).toBe(false);
+      expect(isTextInputSubmitPayload(123)).toBe(false);
+      expect(isTextInputSubmitPayload(undefined)).toBe(false);
+    });
+
+    it("should narrow the type when used as a guard", () => {
+      const value: unknown = { text: "Test input", timestamp: "2024-01-15T10:30:00.000Z" };
+      if (isTextInputSubmitPayload(value)) {
+        const _payload: TextInputSubmitPayload = value;
+        expect(_payload.text).toBe("Test input");
+      }
+    });
+  });
+
+  describe("interface structure", () => {
+    it("should allow valid payload structures", () => {
+      const payload: TextInputSubmitPayload = {
+        text: "User input text",
+        timestamp: "2024-01-15T10:30:00.000Z",
+      };
+      expect(payload.text).toBe("User input text");
+      expect(payload.timestamp).toBe("2024-01-15T10:30:00.000Z");
+    });
+  });
+});
+
+describe("TextInputOpenPayload", () => {
+  describe("interface structure", () => {
+    it("should allow payload with placeholder", () => {
+      const payload: TextInputOpenPayload = {
+        placeholder: "Type your command...",
+      };
+      expect(payload.placeholder).toBe("Type your command...");
+    });
+
+    it("should allow empty payload", () => {
+      const payload: TextInputOpenPayload = {};
+      expect(payload.placeholder).toBeUndefined();
     });
   });
 });
