@@ -69,7 +69,10 @@ affectedFiles:
     payload/response maps; Added 4 new permission IPC channels
     (PERMISSION_CHECK_MICROPHONE, PERMISSION_REQUEST_MICROPHONE,
     PERMISSION_CHECK_ACCESSIBILITY, PERMISSION_OPEN_ACCESSIBILITY_SETTINGS) with
-    corresponding payload/response types in IpcPayloadMap and IpcResponseMap
+    corresponding payload/response types in IpcPayloadMap and IpcResponseMap;
+    Added STT IPC channels (STT_TRANSCRIBING, STT_RESULT, STT_ERROR),
+    SttTranscribingPayload interface, re-exported TranscriptionReadyEvent and
+    TranscriptionErrorEvent, added entries to IpcPayloadMap
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -85,7 +88,8 @@ affectedFiles:
     for audio capture channels, updated channel count from 26 to 32; Added test
     for credential channels and updated channel count from 32 to 35.; Updated
     channel count to 36 and added DIALOG_OPEN channel test; Updated channel
-    count assertion from 36 to 40
+    count assertion from 36 to 40; Added test for STT channels and updated
+    channel count from 41 to 44
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -630,8 +634,17 @@ affectedFiles:
     singleton initialization, backend selection (cloud vs local), transcription
     delegation, getActiveBackend, isReady, and SttServiceError class
   src/services/stt-pipeline.ts: Created new STT pipeline service with
-    audio-to-transcription orchestration, error handling, and event emission
-  src/services/stt-pipeline.test.ts: Created comprehensive test suite with 19 tests covering all scenarios
+    audio-to-transcription orchestration, error handling, and event emission;
+    Wired STT pipeline to emit IPC events via broadcast functions
+  src/services/stt-pipeline.test.ts: Created comprehensive test suite with 19
+    tests covering all scenarios; Added BrowserWindow mock to electron mock for
+    IPC integration
+  src/ipc/stt-handler.ts: Created new STT IPC handler with
+    broadcastSttTranscribing, broadcastSttResult, and broadcastSttError
+    functions
+  src/ipc/stt-handler.test.ts: Created test suite with 10 tests covering all broadcast functions
+  src/preload/preload.ts: Added onSttTranscribing, onSttResult, onSttError event
+    listeners to electronAPI
 log: []
 schema: v1.0
 childrenIds:

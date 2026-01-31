@@ -34,12 +34,26 @@ affectedFiles:
     delegation, getActiveBackend, isReady, and SttServiceError class
   src/services/index.ts: Updated to export the new stt-service module
   src/services/stt-pipeline.ts: Created new STT pipeline service with
-    audio-to-transcription orchestration, error handling, and event emission
-  src/services/stt-pipeline.test.ts: Created comprehensive test suite with 19 tests covering all scenarios
+    audio-to-transcription orchestration, error handling, and event emission;
+    Wired STT pipeline to emit IPC events via broadcast functions
+  src/services/stt-pipeline.test.ts: Created comprehensive test suite with 19
+    tests covering all scenarios; Added BrowserWindow mock to electron mock for
+    IPC integration
   src/main.ts: Wired STT pipeline to audioReady event and added transcriptionReady
     listener for downstream routing
   src/services/input-state.ts: Added IDLE -> PROCESSING valid transition for STT pipeline use case
   src/services/input-state.test.ts: Updated tests to reflect new valid IDLE -> PROCESSING transition
+  src/types/ipc.ts: Added STT IPC channels (STT_TRANSCRIBING, STT_RESULT,
+    STT_ERROR), SttTranscribingPayload interface, re-exported
+    TranscriptionReadyEvent and TranscriptionErrorEvent, added entries to
+    IpcPayloadMap
+  src/ipc/stt-handler.ts: Created new STT IPC handler with
+    broadcastSttTranscribing, broadcastSttResult, and broadcastSttError
+    functions
+  src/ipc/stt-handler.test.ts: Created test suite with 10 tests covering all broadcast functions
+  src/preload/preload.ts: Added onSttTranscribing, onSttResult, onSttError event
+    listeners to electronAPI
+  src/types/ipc.test.ts: Added test for STT channels and updated channel count from 41 to 44
 log: []
 schema: v1.0
 childrenIds:

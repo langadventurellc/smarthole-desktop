@@ -17,6 +17,7 @@ import {
   AudioPermissionChangedEvent,
 } from "./audio";
 import type { CredentialKey } from "./credentials";
+import { TranscriptionReadyEvent, TranscriptionErrorEvent } from "./stt";
 
 // ============================================================================
 // IPC Channel Definitions
@@ -104,6 +105,11 @@ export const IPC_CHANNELS = {
 
   // Onboarding channels
   ONBOARDING_CLOSE: "onboarding:close", // Request to close onboarding window
+
+  // STT (Speech-to-Text) channels
+  STT_TRANSCRIBING: "stt:transcribing", // Main -> Renderer: STT processing started
+  STT_RESULT: "stt:result", // Main -> Renderer: Transcription complete
+  STT_ERROR: "stt:error", // Main -> Renderer: Transcription failed
 } as const;
 
 /**
@@ -457,6 +463,22 @@ export interface TextInputOpenPayload {
 // Re-export audio event types for IPC consumers
 export type { AudioStateChangedEvent, AudioPermissionChangedEvent };
 
+// ============================================================================
+// STT IPC Types
+// ============================================================================
+
+// Re-export STT event types for IPC consumers
+export type { TranscriptionReadyEvent, TranscriptionErrorEvent };
+
+/**
+ * Payload for stt:transcribing IPC channel.
+ * Sent when STT processing starts.
+ */
+export interface SttTranscribingPayload {
+  /** Identifier for the audio being transcribed (uses startedAt timestamp) */
+  audioId: string;
+}
+
 /**
  * Payload for audio:start IPC channel.
  * Triggers recording start with optional configuration override.
@@ -528,6 +550,9 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.PERMISSION_CHECK_ACCESSIBILITY]: void; // No payload needed
   [IPC_CHANNELS.PERMISSION_OPEN_ACCESSIBILITY_SETTINGS]: void; // No payload needed
   [IPC_CHANNELS.ONBOARDING_CLOSE]: void; // No payload needed
+  [IPC_CHANNELS.STT_TRANSCRIBING]: SttTranscribingPayload;
+  [IPC_CHANNELS.STT_RESULT]: TranscriptionReadyEvent;
+  [IPC_CHANNELS.STT_ERROR]: TranscriptionErrorEvent;
 }
 
 /**

@@ -78,10 +78,13 @@ MockStore.prototype = {
   },
 };
 
-// Mock Electron's Notification
+// Mock Electron's Notification and BrowserWindow
 vi.mock("electron", () => ({
   Notification: {
     isSupported: vi.fn().mockReturnValue(true),
+  },
+  BrowserWindow: {
+    getAllWindows: vi.fn().mockReturnValue([]),
   },
 }));
 

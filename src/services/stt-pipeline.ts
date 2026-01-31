@@ -17,6 +17,11 @@ import {
   TranscriptionReadyEvent,
   TranscriptionErrorEvent,
 } from "../types";
+import {
+  broadcastSttTranscribing,
+  broadcastSttResult,
+  broadcastSttError,
+} from "../ipc/stt-handler";
 
 // ============================================================================
 // Error Notification Mapping
@@ -107,6 +112,9 @@ class SttPipelineServiceImpl implements SttPipelineService {
     if (inputStateService.canTransitionTo(InputState.PROCESSING)) {
       inputStateService.transitionTo(InputState.PROCESSING);
       this.logger.debug("Transitioned to PROCESSING state");
+
+      // Broadcast STT transcribing event to renderer
+      broadcastSttTranscribing({ audioId: audioResult.startedAt });
     }
 
     try {
@@ -147,6 +155,9 @@ class SttPipelineServiceImpl implements SttPipelineService {
       });
 
       this.emitter.emit("transcriptionReady", event);
+
+      // Broadcast result to renderer
+      broadcastSttResult(event);
     } catch (error) {
       const errorCode = this.mapErrorToCode(error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -214,6 +225,9 @@ class SttPipelineServiceImpl implements SttPipelineService {
       cause,
     };
     this.emitter.emit("transcriptionError", errorEvent);
+
+    // Broadcast error to renderer
+    broadcastSttError(errorEvent);
   }
 
   /**
