@@ -91,8 +91,17 @@ describe("IPC_CHANNELS", () => {
       expect(IPC_CHANNELS.TEXT_INPUT_DISMISSED).toBe("textInput:dismissed");
     });
 
-    it("should have exactly 26 channels", () => {
-      expect(Object.keys(IPC_CHANNELS)).toHaveLength(26);
+    it("should have all expected audio capture channels", () => {
+      expect(IPC_CHANNELS.AUDIO_START).toBe("audio:start");
+      expect(IPC_CHANNELS.AUDIO_STOP).toBe("audio:stop");
+      expect(IPC_CHANNELS.AUDIO_DATA).toBe("audio:data");
+      expect(IPC_CHANNELS.AUDIO_PERMISSION_GET).toBe("audio:permission:get");
+      expect(IPC_CHANNELS.AUDIO_PERMISSION_CHANGED).toBe("audio:permission:changed");
+      expect(IPC_CHANNELS.AUDIO_STATE_CHANGED).toBe("audio:stateChanged");
+    });
+
+    it("should have exactly 32 channels", () => {
+      expect(Object.keys(IPC_CHANNELS)).toHaveLength(32);
     });
 
     it("should follow the domain:action naming convention", () => {

@@ -8,6 +8,7 @@
  * ```
  */
 
+export * from "./audio";
 export * from "./common";
 export * from "./config";
 export * from "./errors";

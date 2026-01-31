@@ -17,7 +17,7 @@ affectedFiles:
     IPC types; Updated barrel export to include guards module; Added ElectronAPI
     type export from preload module; Added export for errors.ts to barrel
     export; Added export for client-registry types; Added export for input types
-    module
+    module; Added export for audio types module
   src/types/common.test.ts: Created comprehensive unit tests for all types and
     functions (37 tests) including type-level constraint verification
   src/types/config.ts: Created configuration type definitions including LogLevel,
@@ -53,7 +53,12 @@ affectedFiles:
     updated IpcPayloadMap and IpcResponseMap; Added 5 text input popup IPC
     channels, TextInputSubmitPayload and TextInputOpenPayload interfaces,
     updated IpcPayloadMap with new channel mappings, added
-    isTextInputSubmitPayload type guard
+    isTextInputSubmitPayload type guard; Added import for audio types, added 6
+    new IPC channels (AUDIO_START, AUDIO_STOP, AUDIO_DATA, AUDIO_PERMISSION_GET,
+    AUDIO_PERMISSION_CHANGED, AUDIO_STATE_CHANGED), added AudioStartPayload and
+    AudioDataPayload interfaces, re-exported AudioStateChangedEvent and
+    AudioPermissionChangedEvent, updated IpcPayloadMap with audio channels,
+    updated IpcResponseMap with AUDIO_PERMISSION_GET response type
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -65,7 +70,8 @@ affectedFiles:
     added tests for new hotkey and input state channels; Added tests for new
     text input popup channels, TextInputSubmitPayload type guard tests,
     TextInputOpenPayload interface tests, updated channel count test from 21 to
-    26, updated naming convention regex to allow camelCase domains
+    26, updated naming convention regex to allow camelCase domains; Added test
+    for audio capture channels, updated channel count from 26 to 32
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -85,7 +91,10 @@ affectedFiles:
     getMessageStatus, getRecentDeliveries with full TypeScript types.; Added
     getClientCount, getClientList, getClientDetails, and onClientStatusChange
     methods to the preload API; Added onHotkeyActivated, onHotkeyReleased,
-    getInputState, and onInputStateChanged APIs to electronAPI"
+    getInputState, and onInputStateChanged APIs to electronAPI; Added audio
+    capture API methods: getAudioPermission(), sendAudioData(),
+    onAudioStateChanged(), onAudioPermissionChanged(), onAudioStart(),
+    onAudioStop(). Added required type imports."
   src/types/electron.d.ts: Created global Window interface augmentation declaring
     electronAPI property with ElectronAPI type; Added PopupAPI type import and
     Window.popupAPI declaration for type-safe popup renderer code
@@ -177,7 +186,9 @@ affectedFiles:
     to IPC broadcasts and state transitions, added cleanup in will-quit handler;
     Added popup service imports, popupState tracking, TextInputPopup
     initialization, IPC handler registration, hotkey wiring, and submitted event
-    subscription"
+    subscription; Added audio capture service initialization, IPC wiring, hotkey
+    integration, audioReady event handling, and cleanup in will-quit handler.
+    Added audioState tracking object and required imports."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -191,7 +202,7 @@ affectedFiles:
     for notifications module; Added export for notification-queue module; Added
     export for client-registry service; Added export for registration-handler
     module.; Added export for hotkey-manager module; Added export for
-    input-state service module
+    input-state service module; Added export for audio-capture service
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -205,7 +216,8 @@ affectedFiles:
   src/ipc/index.ts: Created barrel export for IPC module; Added export for
     notification-handler module to barrel export file.; Added export for
     client-status-handler module; Added exports for hotkey-handler and
-    input-state-handler modules; Added export for text-input-handler module
+    input-state-handler modules; Added export for text-input-handler module;
+    Added export for audio-handler
   src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
     covering handler creation, payload validation, log level mapping, context
     enrichment, and edge cases
@@ -392,6 +404,43 @@ affectedFiles:
     pre-existing production build issue
   popup.html: Created at project root as popup window entry point
   src/index.html: Deleted - moved to project root
+  src/types/audio.ts: Created new file with AudioCaptureState enum,
+    AudioCapturePermission enum, AudioBuffer, AudioCaptureConfig (with
+    DEFAULT_AUDIO_CAPTURE_CONFIG), AudioCaptureResult, AudioPermissionStatus
+    interfaces, AudioCaptureEvents interface with all event types, and type
+    guards (isAudioCaptureState, isAudioCapturePermission, isAudioFormat,
+    isAudioBuffer, isAudioCaptureResult, isAudioPermissionStatus,
+    isAudioErrorCode, isAudioStateChangedEvent, isAudioPermissionChangedEvent)
+  src/types/audio.test.ts: Created new file with 47 unit tests for all audio type guards
+  src/renderer/index.ts: Created barrel export file with documentation comment
+    explaining the directory purpose - holds renderer-side modules that use
+    browser/Web APIs and run in renderer context; Updated barrel export to
+    include all audio capture module exports
+  src/services/audio-capture.ts: Created main process audio capture service with
+    singleton pattern, recording lifecycle management (start/stop/isRecording),
+    macOS permission checking, push-to-talk and toggle mode support,
+    handleAudioData for receiving audio from renderer, and EventEmitter for
+    state/permission/audioReady/error events
+  src/services/audio-capture.test.ts: Created 24 unit tests covering singleton
+    management, recording lifecycle, audio data handling, voice input modes,
+    permission status, permission denied scenarios, event subscription, and
+    reset functionality
+  src/ipc/audio-handler.ts: Created IPC handlers including broadcast functions
+    (broadcastAudioStateChanged, broadcastAudioPermissionChanged,
+    broadcastAudioStart, broadcastAudioStop), createAudioDataHandler for
+    AUDIO_DATA channel, createAudioPermissionHandler for AUDIO_PERMISSION_GET
+    channel, wireAudioCaptureToIpc, wireAudioCaptureToHotkey, and
+    registerAudioHandlers
+  src/ipc/audio-handler.test.ts: Created 20 unit tests covering broadcast
+    functions, handler creators, IPC wiring, and hotkey integration for both
+    push-to-talk and toggle modes
+  src/renderer/audio-capture.ts: Created renderer-side audio capture module with
+    MediaRecorder-based recording, WAV encoding, audio resampling (48kHz to
+    16kHz), stereo to mono conversion, permission checking, and
+    AudioCaptureError class
+  src/renderer/audio-capture.test.ts: Created 20 unit tests for WAV encoding,
+    resampling, mono conversion, configuration, state management, and error
+    handling
 log: []
 schema: v1.0
 childrenIds:

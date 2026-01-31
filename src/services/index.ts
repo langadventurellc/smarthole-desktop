@@ -15,3 +15,4 @@ export * from "./client-registry";
 export * from "./registration-handler";
 export * from "./hotkey-manager";
 export * from "./input-state";
+export * from "./audio-capture";
