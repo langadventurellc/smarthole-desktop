@@ -83,6 +83,8 @@ log:
   - "Completed T-implement-onboarding-wizard. Committed as d737d7d. Moving to
     final task: T-integrate-first-run-detection."
   - "Auto-completed: All child tasks are complete"
+  - Completed T-integrate-first-run-detection. Committed as f419a34. All 4 tasks
+    complete. Running docs-updater.
 schema: v1.0
 childrenIds:
   - T-add-permission-ipc-infrastruct

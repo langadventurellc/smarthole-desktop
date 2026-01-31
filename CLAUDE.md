@@ -35,9 +35,10 @@ src/
 ├── App.tsx              # Main React component
 ├── popup/               # Text input popup UI (React)
 ├── settings/            # Settings window UI (React, components/)
+├── onboarding/          # First-run onboarding wizard UI (React)
 ├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state, audio-capture, config-manager, credential-manager)
 ├── renderer/            # Renderer-side modules (audio-capture)
-├── windows/             # Window management (text-input-popup, settings-window)
+├── windows/             # Window management (text-input-popup, settings-window, onboarding-window)
 ├── ipc/                 # IPC handlers for main/renderer communication
 └── types/               # TypeScript type definitions
 ```
@@ -85,4 +86,5 @@ src/
 - [Configuration System](docs/configuration-system.md) - persistent config storage, IPC, electron-store
 - [Credential System](docs/credential-system.md) - secure credential storage, OS keychain, keytar
 - [Settings Window](docs/settings-window.md) - React settings UI, tab navigation, input components
+- [Onboarding System](docs/onboarding-system.md) - first-run wizard, permission requests, setup flow
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements
