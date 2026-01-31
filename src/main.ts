@@ -928,21 +928,22 @@ app.whenReady().then(async () => {
         logger.info("Onboarding window closed");
         onboardingState.isOnboarding = false;
 
-        // Check if firstRunCompleted was set (user finished or skipped)
+        // Always transition to tray mode, regardless of completion status
+        // The setupIncomplete flag in tray menu will remind user to configure
         const updatedConfig = getConfigManager().getConfig();
-        if (updatedConfig.firstRunCompleted) {
-          logger.info("Onboarding completed, transitioning to normal operation");
-          initializeNormalOperation().catch((error) => {
-            logger.error("Failed to initialize normal operation", {
-              error: error instanceof Error ? error.message : String(error),
-            });
-            app.quit();
-          });
-        } else {
-          // User closed without completing - quit the app
-          logger.info("Onboarding closed without completion, quitting");
-          app.quit();
+        if (!updatedConfig.firstRunCompleted) {
+          logger.info("Onboarding closed without completion, marking first run complete");
+          // Mark first run complete so onboarding doesn't show again
+          getConfigManager().setConfig({ firstRunCompleted: true });
         }
+
+        logger.info("Transitioning to normal operation");
+        initializeNormalOperation().catch((error) => {
+          logger.error("Failed to initialize normal operation", {
+            error: error instanceof Error ? error.message : String(error),
+          });
+          app.quit();
+        });
       });
     }
   } else {
