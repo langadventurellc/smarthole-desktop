@@ -216,7 +216,8 @@ affectedFiles:
     for notifications module; Added export for notification-queue module; Added
     export for client-registry service; Added export for registration-handler
     module.; Added export for hotkey-manager module; Added export for
-    input-state service module; Added export for audio-capture service
+    input-state service module; Added export for audio-capture service; Added
+    export for config-manager module; Added export for config-manager module
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -471,6 +472,17 @@ affectedFiles:
     interfaces and buildTrayMenuTemplate() function."
   src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
     building logic covering all input states and menu structure."
+  src/services/config-manager.ts: Created config manager service with
+    electron-store integration, singleton pattern, configChanged event emission,
+    and changed key path tracking; Created config manager service with
+    electron-store integration, singleton pattern, configChanged event emission,
+    and changed key path tracking
+  src/services/config-manager.test.ts: Created comprehensive unit tests (24 tests)
+    covering singleton initialization, getConfig, setConfig, deep merge
+    behavior, changed keys tracking, event emission, and reset functionality;
+    Created comprehensive unit tests (24 tests) covering singleton
+    initialization, getConfig, setConfig, deep merge behavior, changed keys
+    tracking, event emission, and reset functionality
 log: []
 schema: v1.0
 childrenIds:

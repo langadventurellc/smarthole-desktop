@@ -16,3 +16,4 @@ export * from "./registration-handler";
 export * from "./hotkey-manager";
 export * from "./input-state";
 export * from "./audio-capture";
+export * from "./config-manager";
