@@ -1,15 +1,26 @@
 ---
 id: F-stt-pipeline-integration
 title: STT Pipeline Integration
-status: open
+status: in-progress
 priority: high
 parent: E-speech-to-text-integration
 prerequisites:
   - F-stt-service-core-cloud
-affectedFiles: {}
+affectedFiles:
+  src/types/stt.ts: Added SttPipelineErrorCode, TranscriptionReadyEvent,
+    TranscriptionErrorEvent, SttPipelineEvents types and type guards
+  src/services/stt-pipeline.ts: Created new STT pipeline service with
+    audio-to-transcription orchestration, error handling, and event emission
+  src/services/stt-pipeline.test.ts: Created comprehensive test suite with 19 tests covering all scenarios
+  src/main.ts: Wired STT pipeline to audioReady event and added transcriptionReady
+    listener for downstream routing
+  src/services/input-state.ts: Added IDLE -> PROCESSING valid transition for STT pipeline use case
+  src/services/input-state.test.ts: Updated tests to reflect new valid IDLE -> PROCESSING transition
 log: []
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-add-stt-ipc-events-for
+  - T-create-stt-pipeline-service
 created: 2026-01-31T19:15:43.919Z
 updated: 2026-01-31T19:15:43.919Z
 ---

@@ -10,7 +10,9 @@ prerequisites:
 affectedFiles:
   src/types/stt.ts: Created new file with SttCloudProvider type, SttResult
     interface, ISttBackend interface, SttService interface, and type guards
-    (isSttBackendType, isSttCloudProvider, isSttResult)
+    (isSttBackendType, isSttCloudProvider, isSttResult); Added
+    SttPipelineErrorCode, TranscriptionReadyEvent, TranscriptionErrorEvent,
+    SttPipelineEvents types and type guards
   src/types/index.ts: Added export for the new stt.ts module
   src/services/stt-backends/groq-backend.ts: Created Groq Whisper API backend
     implementation with ISttBackend interface, error handling, timeout
@@ -31,6 +33,13 @@ affectedFiles:
     singleton initialization, backend selection (cloud vs local), transcription
     delegation, getActiveBackend, isReady, and SttServiceError class
   src/services/index.ts: Updated to export the new stt-service module
+  src/services/stt-pipeline.ts: Created new STT pipeline service with
+    audio-to-transcription orchestration, error handling, and event emission
+  src/services/stt-pipeline.test.ts: Created comprehensive test suite with 19 tests covering all scenarios
+  src/main.ts: Wired STT pipeline to audioReady event and added transcriptionReady
+    listener for downstream routing
+  src/services/input-state.ts: Added IDLE -> PROCESSING valid transition for STT pipeline use case
+  src/services/input-state.test.ts: Updated tests to reflect new valid IDLE -> PROCESSING transition
 log: []
 schema: v1.0
 childrenIds:

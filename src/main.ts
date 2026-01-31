@@ -100,6 +100,7 @@ import {
   createAccessibilitySettingsHandler,
 } from "./ipc/permission-handler";
 import { registerOnboardingHandlers } from "./ipc/onboarding-handler";
+import { initializeSttPipeline, getSttPipeline, SttPipelineService } from "./services/stt-pipeline";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -191,6 +192,15 @@ const credentialState: {
   credentialManager: CredentialManagerService | null;
 } = {
   credentialManager: null,
+};
+
+/**
+ * Mutable state for STT pipeline.
+ */
+const sttPipelineState: {
+  sttPipeline: SttPipelineService | null;
+} = {
+  sttPipeline: null,
 };
 
 /**
@@ -879,13 +889,36 @@ app.whenReady().then(async () => {
   // Register audio IPC handlers
   registerAudioHandlers(ipcMain, () => getAudioCapture(), audioLogger);
 
-  // Wire audio ready event for downstream STT processing
+  // Initialize STT pipeline service
+  const sttPipelineLogger = logger.child({ component: "SttPipelineIPC" });
+  sttPipelineState.sttPipeline = initializeSttPipeline();
+  logger.info("STT pipeline service initialized");
+
+  // Wire audio ready event to STT pipeline for transcription
   audioState.audioCapture.on("audioReady", (event) => {
-    logger.info("Audio ready for STT processing", {
+    sttPipelineLogger.debug("Audio ready, routing to STT pipeline", {
       durationMs: event.result.audio.durationMs,
       format: event.result.audio.format,
     });
-    // TODO: Route to STT processing in future task
+
+    // Process audio through STT pipeline (fire and forget, errors handled internally)
+    getSttPipeline()
+      .processAudio(event.result)
+      .catch((error) => {
+        sttPipelineLogger.error("Unexpected error in STT pipeline", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+  });
+
+  // Wire STT pipeline transcription ready event for downstream routing
+  sttPipelineState.sttPipeline.on("transcriptionReady", (event) => {
+    logger.info("Transcription ready for routing", {
+      textLength: event.text.length,
+      backend: event.sttMetadata.backendUsed,
+      processingTimeMs: event.sttMetadata.processingTimeMs,
+    });
+    // TODO: Route to message processing in future task
   });
 
   // Register error handlers
@@ -968,6 +1001,13 @@ app.on("will-quit", async () => {
   // Clean up audio capture service
   try {
     getAudioCapture()?.reset();
+  } catch {
+    // Service may not be initialized if app quits early
+  }
+
+  // Clean up STT pipeline service
+  try {
+    getSttPipeline()?.reset();
   } catch {
     // Service may not be initialized if app quits early
   }

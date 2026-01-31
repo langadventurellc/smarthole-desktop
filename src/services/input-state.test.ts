@@ -82,11 +82,13 @@ describe("InputStateService", () => {
   });
 
   describe("invalid state transitions", () => {
-    it("rejects IDLE to PROCESSING (must go through RECORDING)", () => {
+    it("accepts IDLE to PROCESSING (for STT pipeline processing)", () => {
+      // IDLE -> PROCESSING is valid for when STT pipeline receives audio
+      // after audio-capture has already transitioned back to IDLE
       const result = inputState.transitionTo(InputState.PROCESSING);
 
-      expect(result).toBe(false);
-      expect(inputState.getCurrentState()).toBe(InputState.IDLE);
+      expect(result).toBe(true);
+      expect(inputState.getCurrentState()).toBe(InputState.PROCESSING);
     });
 
     it("rejects IDLE to IDLE (no-op transition)", () => {
@@ -108,17 +110,25 @@ describe("InputStateService", () => {
   });
 
   describe("canTransitionTo", () => {
-    it("returns true for valid transitions", () => {
+    it("returns true for valid transitions from IDLE", () => {
       expect(inputState.canTransitionTo(InputState.RECORDING)).toBe(true);
+      expect(inputState.canTransitionTo(InputState.PROCESSING)).toBe(true); // For STT pipeline
+    });
 
+    it("returns true for valid transitions from RECORDING", () => {
       inputState.transitionTo(InputState.RECORDING);
       expect(inputState.canTransitionTo(InputState.PROCESSING)).toBe(true);
       expect(inputState.canTransitionTo(InputState.IDLE)).toBe(true);
     });
 
     it("returns false for invalid transitions", () => {
-      expect(inputState.canTransitionTo(InputState.PROCESSING)).toBe(false);
+      // From IDLE, can only go to RECORDING or PROCESSING
       expect(inputState.canTransitionTo(InputState.IDLE)).toBe(false);
+
+      // From PROCESSING, can only go to IDLE
+      inputState.transitionTo(InputState.PROCESSING);
+      expect(inputState.canTransitionTo(InputState.RECORDING)).toBe(false);
+      expect(inputState.canTransitionTo(InputState.PROCESSING)).toBe(false);
     });
   });
 
@@ -142,7 +152,8 @@ describe("InputStateService", () => {
       const handler = vi.fn();
       inputState.on("stateChanged", handler);
 
-      inputState.transitionTo(InputState.PROCESSING); // Invalid from IDLE
+      // From IDLE, transition to IDLE is invalid
+      inputState.transitionTo(InputState.IDLE);
 
       expect(handler).not.toHaveBeenCalled();
     });
