@@ -1,16 +1,39 @@
 ---
 id: F-first-run-experience
 title: First-Run Experience & Permissions
-status: open
+status: in-progress
 priority: medium
 parent: E-configuration-user-experience
 prerequisites:
   - F-configuration-storage-ipc
   - F-secure-credential-storage
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/ipc.ts: Added 4 new permission IPC channels
+    (PERMISSION_CHECK_MICROPHONE, PERMISSION_REQUEST_MICROPHONE,
+    PERMISSION_CHECK_ACCESSIBILITY, PERMISSION_OPEN_ACCESSIBILITY_SETTINGS) with
+    corresponding payload/response types in IpcPayloadMap and IpcResponseMap
+  src/ipc/permission-handler.ts: "Created new file with 4 handler factory
+    functions: createMicrophoneCheckHandler, createMicrophoneRequestHandler,
+    createAccessibilityCheckHandler, createAccessibilitySettingsHandler"
+  src/ipc/permission-handler.test.ts: Created new test file with 16 comprehensive
+    unit tests covering all handlers across macOS, Windows, and Linux platforms
+  src/ipc/index.ts: Added export for permission-handler module
+  src/preload/main.ts: "Added 4 permission bridge methods:
+    checkMicrophonePermission, requestMicrophonePermission,
+    checkAccessibilityPermission, openAccessibilitySettings"
+  src/main.ts: Registered permission IPC handlers in app.whenReady() callback
+  src/types/ipc.test.ts: Updated channel count assertion from 36 to 40
+log:
+  - "Started orchestration. Created feature branch
+    feature/F-first-run-experience. Tasks to execute in order:
+    T-add-permission-ipc-infrastruct → T-create-onboarding-window →
+    T-implement-onboarding-wizard → T-integrate-first-run-detection"
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-add-permission-ipc-infrastruct
+  - T-create-onboarding-window
+  - T-implement-onboarding-wizard
+  - T-integrate-first-run-detection
 created: 2026-01-31T06:21:18.472Z
 updated: 2026-01-31T06:21:18.472Z
 ---

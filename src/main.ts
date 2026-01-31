@@ -88,6 +88,12 @@ import {
   createCredentialHasHandler,
 } from "./ipc/credential-handler";
 import { createDialogOpenHandler } from "./ipc/dialog-handler";
+import {
+  createMicrophoneCheckHandler,
+  createMicrophoneRequestHandler,
+  createAccessibilityCheckHandler,
+  createAccessibilitySettingsHandler,
+} from "./ipc/permission-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -494,6 +500,25 @@ app.whenReady().then(async () => {
   // Register dialog IPC handler
   const dialogLogger = logger.child({ component: "DialogIPC" });
   ipcMain.handle(IPC_CHANNELS.DIALOG_OPEN, createDialogOpenHandler(dialogLogger));
+
+  // Register permission IPC handlers
+  const permissionLogger = logger.child({ component: "PermissionIPC" });
+  ipcMain.handle(
+    IPC_CHANNELS.PERMISSION_CHECK_MICROPHONE,
+    createMicrophoneCheckHandler(permissionLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.PERMISSION_REQUEST_MICROPHONE,
+    createMicrophoneRequestHandler(permissionLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.PERMISSION_CHECK_ACCESSIBILITY,
+    createAccessibilityCheckHandler(permissionLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.PERMISSION_OPEN_ACCESSIBILITY_SETTINGS,
+    createAccessibilitySettingsHandler(permissionLogger)
+  );
 
   // Initialize notification services
   const notificationService = initializeNotificationService();
