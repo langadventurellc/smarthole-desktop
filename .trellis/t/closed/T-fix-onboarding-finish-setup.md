@@ -1,12 +1,71 @@
 ---
 id: T-fix-onboarding-finish-setup
 title: Fix onboarding "Finish Setup" button not closing window
-status: open
+status: done
 priority: high
 parent: none
 prerequisites: []
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/windows/onboarding-window.ts: Changed getPreloadPath() to return preload.js
+    instead of main.js, added clarifying comment about build output naming
+  src/windows/settings-window.ts: Changed getPreloadPath() to return preload.js
+    instead of main.js, added clarifying comment about build output naming
+log:
+  - >-
+    ## Research Findings
+
+
+    ### Root Cause Identified
+
+
+    The issue is that `onboarding-window.ts` and `settings-window.ts` are using
+    the wrong preload path:
+
+
+    **Current code:**
+
+    ```typescript
+
+    function getPreloadPath(): string {
+      return path.join(__dirname, "main.js");  // WRONG!
+    }
+
+    ```
+
+
+    **Build output analysis:**
+
+    - `src/preload/main.ts` builds to `.vite/build/preload.js` (the main preload
+    script with electronAPI)
+
+    - `src/preload/popup.ts` builds to `.vite/build/popup.js` (popup-specific
+    preload)
+
+    - `src/main.ts` builds to `.vite/build/main.js` (main process entry point,
+    NOT a preload)
+
+
+    The windows are incorrectly referencing `main.js` (the main process entry)
+    instead of `preload.js` (the actual preload script that exposes
+    `window.electronAPI`).
+
+
+    The text-input-popup correctly uses `popup.js` for its dedicated popup
+    preload, and that works.
+
+
+    ### Fix Required
+
+
+    Change `getPreloadPath()` in both `onboarding-window.ts` and
+    `settings-window.ts` to return `preload.js` instead of `main.js`.
+  - Fixed the preload path in onboarding-window.ts and settings-window.ts. The
+    root cause was that both files were using `path.join(__dirname, "main.js")`
+    which points to the main process entry point, not the preload script. The
+    correct path is `path.join(__dirname, "preload.js")` since the preload entry
+    (src/preload/main.ts) compiles to preload.js in the Vite build output. This
+    fix enables window.electronAPI to be properly exposed to the renderer,
+    allowing the "Finish Setup" button's IPC call to work correctly.
 schema: v1.0
 childrenIds: []
 created: 2026-01-31T18:29:19.723Z

@@ -1,12 +1,19 @@
 ---
 id: T-fix-settings-window-loading
 title: Fix settings window loading blank
-status: open
+status: done
 priority: high
 parent: none
 prerequisites: []
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/windows/settings-window.ts: Changed getPreloadPath() to return preload.js
+    instead of main.js, added clarifying comment about build output naming
+log:
+  - Fixed by the same change as T-fix-onboarding-finish-setup. The settings
+    window was using the same incorrect preload path (main.js instead of
+    preload.js). The fix in src/windows/settings-window.ts corrects this,
+    allowing window.electronAPI to be properly exposed and the settings UI to
+    render correctly.
 schema: v1.0
 childrenIds: []
 created: 2026-01-31T18:29:19.834Z
