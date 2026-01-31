@@ -1,16 +1,98 @@
 ---
 id: F-first-run-experience
 title: First-Run Experience & Permissions
-status: open
+status: done
 priority: medium
 parent: E-configuration-user-experience
 prerequisites:
   - F-configuration-storage-ipc
   - F-secure-credential-storage
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/ipc.ts: Added 4 new permission IPC channels
+    (PERMISSION_CHECK_MICROPHONE, PERMISSION_REQUEST_MICROPHONE,
+    PERMISSION_CHECK_ACCESSIBILITY, PERMISSION_OPEN_ACCESSIBILITY_SETTINGS) with
+    corresponding payload/response types in IpcPayloadMap and IpcResponseMap
+  src/ipc/permission-handler.ts: "Created new file with 4 handler factory
+    functions: createMicrophoneCheckHandler, createMicrophoneRequestHandler,
+    createAccessibilityCheckHandler, createAccessibilitySettingsHandler"
+  src/ipc/permission-handler.test.ts: Created new test file with 16 comprehensive
+    unit tests covering all handlers across macOS, Windows, and Linux platforms
+  src/ipc/index.ts: Added export for permission-handler module
+  src/preload/main.ts: "Added 4 permission bridge methods:
+    checkMicrophonePermission, requestMicrophonePermission,
+    checkAccessibilityPermission, openAccessibilitySettings"
+  src/main.ts: Registered permission IPC handlers in app.whenReady() callback;
+    Added onboarding window imports, onboardingState tracking,
+    checkSetupIncomplete() function, initializeNormalOperation() function, and
+    modified startup flow to detect first-run and show onboarding window.
+    Integrated setupIncomplete state into tray menu building.
+  src/types/ipc.test.ts: Updated channel count assertion from 36 to 40
+  src/windows/onboarding-window.ts: Created onboarding window service with
+    BrowserWindow management, singleton pattern, show/hide/isVisible/getWindow
+    methods, escape key handling, and cleanup on app quit
+  src/windows/onboarding-window.test.ts: Created 23 unit tests covering singleton
+    lifecycle, show behavior, hide behavior, visibility, getWindow, escape key
+    handling, window closed events, and app cleanup
+  src/windows/index.ts: Added exports for initializeOnboardingWindow,
+    getOnboardingWindow, resetOnboardingWindow, and OnboardingWindowService type
+  vite.onboarding-renderer.config.ts: Created Vite config for onboarding renderer
+    with react plugin and root set to src/onboarding
+  forge.config.ts: Added onboarding_window entry to renderer array in VitePlugin configuration
+  src/onboarding/index.html: Created HTML entry point for onboarding window
+  src/onboarding/renderer.tsx: Created React renderer entry point
+  src/onboarding/OnboardingApp.tsx: Created minimal OnboardingApp component
+    placeholder; Completely rewritten with wizard state management, step
+    navigation, config loading, and STT config persistence
+  src/onboarding/index.css: Created CSS styles for onboarding window with
+    light/dark theme support; Expanded with comprehensive wizard styles
+    including progress indicator, step layouts, permission cards, buttons, and
+    form elements
+  src/onboarding/OnboardingApp.test.tsx: Created 9 unit tests for wizard
+    functionality including navigation, skip, and config saving
+  src/onboarding/components/index.ts: Created exports for all onboarding components
+  src/onboarding/components/ProgressIndicator.tsx: Created step indicator with
+    completion state, current step highlight, and step labels
+  src/onboarding/components/StepLayout.tsx: Created consistent layout wrapper with title, description, and content areas
+  src/onboarding/components/WelcomeStep.tsx: Created welcome screen with app logo,
+    feature highlights, and Get Started button
+  src/onboarding/components/PermissionsStep.tsx: Created permissions step with
+    microphone request, accessibility check (macOS), and polling for permission
+    changes
+  src/onboarding/components/SttStep.tsx: Created STT configuration with backend
+    selection (cloud/local), API key input, and Whisper path selection
+  src/onboarding/components/AiStep.tsx: Created Anthropic API key configuration with explanation and secure input
+  src/onboarding/components/CompleteStep.tsx: Created completion step with
+    configuration summary, status icons, and Finish button that sets
+    firstRunCompleted
+  src/tray-menu.ts: Added setupIncomplete field to TrayMenuState interface, added
+    onSetupIncomplete action to TrayMenuActions interface, updated
+    buildTrayMenuTemplate to show 'Setup Incomplete' item at top of menu when
+    setupIncomplete is true.
+  src/tray-menu.test.ts: "Added 6 new tests for setup incomplete reminder
+    functionality: showing/hiding based on setupIncomplete flag, click handler
+    behavior, and menu position."
+log:
+  - "Started orchestration. Created feature branch
+    feature/F-first-run-experience. Tasks to execute in order:
+    T-add-permission-ipc-infrastruct → T-create-onboarding-window →
+    T-implement-onboarding-wizard → T-integrate-first-run-detection"
+  - Completed T-add-permission-ipc-infrastruct. Committed as f9b2a32. Moving to
+    T-create-onboarding-window.
+  - Completed T-create-onboarding-window. Committed as cd83487. Moving to
+    T-implement-onboarding-wizard.
+  - "Completed T-implement-onboarding-wizard. Committed as d737d7d. Moving to
+    final task: T-integrate-first-run-detection."
+  - "Auto-completed: All child tasks are complete"
+  - Completed T-integrate-first-run-detection. Committed as f419a34. All 4 tasks
+    complete. Running docs-updater.
+  - Feature complete. Documentation updated and committed as 4a82ad5. All 4
+    tasks implemented, reviewed, and committed.
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-add-permission-ipc-infrastruct
+  - T-create-onboarding-window
+  - T-implement-onboarding-wizard
+  - T-integrate-first-run-detection
 created: 2026-01-31T06:21:18.472Z
 updated: 2026-01-31T06:21:18.472Z
 ---

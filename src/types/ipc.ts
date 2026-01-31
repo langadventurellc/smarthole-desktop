@@ -95,6 +95,12 @@ export const IPC_CHANNELS = {
 
   // Dialog channels
   DIALOG_OPEN: "dialog:open", // Show native open file dialog
+
+  // Permission channels
+  PERMISSION_CHECK_MICROPHONE: "permission:checkMicrophone", // Check current microphone permission status
+  PERMISSION_REQUEST_MICROPHONE: "permission:requestMicrophone", // Request microphone access
+  PERMISSION_CHECK_ACCESSIBILITY: "permission:checkAccessibility", // Check accessibility permission (macOS)
+  PERMISSION_OPEN_ACCESSIBILITY_SETTINGS: "permission:openAccessibilitySettings", // Open System Preferences to Accessibility pane (macOS)
 } as const;
 
 /**
@@ -514,6 +520,10 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.CREDENTIAL_DELETE]: CredentialKeyPayload;
   [IPC_CHANNELS.CREDENTIAL_HAS]: CredentialKeyPayload;
   [IPC_CHANNELS.DIALOG_OPEN]: DialogOpenOptions;
+  [IPC_CHANNELS.PERMISSION_CHECK_MICROPHONE]: void; // No payload needed
+  [IPC_CHANNELS.PERMISSION_REQUEST_MICROPHONE]: void; // No payload needed
+  [IPC_CHANNELS.PERMISSION_CHECK_ACCESSIBILITY]: void; // No payload needed
+  [IPC_CHANNELS.PERMISSION_OPEN_ACCESSIBILITY_SETTINGS]: void; // No payload needed
 }
 
 /**
@@ -540,6 +550,10 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.CREDENTIAL_DELETE]: void;
   [IPC_CHANNELS.CREDENTIAL_HAS]: boolean;
   [IPC_CHANNELS.DIALOG_OPEN]: DialogOpenResponse;
+  [IPC_CHANNELS.PERMISSION_CHECK_MICROPHONE]: PermissionCheckMicrophoneResponse;
+  [IPC_CHANNELS.PERMISSION_REQUEST_MICROPHONE]: PermissionRequestMicrophoneResponse;
+  [IPC_CHANNELS.PERMISSION_CHECK_ACCESSIBILITY]: PermissionCheckAccessibilityResponse;
+  [IPC_CHANNELS.PERMISSION_OPEN_ACCESSIBILITY_SETTINGS]: PermissionOpenAccessibilitySettingsResponse;
 }
 
 // ============================================================================
@@ -865,4 +879,51 @@ export interface DialogOpenResponse {
   canceled: boolean;
   /** Array of selected file paths (empty if canceled) */
   filePaths: string[];
+}
+
+// ============================================================================
+// Permission IPC Types
+// ============================================================================
+
+/**
+ * Microphone permission status from Electron's systemPreferences.
+ * Maps to the values returned by systemPreferences.getMediaAccessStatus('microphone').
+ */
+export type MicrophonePermissionStatus =
+  | "not-determined"
+  | "granted"
+  | "denied"
+  | "restricted"
+  | "unknown";
+
+/**
+ * Response for permission:checkMicrophone channel.
+ */
+export interface PermissionCheckMicrophoneResponse {
+  /** Current microphone permission status */
+  status: MicrophonePermissionStatus;
+}
+
+/**
+ * Response for permission:requestMicrophone channel.
+ */
+export interface PermissionRequestMicrophoneResponse {
+  /** Whether the request was granted */
+  granted: boolean;
+}
+
+/**
+ * Response for permission:checkAccessibility channel.
+ */
+export interface PermissionCheckAccessibilityResponse {
+  /** Whether the application is a trusted accessibility client (macOS only) */
+  trusted: boolean;
+}
+
+/**
+ * Response for permission:openAccessibilitySettings channel.
+ */
+export interface PermissionOpenAccessibilitySettingsResponse {
+  /** Whether the settings were successfully opened (or no-op completed on non-macOS) */
+  success: boolean;
 }

@@ -18,6 +18,8 @@ export interface TrayMenuState {
   connectedClients: { name: string; description?: string }[];
   currentInputState: InputState;
   isRecording: boolean;
+  /** Whether essential setup is incomplete (missing API keys, etc.) */
+  setupIncomplete?: boolean;
 }
 
 /**
@@ -31,6 +33,8 @@ export interface TrayMenuActions {
   onSettings: () => void;
   onAbout: () => void;
   onQuit: () => void;
+  /** Called when user clicks the "Setup Incomplete" reminder */
+  onSetupIncomplete?: () => void;
 }
 
 /**
@@ -62,15 +66,24 @@ export function buildTrayMenuTemplate(
   state: TrayMenuState,
   actions: TrayMenuActions
 ): MenuItemOptions[] {
-  const { clientCount, connectedClients, currentInputState, isRecording } = state;
+  const { clientCount, connectedClients, currentInputState, isRecording, setupIncomplete } = state;
 
   // Build menu template with client status
-  const template: MenuItemOptions[] = [
-    {
-      label: `${clientCount} client${clientCount !== 1 ? "s" : ""} connected`,
-      enabled: false, // Display-only label
-    },
-  ];
+  const template: MenuItemOptions[] = [];
+
+  // Show setup incomplete reminder if essential settings are missing
+  if (setupIncomplete) {
+    template.push({
+      label: "Setup Incomplete - Click to Configure",
+      click: actions.onSetupIncomplete ?? actions.onSettings,
+    });
+    template.push({ type: "separator" });
+  }
+
+  template.push({
+    label: `${clientCount} client${clientCount !== 1 ? "s" : ""} connected`,
+    enabled: false, // Display-only label
+  });
 
   // Add connected clients submenu when clients are connected
   if (clientCount > 0) {

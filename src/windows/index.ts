@@ -18,3 +18,10 @@ export {
   resetSettingsWindow,
   type SettingsWindowService,
 } from "./settings-window";
+
+export {
+  initializeOnboardingWindow,
+  getOnboardingWindow,
+  resetOnboardingWindow,
+  type OnboardingWindowService,
+} from "./onboarding-window";

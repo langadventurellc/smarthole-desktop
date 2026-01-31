@@ -33,6 +33,10 @@ import type {
   CredentialKey,
   DialogOpenOptions,
   DialogOpenResponse,
+  PermissionCheckMicrophoneResponse,
+  PermissionRequestMicrophoneResponse,
+  PermissionCheckAccessibilityResponse,
+  PermissionOpenAccessibilitySettingsResponse,
 } from "../types";
 import { IPC_CHANNELS } from "../types";
 import type { LogLevel, AppConfig } from "../types";
@@ -571,6 +575,54 @@ const electronAPI = {
    */
   showOpenDialog: (options?: DialogOpenOptions): Promise<DialogOpenResponse> => {
     return ipcRenderer.invoke(IPC_CHANNELS.DIALOG_OPEN, options);
+  },
+
+  // ============================================
+  // Permissions
+  // ============================================
+
+  /**
+   * Check the current microphone permission status.
+   * On macOS, returns the actual permission status from system preferences.
+   * On Windows/Linux, typically returns "granted" as permissions are handled at device access.
+   *
+   * @returns Promise resolving to the microphone permission status
+   */
+  checkMicrophonePermission: (): Promise<PermissionCheckMicrophoneResponse> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.PERMISSION_CHECK_MICROPHONE);
+  },
+
+  /**
+   * Request microphone access from the user.
+   * On macOS, triggers the system permission dialog if access hasn't been determined.
+   * On Windows/Linux, this is effectively a no-op as permission is handled at device access.
+   *
+   * @returns Promise resolving to whether access was granted
+   */
+  requestMicrophonePermission: (): Promise<PermissionRequestMicrophoneResponse> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.PERMISSION_REQUEST_MICROPHONE);
+  },
+
+  /**
+   * Check if the application is a trusted accessibility client.
+   * Only meaningful on macOS; other platforms always return trusted=true.
+   * Accessibility permission is required for global hotkeys on macOS.
+   *
+   * @returns Promise resolving to whether the app is trusted for accessibility
+   */
+  checkAccessibilityPermission: (): Promise<PermissionCheckAccessibilityResponse> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.PERMISSION_CHECK_ACCESSIBILITY);
+  },
+
+  /**
+   * Open the system accessibility settings (macOS only).
+   * Guides the user to manually grant accessibility permission.
+   * On non-macOS platforms, this is a no-op that returns success.
+   *
+   * @returns Promise resolving to whether the settings were successfully opened
+   */
+  openAccessibilitySettings: (): Promise<PermissionOpenAccessibilitySettingsResponse> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.PERMISSION_OPEN_ACCESSIBILITY_SETTINGS);
   },
 };
 

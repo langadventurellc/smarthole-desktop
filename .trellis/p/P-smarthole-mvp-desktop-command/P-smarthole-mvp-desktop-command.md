@@ -65,7 +65,10 @@ affectedFiles:
     CredentialStorePayload and CredentialKeyPayload types. Added entries to
     IpcPayloadMap and IpcResponseMap. Re-exported CredentialKey type.; Added
     DIALOG_OPEN channel, DialogOpenOptions and DialogOpenResponse types, updated
-    payload/response maps
+    payload/response maps; Added 4 new permission IPC channels
+    (PERMISSION_CHECK_MICROPHONE, PERMISSION_REQUEST_MICROPHONE,
+    PERMISSION_CHECK_ACCESSIBILITY, PERMISSION_OPEN_ACCESSIBILITY_SETTINGS) with
+    corresponding payload/response types in IpcPayloadMap and IpcResponseMap
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -80,7 +83,8 @@ affectedFiles:
     26, updated naming convention regex to allow camelCase domains; Added test
     for audio capture channels, updated channel count from 26 to 32; Added test
     for credential channels and updated channel count from 32 to 35.; Updated
-    channel count to 36 and added DIALOG_OPEN channel test
+    channel count to 36 and added DIALOG_OPEN channel test; Updated channel
+    count assertion from 36 to 40
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -214,7 +218,12 @@ affectedFiles:
     change event wiring to broadcast; Added credential manager imports, state
     object, initialization after config manager, and registered IPC handlers
     with child logger.; Added settings window import, initialization, state
-    tracking, dialog handler registration, and tray menu wiring"
+    tracking, dialog handler registration, and tray menu wiring; Registered
+    permission IPC handlers in app.whenReady() callback; Added onboarding window
+    imports, onboardingState tracking, checkSetupIncomplete() function,
+    initializeNormalOperation() function, and modified startup flow to detect
+    first-run and show onboarding window. Integrated setupIncomplete state into
+    tray menu building."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -246,7 +255,8 @@ affectedFiles:
     notification-handler module to barrel export file.; Added export for
     client-status-handler module; Added exports for hotkey-handler and
     input-state-handler modules; Added export for text-input-handler module;
-    Added export for audio-handler; Exported dialog handler
+    Added export for audio-handler; Exported dialog handler; Added export for
+    permission-handler module
   src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
     covering handler creation, payload validation, log level mapping, context
     enrichment, and edge cases
@@ -407,7 +417,9 @@ affectedFiles:
     isShowing flag, updated destroy() to reset isShowing
   src/windows/index.ts: Created module exports for TextInputPopupService,
     functions (initialize, get, reset, getImpl), calculateCenteredPosition, and
-    event types; Exported settings window service types and functions
+    event types; Exported settings window service types and functions; Added
+    exports for initializeOnboardingWindow, getOnboardingWindow,
+    resetOnboardingWindow, and OnboardingWindowService type
   src/windows/text-input-popup.test.ts: Added 20 unit tests covering singleton
     lifecycle, show (positioning, focus, placeholder, events), hide (window,
     input clearing, focus restoration), isVisible, event
@@ -434,7 +446,8 @@ affectedFiles:
     React plugin and rollupOptions.input pointing to popup.html
   forge.config.ts: Added popup preload entry (src/preload-popup.ts) and
     popup_window renderer entry to VitePlugin configuration; Added
-    settings_window renderer entry to VitePlugin configuration
+    settings_window renderer entry to VitePlugin configuration; Added
+    onboarding_window entry to renderer array in VitePlugin configuration
   index.html: Created at project root (moved from src/index.html) - fixes
     pre-existing production build issue
   popup.html: Created at project root as popup window entry point
@@ -484,10 +497,15 @@ affectedFiles:
   src/tray-menu.ts: "New module: Extracted tray menu template building logic for
     testability. Contains TrayMenuState, TrayMenuActions, MenuItemOptions
     interfaces and buildTrayMenuTemplate() function.; Added onSettings action to
-    TrayMenuActions and Settings... menu item"
+    TrayMenuActions and Settings... menu item; Added setupIncomplete field to
+    TrayMenuState interface, added onSetupIncomplete action to TrayMenuActions
+    interface, updated buildTrayMenuTemplate to show 'Setup Incomplete' item at
+    top of menu when setupIncomplete is true."
   src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
     building logic covering all input states and menu structure.; Updated mock
-    actions and menu structure tests to include Settings menu item"
+    actions and menu structure tests to include Settings menu item; Added 6 new
+    tests for setup incomplete reminder functionality: showing/hiding based on
+    setupIncomplete flag, click handler behavior, and menu position."
   src/services/config-manager.ts: Created config manager service with
     electron-store integration, singleton pattern, configChanged event emission,
     and changed key path tracking; Created config manager service with
@@ -515,9 +533,12 @@ affectedFiles:
     createCredentialHasHandler factory functions following existing patterns.
   src/ipc/credential-handler.test.ts: New test file with 13 tests covering all
     three handlers, error propagation, and credential key type coverage.
-  src/preload/main.ts: Extended electronAPI with storeCredential,
+  src/preload/main.ts: "Extended electronAPI with storeCredential,
     deleteCredential, and hasCredential methods using ipcRenderer.invoke.; Added
-    showOpenDialog() method to electronAPI for renderer access to file dialogs
+    showOpenDialog() method to electronAPI for renderer access to file dialogs;
+    Added 4 permission bridge methods: checkMicrophonePermission,
+    requestMicrophonePermission, checkAccessibilityPermission,
+    openAccessibilitySettings"
   src/windows/settings-window.ts: Created settings window singleton service with
     show/hide/isVisible/getWindow methods, escape key handling, and
     single-instance behavior; Updated to use SETTINGS_WINDOW_VITE_DEV_SERVER_URL
@@ -542,6 +563,45 @@ affectedFiles:
   src/settings/components/ToggleInput.tsx: Created accessible toggle switch with aria-checked attribute
   src/settings/components/PathInput.tsx: Created file path input with browse button using showOpenDialog()
   src/settings/components/index.ts: Created barrel export for all settings components
+  src/ipc/permission-handler.ts: "Created new file with 4 handler factory
+    functions: createMicrophoneCheckHandler, createMicrophoneRequestHandler,
+    createAccessibilityCheckHandler, createAccessibilitySettingsHandler"
+  src/ipc/permission-handler.test.ts: Created new test file with 16 comprehensive
+    unit tests covering all handlers across macOS, Windows, and Linux platforms
+  src/windows/onboarding-window.ts: Created onboarding window service with
+    BrowserWindow management, singleton pattern, show/hide/isVisible/getWindow
+    methods, escape key handling, and cleanup on app quit
+  src/windows/onboarding-window.test.ts: Created 23 unit tests covering singleton
+    lifecycle, show behavior, hide behavior, visibility, getWindow, escape key
+    handling, window closed events, and app cleanup
+  vite.onboarding-renderer.config.ts: Created Vite config for onboarding renderer
+    with react plugin and root set to src/onboarding
+  src/onboarding/index.html: Created HTML entry point for onboarding window
+  src/onboarding/renderer.tsx: Created React renderer entry point
+  src/onboarding/OnboardingApp.tsx: Created minimal OnboardingApp component
+    placeholder; Completely rewritten with wizard state management, step
+    navigation, config loading, and STT config persistence
+  src/onboarding/index.css: Created CSS styles for onboarding window with
+    light/dark theme support; Expanded with comprehensive wizard styles
+    including progress indicator, step layouts, permission cards, buttons, and
+    form elements
+  src/onboarding/OnboardingApp.test.tsx: Created 9 unit tests for wizard
+    functionality including navigation, skip, and config saving
+  src/onboarding/components/index.ts: Created exports for all onboarding components
+  src/onboarding/components/ProgressIndicator.tsx: Created step indicator with
+    completion state, current step highlight, and step labels
+  src/onboarding/components/StepLayout.tsx: Created consistent layout wrapper with title, description, and content areas
+  src/onboarding/components/WelcomeStep.tsx: Created welcome screen with app logo,
+    feature highlights, and Get Started button
+  src/onboarding/components/PermissionsStep.tsx: Created permissions step with
+    microphone request, accessibility check (macOS), and polling for permission
+    changes
+  src/onboarding/components/SttStep.tsx: Created STT configuration with backend
+    selection (cloud/local), API key input, and Whisper path selection
+  src/onboarding/components/AiStep.tsx: Created Anthropic API key configuration with explanation and secure input
+  src/onboarding/components/CompleteStep.tsx: Created completion step with
+    configuration summary, status icons, and Finish button that sets
+    firstRunCompleted
 log: []
 schema: v1.0
 childrenIds:

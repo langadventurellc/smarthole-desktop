@@ -107,8 +107,8 @@ describe("IPC_CHANNELS", () => {
       expect(IPC_CHANNELS.DIALOG_OPEN).toBe("dialog:open");
     });
 
-    it("should have exactly 36 channels", () => {
-      expect(Object.keys(IPC_CHANNELS)).toHaveLength(36);
+    it("should have exactly 40 channels", () => {
+      expect(Object.keys(IPC_CHANNELS)).toHaveLength(40);
     });
 
     it("should follow the domain:action naming convention", () => {
