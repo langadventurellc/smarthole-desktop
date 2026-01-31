@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { IPC_CHANNELS } from "./types";
+import { IPC_CHANNELS } from "../types";
 
 // Use vi.hoisted to define mock functions that can be used in vi.mock
 // This is necessary because vi.mock is hoisted to the top of the file
@@ -37,9 +37,9 @@ vi.mock("electron", () => ({
 }));
 
 // Import the module after mocking - this triggers the contextBridge.exposeInMainWorld call
-import "./preload";
-import type { ElectronAPI } from "./preload";
-import type { AppConfig, NotifyShowPayload } from "./types";
+import "./main";
+import type { ElectronAPI } from "./main";
+import type { AppConfig, NotifyShowPayload } from "../types";
 
 // Get the electronAPI that was passed to exposeInMainWorld during module initialization
 // This must be called before any tests clear the mocks

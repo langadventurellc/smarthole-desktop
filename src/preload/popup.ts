@@ -6,8 +6,8 @@
  */
 
 import { contextBridge, ipcRenderer } from "electron";
-import { IPC_CHANNELS } from "./types";
-import type { TextInputSubmitPayload } from "./types";
+import { IPC_CHANNELS } from "../types";
+import type { TextInputSubmitPayload } from "../types";
 
 /**
  * Popup API exposed to the popup renderer process via contextBridge.

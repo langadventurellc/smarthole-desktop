@@ -69,7 +69,7 @@ const POPUP_HEIGHT = 60;
  * In both dev and production, the preload script is output alongside main.
  */
 function getPreloadPath(): string {
-  return path.join(__dirname, "preload-popup.js");
+  return path.join(__dirname, "popup.js");
 }
 
 /**
@@ -80,30 +80,36 @@ interface PopupUrlResult {
   value: string;
 }
 
+// Vite define plugin injects these as global constants at build time
+declare const POPUP_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
+declare const POPUP_WINDOW_VITE_NAME: string | undefined;
+
 /**
  * Gets the URL or file path to load for the popup window.
- * Uses Electron Forge VitePlugin environment variables.
+ * Uses Electron Forge VitePlugin define constants (not process.env).
  */
 function getPopupUrl(): PopupUrlResult {
-  // The VitePlugin sets POPUP_WINDOW_VITE_DEV_SERVER_URL in dev mode
-  // Format: {NAME}_VITE_DEV_SERVER_URL where NAME is uppercase renderer name
-  if (process.env.POPUP_WINDOW_VITE_DEV_SERVER_URL) {
-    // In dev mode, Vite serves from the root, so we access popup.html directly
+  // The VitePlugin injects POPUP_WINDOW_VITE_DEV_SERVER_URL via Vite's define plugin
+  // in dev mode. This is a build-time replacement, not a runtime env var.
+  if (typeof POPUP_WINDOW_VITE_DEV_SERVER_URL !== "undefined") {
+    // In dev mode, Vite serves index.html from the root
+    // Ensure trailing slash before appending path
+    const baseUrl = POPUP_WINDOW_VITE_DEV_SERVER_URL.endsWith("/")
+      ? POPUP_WINDOW_VITE_DEV_SERVER_URL
+      : `${POPUP_WINDOW_VITE_DEV_SERVER_URL}/`;
     return {
       type: "url",
-      value: `${process.env.POPUP_WINDOW_VITE_DEV_SERVER_URL}popup.html`,
+      value: `${baseUrl}index.html`,
     };
   }
 
-  // In production (or dev without the env var), use file path
+  // In production (or dev without the define), use file path
   // VitePlugin sets POPUP_WINDOW_VITE_NAME for the renderer output directory
-  // The entry point is popup.html (from our rollupOptions.input config)
+  const rendererName =
+    typeof POPUP_WINDOW_VITE_NAME !== "undefined" ? POPUP_WINDOW_VITE_NAME : "popup_window";
   return {
     type: "file",
-    value: path.join(
-      __dirname,
-      `../renderer/${process.env.POPUP_WINDOW_VITE_NAME || "popup_window"}/popup.html`
-    ),
+    value: path.join(__dirname, `../renderer/${rendererName}/index.html`),
   };
 }
 

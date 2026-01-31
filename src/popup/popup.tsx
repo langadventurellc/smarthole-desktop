@@ -18,7 +18,7 @@ function PopupInput(): React.ReactNode {
     window.popupAPI.notifyFocused();
 
     // Subscribe to placeholder changes
-    const unsubPlaceholder = window.popupAPI.onPlaceholderChange((newPlaceholder) => {
+    const unsubPlaceholder = window.popupAPI.onPlaceholderChange((newPlaceholder: string) => {
       setPlaceholder(newPlaceholder);
     });
 
