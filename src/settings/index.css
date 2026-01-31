@@ -1,11 +1,647 @@
+/* Base Reset */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+:root {
+  /* Light theme colors */
+  --color-bg: #f5f5f7;
+  --color-bg-secondary: #ffffff;
+  --color-text: #1d1d1f;
+  --color-text-secondary: #86868b;
+  --color-border: #d2d2d7;
+  --color-border-focus: #0066cc;
+  --color-primary: #0066cc;
+  --color-primary-hover: #0055b3;
+  --color-success: #34c759;
+  --color-error: #ff3b30;
+  --color-danger: #ff3b30;
+  --color-danger-hover: #d62b22;
+  --color-input-bg: #ffffff;
+  --color-nav-active: rgba(0, 102, 204, 0.1);
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+}
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1c1c1e;
+    --color-bg-secondary: #2c2c2e;
+    --color-text: #f5f5f7;
+    --color-text-secondary: #98989d;
+    --color-border: #48484a;
+    --color-border-focus: #0a84ff;
+    --color-primary: #0a84ff;
+    --color-primary-hover: #409cff;
+    --color-success: #30d158;
+    --color-error: #ff453a;
+    --color-danger: #ff453a;
+    --color-danger-hover: #ff6961;
+    --color-input-bg: #3a3a3c;
+    --color-nav-active: rgba(10, 132, 255, 0.2);
+  }
+}
+
+html,
 body {
+  height: 100%;
+  background: var(--color-bg);
+  color: var(--color-text);
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans",
     "Helvetica Neue", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100%;
+}
+
+/* =========================================
+   Settings Container Layout
+   ========================================= */
+
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100vh;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  flex-shrink: 0;
+}
+
+.settings-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.settings-message {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.settings-message--success {
+  background: rgba(52, 199, 89, 0.15);
+  color: var(--color-success);
+}
+
+.settings-message--error {
+  background: rgba(255, 59, 48, 0.15);
+  color: var(--color-error);
+}
+
+.settings-message--warning {
+  background: rgba(255, 159, 10, 0.15);
+  color: #ff9f0a;
+}
+
+@media (prefers-color-scheme: dark) {
+  .settings-message--warning {
+    color: #ffd60a;
+  }
+}
+
+.settings-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* =========================================
+   Navigation Sidebar
+   ========================================= */
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  width: 180px;
+  padding: var(--spacing-md);
+  background: var(--color-bg);
+  border-right: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.settings-nav-item {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.settings-nav-item:hover {
+  background: var(--color-nav-active);
+}
+
+.settings-nav-item--active {
+  background: var(--color-nav-active);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.settings-nav-item:focus {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+/* =========================================
+   Content Area
+   ========================================= */
+
+.settings-content {
+  flex: 1;
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+  background: var(--color-bg-secondary);
+}
+
+/* =========================================
+   Settings Section
+   ========================================= */
+
+.settings-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-section-header {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.settings-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+
+.settings-section-description {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.settings-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* =========================================
+   Setting Field (Base)
+   ========================================= */
+
+.setting-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.setting-field-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.setting-field-description {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.setting-field-error {
+  font-size: 12px;
+  color: var(--color-error);
+}
+
+.setting-field-loading {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* =========================================
+   Input Styles
+   ========================================= */
+
+.setting-field-input {
+  width: 100%;
+  max-width: 400px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  font-family: inherit;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.setting-field-input:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+}
+
+.setting-field-input--error {
+  border-color: var(--color-error);
+}
+
+.setting-field-input--error:focus {
+  box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.15);
+}
+
+.setting-field-input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.setting-field-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Number input */
+.setting-field-input[type="number"] {
+  max-width: 150px;
+}
+
+/* =========================================
+   Hotkey Input
+   ========================================= */
+
+.setting-field-input--hotkey {
+  cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+}
+
+.setting-field-input--recording {
+  border-color: var(--color-primary);
+  background: var(--color-nav-active);
+}
+
+/* =========================================
+   Select Input
+   ========================================= */
+
+.setting-field-select {
+  width: 100%;
+  max-width: 400px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-right: var(--spacing-xl);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2386868b' d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.setting-field-select:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+}
+
+.setting-field-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   Toggle Switch
+   ========================================= */
+
+.setting-field-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.setting-field-label-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border: none;
+  border-radius: 12px;
+  background: var(--color-border);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.toggle-switch:focus {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.toggle-switch--on {
+  background: var(--color-primary);
+}
+
+.toggle-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform var(--transition-fast);
+}
+
+.toggle-switch--on .toggle-switch-thumb {
+  transform: translateX(20px);
+}
+
+.toggle-switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   Path Input
+   ========================================= */
+
+.setting-field-path-group {
+  display: flex;
+  gap: var(--spacing-sm);
+  max-width: 500px;
+}
+
+.setting-field-input--path {
+  flex: 1;
+  max-width: none;
+  font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+}
+
+/* =========================================
+   Secret Input
+   ========================================= */
+
+.setting-field-secret-display,
+.setting-field-secret-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.setting-field-secret-value {
+  font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  letter-spacing: 2px;
+}
+
+.setting-field-secret-input-group {
+  display: flex;
+  gap: var(--spacing-sm);
+  max-width: 400px;
+}
+
+.setting-field-secret-input-group .setting-field-input {
+  flex: 1;
+  max-width: none;
+}
+
+.setting-field-secret-toggle {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.setting-field-secret-toggle:hover {
+  background: var(--color-bg);
+}
+
+.setting-field-secret-toggle:focus {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.setting-field-secret-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* =========================================
+   Buttons
+   ========================================= */
+
+.setting-button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.setting-button:hover:not(:disabled) {
+  background: var(--color-bg);
+}
+
+.setting-button:focus {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.setting-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.setting-button--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.setting-button--primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.setting-button--danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.setting-button--danger:hover:not(:disabled) {
+  background: var(--color-danger);
+  color: white;
+}
+
+/* =========================================
+   Footer
+   ========================================= */
+
+.settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  flex-shrink: 0;
+}
+
+.settings-footer-status {
+  font-size: 13px;
+}
+
+.settings-dirty-indicator {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.settings-external-changes-indicator {
+  color: #ff9f0a;
+  font-size: 12px;
+  margin-left: var(--spacing-sm);
+}
+
+@media (prefers-color-scheme: dark) {
+  .settings-external-changes-indicator {
+    color: #ffd60a;
+  }
+}
+
+.settings-footer-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* =========================================
+   Loading & Error States
+   ========================================= */
+
+.settings-loading,
+.settings-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--spacing-md);
+  color: var(--color-text-secondary);
+}
+
+.settings-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================
+   High Contrast Mode
+   ========================================= */
+
+@media (prefers-contrast: high) {
+  .setting-field-input,
+  .setting-field-select,
+  .setting-button,
+  .toggle-switch {
+    border-width: 2px;
+  }
+
+  .settings-nav-item:focus,
+  .setting-field-input:focus,
+  .setting-field-select:focus,
+  .setting-button:focus,
+  .toggle-switch:focus {
+    outline-width: 3px;
+  }
+}
+
+/* =========================================
+   Reduced Motion
+   ========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
