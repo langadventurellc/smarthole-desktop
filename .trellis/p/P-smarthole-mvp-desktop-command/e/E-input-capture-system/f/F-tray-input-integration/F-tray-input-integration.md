@@ -1,7 +1,7 @@
 ---
 id: F-tray-input-integration
 title: Tray Input Integration
-status: in-progress
+status: done
 priority: medium
 parent: E-input-capture-system
 prerequisites:
@@ -15,7 +15,11 @@ affectedFiles:
     menu updates. Menu items have dynamic labels and enabled states based on
     current input state.; Updated to import buildTrayMenuTemplate from
     tray-menu.ts. Added enabled state to Open Text Input menu item during
-    PROCESSING. Added stateChanged event subscription for menu updates.
+    PROCESSING. Added stateChanged event subscription for menu updates.;
+    Refactored createTrayIcon() to createIdleIcon(). Added createRecordingIcon()
+    for red circle. Added updateTrayIcon(state) function. Updated createTray()
+    to use createIdleIcon(). Extended stateChanged subscription to call
+    updateTrayIcon().
   src/tray-menu.ts: "New module: Extracted tray menu template building logic for
     testability. Contains TrayMenuState, TrayMenuActions, MenuItemOptions
     interfaces and buildTrayMenuTemplate() function."
@@ -56,10 +60,11 @@ log:
     - Created src/tray-menu.ts module with 22 unit tests
 
     Committing task changes.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
-  - T-add-tray-icon-state
   - T-add-input-menu-items-and
+  - T-add-tray-icon-state
 created: 2026-01-30T22:15:47.857Z
 updated: 2026-01-30T22:15:47.857Z
 ---

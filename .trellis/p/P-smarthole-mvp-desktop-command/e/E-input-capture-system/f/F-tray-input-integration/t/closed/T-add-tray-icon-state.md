@@ -1,13 +1,62 @@
 ---
 id: T-add-tray-icon-state
 title: Add tray icon state indication for recording
-status: open
+status: done
 priority: medium
 parent: F-tray-input-integration
 prerequisites:
   - T-add-input-menu-items-and
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/main.ts: Refactored createTrayIcon() to createIdleIcon(). Added
+    createRecordingIcon() for red circle. Added updateTrayIcon(state) function.
+    Updated createTray() to use createIdleIcon(). Extended stateChanged
+    subscription to call updateTrayIcon().
+log:
+  - >-
+    Implementation complete:
+
+
+    1. Refactored `createTrayIcon()` to `createIdleIcon()` - same 16x16 black
+    square with macOS template image support
+
+    2. Created `createRecordingIcon()` - 16x16 red filled circle (not marked as
+    template to preserve color on macOS)
+
+    3. Created `updateTrayIcon(state: InputState)` - switches icon based on
+    recording state
+
+    4. Updated `createTray()` to use `createIdleIcon()`
+
+    5. Added `updateTrayIcon(event.newState)` call in existing `stateChanged`
+    subscription
+
+
+    All acceptance criteria met:
+
+    - Idle icon: black square (current behavior preserved)
+
+    - Recording icon: red circle (visually distinct)
+
+    - Icon changes on state change via event subscription
+
+    - macOS template image preserved for idle, disabled for recording to keep
+    red color
+
+    - No external asset files - all programmatic generation
+
+
+    Quality checks pass (lint, format, type-check). All 798 tests pass.
+
+
+    Skipped unit tests per testing guidelines - icon generation is trivial
+    buffer manipulation best verified via manual visual testing.
+  - Added tray icon state indication for recording. Refactored createTrayIcon()
+    into createIdleIcon() (16x16 black square with macOS template support) and
+    created createRecordingIcon() (16x16 red circle, not marked as template to
+    preserve color). Added updateTrayIcon(state) function that is called on
+    stateChanged events to switch the icon when recording starts/stops. All
+    acceptance criteria met with programmatic icon generation (no external
+    assets).
 schema: v1.0
 childrenIds: []
 created: 2026-01-31T03:00:59.510Z

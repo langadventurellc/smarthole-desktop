@@ -195,7 +195,11 @@ affectedFiles:
     dynamic labels and enabled states based on current input state.; Updated to
     import buildTrayMenuTemplate from tray-menu.ts. Added enabled state to Open
     Text Input menu item during PROCESSING. Added stateChanged event
-    subscription for menu updates."
+    subscription for menu updates.; Refactored createTrayIcon() to
+    createIdleIcon(). Added createRecordingIcon() for red circle. Added
+    updateTrayIcon(state) function. Updated createTray() to use
+    createIdleIcon(). Extended stateChanged subscription to call
+    updateTrayIcon()."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added

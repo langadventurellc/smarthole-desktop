@@ -1,7 +1,7 @@
 ---
 id: E-input-capture-system
 title: Input Capture System
-status: in-progress
+status: done
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
@@ -66,7 +66,10 @@ affectedFiles:
     enabled states based on current input state.; Updated to import
     buildTrayMenuTemplate from tray-menu.ts. Added enabled state to Open Text
     Input menu item during PROCESSING. Added stateChanged event subscription for
-    menu updates.
+    menu updates.; Refactored createTrayIcon() to createIdleIcon(). Added
+    createRecordingIcon() for red circle. Added updateTrayIcon(state) function.
+    Updated createTray() to use createIdleIcon(). Extended stateChanged
+    subscription to call updateTrayIcon().
   src/types/ipc.test.ts: Updated channel count test from 17 to 21, added tests for
     new hotkey and input state channels; Added tests for new text input popup
     channels, TextInputSubmitPayload type guard tests, TextInputOpenPayload
@@ -163,7 +166,8 @@ affectedFiles:
     interfaces and buildTrayMenuTemplate() function."
   src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
     building logic covering all input states and menu structure."
-log: []
+log:
+  - "Auto-completed: All child features are complete"
 schema: v1.0
 childrenIds:
   - F-global-hotkey-system
