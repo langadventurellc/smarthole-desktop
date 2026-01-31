@@ -1,16 +1,23 @@
 ---
 id: E-speech-to-text-integration
 title: Speech-to-Text Integration
-status: open
+status: in-progress
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
   - E-foundation-core-infrastructure
   - E-input-capture-system
-affectedFiles: {}
+affectedFiles:
+  src/types/stt.ts: Created new file with SttCloudProvider type, SttResult
+    interface, ISttBackend interface, SttService interface, and type guards
+    (isSttBackendType, isSttCloudProvider, isSttResult)
+  src/types/index.ts: Added export for the new stt.ts module
 log: []
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - F-local-whisper-backend
+  - F-stt-pipeline-integration
+  - F-stt-service-core-cloud
 created: 2026-01-29T01:44:42.105Z
 updated: 2026-01-29T01:44:42.105Z
 ---

@@ -17,7 +17,8 @@ affectedFiles:
     IPC types; Updated barrel export to include guards module; Added ElectronAPI
     type export from preload module; Added export for errors.ts to barrel
     export; Added export for client-registry types; Added export for input types
-    module; Added export for audio types module
+    module; Added export for audio types module; Added export for the new stt.ts
+    module
   src/types/common.test.ts: Created comprehensive unit tests for all types and
     functions (37 tests) including type-level constraint verification
   src/types/config.ts: "Created configuration type definitions including LogLevel,
@@ -602,6 +603,9 @@ affectedFiles:
   src/onboarding/components/CompleteStep.tsx: Created completion step with
     configuration summary, status icons, and Finish button that sets
     firstRunCompleted
+  src/types/stt.ts: Created new file with SttCloudProvider type, SttResult
+    interface, ISttBackend interface, SttService interface, and type guards
+    (isSttBackendType, isSttCloudProvider, isSttResult)
 log: []
 schema: v1.0
 childrenIds:
