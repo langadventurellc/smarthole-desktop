@@ -4,7 +4,7 @@ import eslintConfigPrettier from "eslint-config-prettier";
 
 export default tseslint.config(
   {
-    ignores: ["node_modules/", "dist/", ".vite/", "out/", "coverage/"],
+    ignores: ["**/node_modules/", "**/dist/", "**/.vite/", "**/out/", "**/coverage/"],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
