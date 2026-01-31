@@ -1,17 +1,50 @@
 ---
 id: F-tray-input-integration
 title: Tray Input Integration
-status: open
+status: in-progress
 priority: medium
 parent: E-input-capture-system
 prerequisites:
   - F-global-hotkey-system
   - F-voice-recording-service
   - F-text-input-popup-window
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/main.ts: Extended buildTrayMenu() to add input state detection and input
+    menu items (Open Text Input, Start/Stop Recording toggle). Added
+    stateChanged event subscription after input state initialization to trigger
+    menu updates. Menu items have dynamic labels and enabled states based on
+    current input state.
+log:
+  - >-
+    Started feature implementation. Created feature branch
+    feature/F-tray-input-integration.
+
+
+    Execution order:
+
+    1. T-add-input-menu-items-and (no prerequisites)
+
+    2. T-add-tray-icon-state (depends on #1)
+
+
+    Starting with T-add-input-menu-items-and first.
+  - >-
+    Resuming feature implementation. Currently on branch
+    feature/F-tray-input-integration.
+
+
+    Both tasks are open:
+
+    1. T-add-input-menu-items-and - ready to start
+
+    2. T-add-tray-icon-state - blocked by T-add-input-menu-items-and
+
+
+    Starting implementation of T-add-input-menu-items-and.
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-add-input-menu-items-and
+  - T-add-tray-icon-state
 created: 2026-01-30T22:15:47.857Z
 updated: 2026-01-30T22:15:47.857Z
 ---

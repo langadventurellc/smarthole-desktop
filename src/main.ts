@@ -200,6 +200,17 @@ function buildTrayMenu(): Electron.Menu {
     // Registry not initialized yet - use defaults
   }
 
+  // Get current input state (with fallback for early initialization)
+  let currentInputState: InputState = InputState.IDLE;
+  let isRecording = false;
+
+  try {
+    currentInputState = getInputState().getCurrentState();
+    isRecording = getAudioCapture().isRecording();
+  } catch {
+    // Services not initialized yet - use defaults
+  }
+
   // Build menu template with client status
   const template: Electron.MenuItemConstructorOptions[] = [
     {
@@ -219,6 +230,49 @@ function buildTrayMenu(): Electron.Menu {
       })),
     });
   }
+
+  // Add separator and input menu items
+  template.push({ type: "separator" });
+
+  // Open Text Input menu item
+  template.push({
+    label: "Open Text Input",
+    click: (): void => {
+      try {
+        getTextInputPopup().show();
+      } catch {
+        // Service not initialized yet
+      }
+    },
+  });
+
+  // Recording toggle menu item - label and behavior depend on current state
+  const recordingItem: Electron.MenuItemConstructorOptions = isRecording
+    ? {
+        label: "Stop Recording",
+        click: (): void => {
+          try {
+            void getAudioCapture().stopRecording();
+          } catch {
+            // Service not initialized yet
+          }
+        },
+        // Only enabled when actually in RECORDING state (not during transitions)
+        enabled: currentInputState === InputState.RECORDING,
+      }
+    : {
+        label: "Start Recording",
+        click: (): void => {
+          try {
+            void getAudioCapture().startRecording();
+          } catch {
+            // Service not initialized yet
+          }
+        },
+        // Only enabled when in IDLE state
+        enabled: currentInputState === InputState.IDLE,
+      };
+  template.push(recordingItem);
 
   // Add separator and standard menu items
   template.push(
@@ -479,6 +533,11 @@ app.whenReady().then(async () => {
 
   // Wire input state to IPC for state change broadcasts
   wireInputStateToIpc(inputState.inputStateService, inputStateLogger);
+
+  // Subscribe to input state changes to update tray menu
+  inputState.inputStateService.on("stateChanged", () => {
+    updateTrayMenu();
+  });
 
   // Register input state IPC handler
   const inputStateGetter = (): InputStateService => getInputState();

@@ -188,7 +188,11 @@ affectedFiles:
     initialization, IPC handler registration, hotkey wiring, and submitted event
     subscription; Added audio capture service initialization, IPC wiring, hotkey
     integration, audioReady event handling, and cleanup in will-quit handler.
-    Added audioState tracking object and required imports."
+    Added audioState tracking object and required imports.; Extended
+    buildTrayMenu() to add input state detection and input menu items (Open Text
+    Input, Start/Stop Recording toggle). Added stateChanged event subscription
+    after input state initialization to trigger menu updates. Menu items have
+    dynamic labels and enabled states based on current input state."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
