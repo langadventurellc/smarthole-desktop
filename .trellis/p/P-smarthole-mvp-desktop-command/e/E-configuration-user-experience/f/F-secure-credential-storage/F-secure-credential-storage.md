@@ -37,6 +37,8 @@ log:
   - Completed T-install-keytar-and-implement. Committed as eddad86. Moving to
     T-add-credential-ipc-handlers.
   - "Auto-completed: All child tasks are complete"
+  - Completed T-add-credential-ipc-handlers. Committed as 2928d32. Both tasks
+    complete. Running docs-updater.
 schema: v1.0
 childrenIds:
   - T-add-credential-ipc-handlers
