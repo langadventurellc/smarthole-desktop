@@ -1,7 +1,7 @@
 ---
 id: F-secure-credential-storage
 title: Secure Credential Storage
-status: in-progress
+status: done
 priority: medium
 parent: E-configuration-user-experience
 prerequisites:
@@ -17,10 +17,26 @@ affectedFiles:
   src/services/index.ts: Added export for credential-manager module.
   package.json: Added keytar dependency.
   package-lock.json: Updated lockfile with keytar and its dependencies.
+  src/types/ipc.ts: Added CREDENTIAL_STORE, CREDENTIAL_DELETE, CREDENTIAL_HAS
+    channels. Added CredentialStorePayload and CredentialKeyPayload types. Added
+    entries to IpcPayloadMap and IpcResponseMap. Re-exported CredentialKey type.
+  src/ipc/credential-handler.ts: New file implementing
+    createCredentialStoreHandler, createCredentialDeleteHandler, and
+    createCredentialHasHandler factory functions following existing patterns.
+  src/ipc/credential-handler.test.ts: New test file with 13 tests covering all
+    three handlers, error propagation, and credential key type coverage.
+  src/preload/main.ts: Extended electronAPI with storeCredential,
+    deleteCredential, and hasCredential methods using ipcRenderer.invoke.
+  src/main.ts: Added credential manager imports, state object, initialization
+    after config manager, and registered IPC handlers with child logger.
+  src/types/ipc.test.ts: Added test for credential channels and updated channel count from 32 to 35.
 log:
   - "Started orchestration. Created feature branch
     feature/F-secure-credential-storage. Tasks to execute in order:
     T-install-keytar-and-implement → T-add-credential-ipc-handlers"
+  - Completed T-install-keytar-and-implement. Committed as eddad86. Moving to
+    T-add-credential-ipc-handlers.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
   - T-add-credential-ipc-handlers

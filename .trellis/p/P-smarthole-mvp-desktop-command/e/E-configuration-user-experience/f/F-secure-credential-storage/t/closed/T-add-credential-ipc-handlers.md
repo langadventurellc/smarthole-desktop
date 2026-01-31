@@ -1,13 +1,68 @@
 ---
 id: T-add-credential-ipc-handlers
 title: Add credential IPC handlers and preload bridge
-status: open
+status: done
 priority: medium
 parent: F-secure-credential-storage
 prerequisites:
   - T-install-keytar-and-implement
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/ipc.ts: Added CREDENTIAL_STORE, CREDENTIAL_DELETE, CREDENTIAL_HAS
+    channels. Added CredentialStorePayload and CredentialKeyPayload types. Added
+    entries to IpcPayloadMap and IpcResponseMap. Re-exported CredentialKey type.
+  src/ipc/credential-handler.ts: New file implementing
+    createCredentialStoreHandler, createCredentialDeleteHandler, and
+    createCredentialHasHandler factory functions following existing patterns.
+  src/ipc/credential-handler.test.ts: New test file with 13 tests covering all
+    three handlers, error propagation, and credential key type coverage.
+  src/preload/main.ts: Extended electronAPI with storeCredential,
+    deleteCredential, and hasCredential methods using ipcRenderer.invoke.
+  src/main.ts: Added credential manager imports, state object, initialization
+    after config manager, and registered IPC handlers with child logger.
+  src/types/ipc.test.ts: Added test for credential channels and updated channel count from 32 to 35.
+log:
+  - >-
+    Research completed:
+
+    - Reviewed ipc.ts for IPC channel patterns (IPC_CHANNELS, IpcPayloadMap,
+    IpcResponseMap)
+
+    - Reviewed config-handler.ts for handler patterns (factory functions with
+    getService and logger)
+
+    - Reviewed main.ts for registration patterns (ipcMain.handle with child
+    logger)
+
+    - Reviewed preload/main.ts for bridge patterns (ipcRenderer.invoke with
+    typed returns)
+
+    - Reviewed credential-manager.ts for CredentialKey type and service
+    interface
+
+    - Reviewed config-handler.test.ts for test patterns (mocking service,
+    logger, Electron.IpcMainInvokeEvent)
+
+
+    Now implementing:
+
+    1. IPC channels in types/ipc.ts
+
+    2. credential-handler.ts
+
+    3. preload bridge extensions
+
+    4. main.ts handler registration
+
+    5. Unit tests
+  - Implemented credential IPC handlers and preload bridge for secure credential
+    operations. Added three new IPC channels (CREDENTIAL_STORE,
+    CREDENTIAL_DELETE, CREDENTIAL_HAS) following the existing patterns. The
+    getCredential operation is intentionally NOT exposed to the renderer -
+    credentials are only retrieved in the main process for security. The preload
+    bridge exposes storeCredential, deleteCredential, and hasCredential methods.
+    All handlers follow the existing factory function pattern with proper
+    logging and error propagation. Unit tests cover all handlers with mocked
+    credential manager service.
 schema: v1.0
 childrenIds: []
 created: 2026-01-31T09:06:41.224Z

@@ -1,11 +1,13 @@
 import keytar from "keytar";
 import { getLogger, Logger } from "./logger";
+import type { CredentialKey } from "../types/credentials";
+
+// Re-export CredentialKey for consumers that import from this module
+export type { CredentialKey };
 
 // ============================================================================
 // Types
 // ============================================================================
-
-export type CredentialKey = "anthropic-api-key" | "stt-api-key" | "openai-api-key" | "groq-api-key";
 
 export class CredentialManagerError extends Error {
   constructor(

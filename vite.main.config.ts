@@ -6,7 +6,8 @@ export default defineConfig({
       // Externalize native modules that shouldn't be bundled
       // - electron: Electron core APIs
       // - bufferutil, utf-8-validate: Optional native dependencies of 'ws' package
-      external: ["electron", "bufferutil", "utf-8-validate"],
+      // - keytar: Native module for OS keychain access
+      external: ["electron", "bufferutil", "utf-8-validate", "keytar"],
     },
   },
 });

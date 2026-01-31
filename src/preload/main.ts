@@ -30,6 +30,7 @@ import type {
   AudioCapturePermission,
   AudioStateChangedEvent,
   AudioPermissionStatus,
+  CredentialKey,
 } from "../types";
 import { IPC_CHANNELS } from "../types";
 import type { LogLevel, AppConfig } from "../types";
@@ -534,6 +535,25 @@ const electronAPI = {
     return (): void => {
       ipcRenderer.removeListener(IPC_CHANNELS.AUDIO_STOP, handler);
     };
+  },
+
+  // ============================================
+  // Credentials (safe operations only)
+  // ============================================
+
+  /** Store a credential in the OS keychain. */
+  storeCredential: (key: CredentialKey, value: string): Promise<void> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.CREDENTIAL_STORE, { key, value });
+  },
+
+  /** Delete a credential from the OS keychain. */
+  deleteCredential: (key: CredentialKey): Promise<void> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.CREDENTIAL_DELETE, { key });
+  },
+
+  /** Check if a credential exists. Use to show "configured" vs "not configured" in settings UI. */
+  hasCredential: (key: CredentialKey): Promise<boolean> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.CREDENTIAL_HAS, { key });
   },
 };
 

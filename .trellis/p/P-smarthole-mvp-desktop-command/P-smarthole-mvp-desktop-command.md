@@ -60,7 +60,10 @@ affectedFiles:
     AUDIO_PERMISSION_CHANGED, AUDIO_STATE_CHANGED), added AudioStartPayload and
     AudioDataPayload interfaces, re-exported AudioStateChangedEvent and
     AudioPermissionChangedEvent, updated IpcPayloadMap with audio channels,
-    updated IpcResponseMap with AUDIO_PERMISSION_GET response type
+    updated IpcResponseMap with AUDIO_PERMISSION_GET response type; Added
+    CREDENTIAL_STORE, CREDENTIAL_DELETE, CREDENTIAL_HAS channels. Added
+    CredentialStorePayload and CredentialKeyPayload types. Added entries to
+    IpcPayloadMap and IpcResponseMap. Re-exported CredentialKey type.
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -73,7 +76,8 @@ affectedFiles:
     text input popup channels, TextInputSubmitPayload type guard tests,
     TextInputOpenPayload interface tests, updated channel count test from 21 to
     26, updated naming convention regex to allow camelCase domains; Added test
-    for audio capture channels, updated channel count from 26 to 32
+    for audio capture channels, updated channel count from 26 to 32; Added test
+    for credential channels and updated channel count from 32 to 35.
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -204,7 +208,9 @@ affectedFiles:
     createIdleIcon(). Extended stateChanged subscription to call
     updateTrayIcon().; Added config manager imports, state tracking,
     initialization in app.whenReady(), IPC handler registration, and config
-    change event wiring to broadcast"
+    change event wiring to broadcast; Added credential manager imports, state
+    object, initialization after config manager, and registered IPC handlers
+    with child logger."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -497,6 +503,13 @@ affectedFiles:
   src/services/credential-manager.test.ts: Unit tests covering singleton
     management, all CRUD operations, error handling for keytar failures, and
     type coverage for all CredentialKey variants.
+  src/ipc/credential-handler.ts: New file implementing
+    createCredentialStoreHandler, createCredentialDeleteHandler, and
+    createCredentialHasHandler factory functions following existing patterns.
+  src/ipc/credential-handler.test.ts: New test file with 13 tests covering all
+    three handlers, error propagation, and credential key type coverage.
+  src/preload/main.ts: Extended electronAPI with storeCredential,
+    deleteCredential, and hasCredential methods using ipcRenderer.invoke.
 log: []
 schema: v1.0
 childrenIds:
