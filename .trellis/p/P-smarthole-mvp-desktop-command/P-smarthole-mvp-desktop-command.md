@@ -409,7 +409,8 @@ affectedFiles:
   src/types/audio.test.ts: Created new file with 47 unit tests for all audio type guards
   src/renderer/index.ts: Created barrel export file with documentation comment
     explaining the directory purpose - holds renderer-side modules that use
-    browser/Web APIs and run in renderer context
+    browser/Web APIs and run in renderer context; Updated barrel export to
+    include all audio capture module exports
   src/services/audio-capture.ts: Created main process audio capture service with
     singleton pattern, recording lifecycle management (start/stop/isRecording),
     macOS permission checking, push-to-talk and toggle mode support,
@@ -428,6 +429,13 @@ affectedFiles:
   src/ipc/audio-handler.test.ts: Created 20 unit tests covering broadcast
     functions, handler creators, IPC wiring, and hotkey integration for both
     push-to-talk and toggle modes
+  src/renderer/audio-capture.ts: Created renderer-side audio capture module with
+    MediaRecorder-based recording, WAV encoding, audio resampling (48kHz to
+    16kHz), stereo to mono conversion, permission checking, and
+    AudioCaptureError class
+  src/renderer/audio-capture.test.ts: Created 20 unit tests for WAV encoding,
+    resampling, mono conversion, configuration, state management, and error
+    handling
 log: []
 schema: v1.0
 childrenIds:

@@ -1,14 +1,57 @@
 ---
 id: T-implement-renderer-side-audio
 title: Implement renderer-side audio capture
-status: open
+status: done
 priority: high
 parent: F-voice-recording-service
 prerequisites:
   - T-add-audio-types-and-ipc
   - T-create-srcrenderer-directory
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/renderer/audio-capture.ts: Created renderer-side audio capture module with
+    MediaRecorder-based recording, WAV encoding, audio resampling (48kHz to
+    16kHz), stereo to mono conversion, permission checking, and
+    AudioCaptureError class
+  src/renderer/audio-capture.test.ts: Created 20 unit tests for WAV encoding,
+    resampling, mono conversion, configuration, state management, and error
+    handling
+  src/renderer/index.ts: Updated barrel export to include all audio capture module exports
+log:
+  - >-
+    Implementation completed:
+
+
+    1. Created `src/renderer/audio-capture.ts` with:
+       - AudioCaptureError class for typed error handling
+       - WAV encoding utilities (writeString, encodeWav) - pure functions for creating WAV files
+       - Audio resampling (resampleAudio) - linear interpolation for sample rate conversion
+       - Stereo to mono conversion (convertToMono)
+       - startRecording() - requests mic via getUserMedia, creates MediaRecorder
+       - stopRecording() - stops recording, decodes audio, resamples to 16kHz, encodes as WAV
+       - cancelRecording() - aborts without processing
+       - getPermissionStatus() - queries navigator.permissions API
+       - isRecording(), isSupported(), getConfig(), setConfig(), reset() helpers
+
+    2. Updated `src/renderer/index.ts` to export all audio capture functions
+
+
+    3. Created `src/renderer/audio-capture.test.ts` with 20 unit tests for:
+       - WAV header and sample encoding
+       - Sample clamping
+       - Audio resampling (downsampling/upsampling)
+       - Stereo to mono conversion
+       - Configuration management
+       - State management
+       - AudioCaptureError class
+
+    All quality checks pass. All 772 tests pass.
+  - Implemented renderer-side audio capture module using Web Audio API. The
+    module captures microphone audio via MediaRecorder, resamples from browser's
+    native rate (typically 48kHz) to 16kHz for Whisper STT compatibility,
+    converts stereo to mono, and encodes as 16-bit PCM WAV format. Includes
+    proper error handling with typed AudioCaptureError, permission checking via
+    navigator.permissions API, and clean resource management. All 20 unit tests
+    pass covering WAV encoding, resampling, and state management.
 schema: v1.0
 childrenIds: []
 created: 2026-01-31T00:54:24.430Z

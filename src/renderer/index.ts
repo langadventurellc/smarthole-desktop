@@ -9,8 +9,25 @@
  *
  * @example
  * ```ts
- * import { /* renderer modules *\/ } from '../renderer';
+ * import { startRecording, stopRecording } from '../renderer';
  * ```
  */
 
-// Exports will be added as renderer modules are implemented
+// Audio capture module
+export {
+  startRecording,
+  stopRecording,
+  cancelRecording,
+  isRecording,
+  getPermissionStatus,
+  isSupported,
+  setConfig,
+  getConfig,
+  reset,
+  AudioCaptureError,
+  // WAV encoding utilities (exported for testing)
+  writeString,
+  encodeWav,
+  resampleAudio,
+  convertToMono,
+} from "./audio-capture";

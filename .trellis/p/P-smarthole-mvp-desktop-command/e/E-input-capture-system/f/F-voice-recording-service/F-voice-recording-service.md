@@ -25,7 +25,8 @@ affectedFiles:
   src/types/ipc.test.ts: Added test for audio capture channels, updated channel count from 26 to 32
   src/renderer/index.ts: Created barrel export file with documentation comment
     explaining the directory purpose - holds renderer-side modules that use
-    browser/Web APIs and run in renderer context
+    browser/Web APIs and run in renderer context; Updated barrel export to
+    include all audio capture module exports
   src/services/audio-capture.ts: Created main process audio capture service with
     singleton pattern, recording lifecycle management (start/stop/isRecording),
     macOS permission checking, push-to-talk and toggle mode support,
@@ -46,6 +47,13 @@ affectedFiles:
     push-to-talk and toggle modes
   src/services/index.ts: Added export for audio-capture service
   src/ipc/index.ts: Added export for audio-handler
+  src/renderer/audio-capture.ts: Created renderer-side audio capture module with
+    MediaRecorder-based recording, WAV encoding, audio resampling (48kHz to
+    16kHz), stereo to mono conversion, permission checking, and
+    AudioCaptureError class
+  src/renderer/audio-capture.test.ts: Created 20 unit tests for WAV encoding,
+    resampling, mono conversion, configuration, state management, and error
+    handling
 log:
   - >-
     Started feature implementation. Created feature branch
@@ -79,10 +87,10 @@ log:
 schema: v1.0
 childrenIds:
   - T-add-audio-capture-preload-api
-  - T-implement-main-process-audio
   - T-implement-renderer-side-audio
   - T-add-audio-types-and-ipc
   - T-create-srcrenderer-directory
+  - T-implement-main-process-audio
 created: 2026-01-30T22:15:08.998Z
 updated: 2026-01-30T22:15:08.998Z
 ---
