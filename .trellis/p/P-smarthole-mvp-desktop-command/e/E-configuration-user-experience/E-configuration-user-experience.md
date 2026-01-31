@@ -1,15 +1,43 @@
 ---
 id: E-configuration-user-experience
 title: Configuration & User Experience
-status: open
+status: in-progress
 priority: medium
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
   - E-foundation-core-infrastructure
-affectedFiles: {}
+affectedFiles:
+  src/types/config.ts: "Added firstRunCompleted: boolean field to AppConfig
+    interface and firstRunCompleted: false to DEFAULT_CONFIG"
+  package.json: Added electron-store ^11.0.2 as dependency (via npm install)
+  package-lock.json: Updated with electron-store and its dependencies
+  src/services/config-manager.ts: Created config manager service with
+    electron-store integration, singleton pattern, configChanged event emission,
+    and changed key path tracking; Created config manager service with
+    electron-store integration, singleton pattern, configChanged event emission,
+    and changed key path tracking
+  src/services/config-manager.test.ts: Created comprehensive unit tests (24 tests)
+    covering singleton initialization, getConfig, setConfig, deep merge
+    behavior, changed keys tracking, event emission, and reset functionality;
+    Created comprehensive unit tests (24 tests) covering singleton
+    initialization, getConfig, setConfig, deep merge behavior, changed keys
+    tracking, event emission, and reset functionality
+  src/services/index.ts: Added export for config-manager module; Added export for
+    config-manager module
+  src/ipc/config-handler.ts: Created IPC handler for config management with
+    createConfigGetHandler, createConfigSetHandler, and broadcastConfigChange
+    functions
+  src/ipc/config-handler.test.ts: Created 11 unit tests covering get/set handlers and broadcast functionality
+  src/main.ts: Added config manager imports, state tracking, initialization in
+    app.whenReady(), IPC handler registration, and config change event wiring to
+    broadcast
 log: []
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - F-configuration-storage-ipc
+  - F-first-run-experience
+  - F-secure-credential-storage
+  - F-settings-window-ui
 created: 2026-01-29T01:45:51.040Z
 updated: 2026-01-29T01:45:51.040Z
 ---

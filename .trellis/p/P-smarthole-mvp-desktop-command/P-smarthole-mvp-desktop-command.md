@@ -20,9 +20,11 @@ affectedFiles:
     module; Added export for audio types module
   src/types/common.test.ts: Created comprehensive unit tests for all types and
     functions (37 tests) including type-level constraint verification
-  src/types/config.ts: Created configuration type definitions including LogLevel,
+  src/types/config.ts: "Created configuration type definitions including LogLevel,
     VoiceInputMode, SttBackend, LlmProvider, SttConfig, LlmConfig, HotkeyConfig,
-    AppConfig interfaces plus DEFAULT_CONFIG values and type guards
+    AppConfig interfaces plus DEFAULT_CONFIG values and type guards; Added
+    firstRunCompleted: boolean field to AppConfig interface and
+    firstRunCompleted: false to DEFAULT_CONFIG"
   src/types/config.test.ts: Created comprehensive unit tests for configuration
     types (44 tests) covering type guards, DEFAULT_CONFIG values, interface
     validation, and type-level constraints
@@ -135,7 +137,8 @@ affectedFiles:
   package.json: Added @testing-library/react, @testing-library/jest-dom, and jsdom
     dev dependencies; Added pino and pino-pretty dependencies; Added @types/ws
     as a dev dependency (ws was already installed); Added uiohook-napi
-    dependency (via npm install)
+    dependency (via npm install); Added electron-store ^11.0.2 as dependency
+    (via npm install)
   src/utils/error-recovery.ts: Created error recovery utilities with
     retryWithBackoff(), withFallback(), withFallbackSync(),
     getRecoveryStrategy(), and isRetryable() functions
@@ -199,7 +202,9 @@ affectedFiles:
     createIdleIcon(). Added createRecordingIcon() for red circle. Added
     updateTrayIcon(state) function. Updated createTray() to use
     createIdleIcon(). Extended stateChanged subscription to call
-    updateTrayIcon()."
+    updateTrayIcon().; Added config manager imports, state tracking,
+    initialization in app.whenReady(), IPC handler registration, and config
+    change event wiring to broadcast"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -213,14 +218,16 @@ affectedFiles:
     for notifications module; Added export for notification-queue module; Added
     export for client-registry service; Added export for registration-handler
     module.; Added export for hotkey-manager module; Added export for
-    input-state service module; Added export for audio-capture service
+    input-state service module; Added export for audio-capture service; Added
+    export for config-manager module; Added export for config-manager module
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
     preservation, nested object handling, array handling, mixed data),
     applyContentRedaction (all content fields, nested objects, arrays,
     null/undefined handling), and Logger Privacy Integration tests.
-  package-lock.json: Updated with new dependencies
+  package-lock.json: Updated with new dependencies; Updated with electron-store
+    and its dependencies
   src/ipc/log-handler.ts: Created new module with createLogMessageHandler() and
     processLogMessage() functions for handling renderer log messages with
     payload validation and context enrichment
@@ -467,6 +474,21 @@ affectedFiles:
     interfaces and buildTrayMenuTemplate() function."
   src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
     building logic covering all input states and menu structure."
+  src/services/config-manager.ts: Created config manager service with
+    electron-store integration, singleton pattern, configChanged event emission,
+    and changed key path tracking; Created config manager service with
+    electron-store integration, singleton pattern, configChanged event emission,
+    and changed key path tracking
+  src/services/config-manager.test.ts: Created comprehensive unit tests (24 tests)
+    covering singleton initialization, getConfig, setConfig, deep merge
+    behavior, changed keys tracking, event emission, and reset functionality;
+    Created comprehensive unit tests (24 tests) covering singleton
+    initialization, getConfig, setConfig, deep merge behavior, changed keys
+    tracking, event emission, and reset functionality
+  src/ipc/config-handler.ts: Created IPC handler for config management with
+    createConfigGetHandler, createConfigSetHandler, and broadcastConfigChange
+    functions
+  src/ipc/config-handler.test.ts: Created 11 unit tests covering get/set handlers and broadcast functionality
 log: []
 schema: v1.0
 childrenIds:
