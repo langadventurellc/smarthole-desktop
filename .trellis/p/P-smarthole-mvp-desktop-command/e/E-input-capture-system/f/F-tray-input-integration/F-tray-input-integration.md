@@ -1,17 +1,114 @@
 ---
 id: F-tray-input-integration
 title: Tray Input Integration
-status: open
+status: done
 priority: medium
 parent: E-input-capture-system
 prerequisites:
   - F-global-hotkey-system
   - F-voice-recording-service
   - F-text-input-popup-window
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/main.ts: Extended buildTrayMenu() to add input state detection and input
+    menu items (Open Text Input, Start/Stop Recording toggle). Added
+    stateChanged event subscription after input state initialization to trigger
+    menu updates. Menu items have dynamic labels and enabled states based on
+    current input state.; Updated to import buildTrayMenuTemplate from
+    tray-menu.ts. Added enabled state to Open Text Input menu item during
+    PROCESSING. Added stateChanged event subscription for menu updates.;
+    Refactored createTrayIcon() to createIdleIcon(). Added createRecordingIcon()
+    for red circle. Added updateTrayIcon(state) function. Updated createTray()
+    to use createIdleIcon(). Extended stateChanged subscription to call
+    updateTrayIcon().
+  src/tray-menu.ts: "New module: Extracted tray menu template building logic for
+    testability. Contains TrayMenuState, TrayMenuActions, MenuItemOptions
+    interfaces and buildTrayMenuTemplate() function."
+  src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
+    building logic covering all input states and menu structure."
+  src/services/audio-capture.ts: "Added no-audio timeout mechanism:
+    noAudioTimeoutId field, NO_AUDIO_TIMEOUT_MS constant (500ms),
+    handleNoAudioReceived() method, timeout scheduling in stopRecording(),
+    timeout cancellation in handleAudioData() and reset()"
+  src/services/audio-capture.test.ts: "Added 4 new tests for no-audio timeout
+    behavior: transition to IDLE after timeout, InputState transition,
+    handleAudioData cancels timeout, reset clears timeout"
+  src/windows/text-input-popup.ts: Added isShowing flag to prevent blur during
+    show, added activateAndShow() private method, modified show() to wait for
+    content load and use isShowing protection, modified blur handler to check
+    isShowing flag, updated destroy() to reset isShowing
+  src/windows/text-input-popup.test.ts: Added isLoading and once mocks to
+    webContents, updated blur event test to use fake timers, added new test for
+    blur-during-show race condition prevention
+log:
+  - >-
+    Started feature implementation. Created feature branch
+    feature/F-tray-input-integration.
+
+
+    Execution order:
+
+    1. T-add-input-menu-items-and (no prerequisites)
+
+    2. T-add-tray-icon-state (depends on #1)
+
+
+    Starting with T-add-input-menu-items-and first.
+  - >-
+    Resuming feature implementation. Currently on branch
+    feature/F-tray-input-integration.
+
+
+    Both tasks are open:
+
+    1. T-add-input-menu-items-and - ready to start
+
+    2. T-add-tray-icon-state - blocked by T-add-input-menu-items-and
+
+
+    Starting implementation of T-add-input-menu-items-and.
+  - |-
+    T-add-input-menu-items-and completed:
+    - Added input menu items (Open Text Input, Start/Stop Recording)
+    - Added dynamic state updates via stateChanged subscription
+    - Review findings addressed (disabled state for PROCESSING, unit tests)
+    - Created src/tray-menu.ts module with 22 unit tests
+
+    Committing task changes.
+  - "Auto-completed: All child tasks are complete"
+  - >-
+    T-add-tray-icon-state completed:
+
+    - Added tray icon state indication (idle=black square, recording=red circle)
+
+    - Icons generated programmatically (no external assets)
+
+    - Cached icons at module level to avoid repeated allocation
+
+    - macOS template image handling correct (idle uses template, recording does
+    not to preserve red)
+
+
+    Both tasks complete. Committing and proceeding to documentation update.
+  - >-
+    Documentation updated:
+
+    - Created docs/tray-input-integration.md with comprehensive documentation
+    for tray menu input controls and icon state indication
+
+    - Updated CLAUDE.md to add tray-menu.ts to project structure
+
+    - Added link to new documentation in CLAUDE.md detailed documentation
+    section
+
+
+    Committing documentation changes.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-add-input-menu-items-and
+  - T-add-tray-icon-state
+  - T-fix-state-stuck-in-processing
+  - T-fix-text-input-popup-not
 created: 2026-01-30T22:15:47.857Z
 updated: 2026-01-30T22:15:47.857Z
 ---

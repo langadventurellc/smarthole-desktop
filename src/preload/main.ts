@@ -29,9 +29,9 @@ import type {
   AudioCapturePermission,
   AudioStateChangedEvent,
   AudioPermissionStatus,
-} from "./types";
-import { IPC_CHANNELS } from "./types";
-import type { LogLevel, AppConfig } from "./types";
+} from "../types";
+import { IPC_CHANNELS } from "../types";
+import type { LogLevel, AppConfig } from "../types";
 
 /**
  * Electron API exposed to renderer process via contextBridge.

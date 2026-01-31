@@ -31,6 +31,7 @@ import {
   AudioCaptureService,
 } from "./services/audio-capture";
 import { InputState } from "./types";
+import { buildTrayMenuTemplate, TrayMenuActions } from "./tray-menu";
 import {
   IPC_CHANNELS,
   LogLevel,
@@ -115,6 +116,17 @@ const audioState: {
 };
 
 /**
+ * Cached tray icons to avoid repeated buffer allocation during state changes.
+ */
+const iconCache: {
+  idle: Electron.NativeImage | null;
+  recording: Electron.NativeImage | null;
+} = {
+  idle: null,
+  recording: null,
+};
+
+/**
  * Broadcasts the current WebSocket server status to all renderer windows.
  */
 function notifyWebSocketStatusChange(): void {
@@ -152,9 +164,13 @@ function hasNotificationContent(notification: NotificationPayload): boolean {
   return Boolean(notification.title || notification.body);
 }
 
-function createTrayIcon(): Electron.NativeImage {
-  // Create a 16x16 black filled square as placeholder icon
-  // Replace with actual app icon later
+/**
+ * Creates the idle state tray icon (black filled square).
+ * On macOS, marked as template image for menu bar theme adaptation.
+ *
+ * @returns 16x16 black square NativeImage
+ */
+function createIdleIcon(): Electron.NativeImage {
   const size = 16;
   const buffer = Buffer.alloc(size * size * 4);
 
@@ -179,6 +195,87 @@ function createTrayIcon(): Electron.NativeImage {
 }
 
 /**
+ * Creates the recording state tray icon (red filled circle).
+ * Not marked as template image to preserve the red color on macOS.
+ *
+ * @returns 16x16 red circle NativeImage
+ */
+function createRecordingIcon(): Electron.NativeImage {
+  const size = 16;
+  const buffer = Buffer.alloc(size * size * 4);
+  const centerX = size / 2;
+  const centerY = size / 2;
+  const radius = size / 2 - 1; // Leave 1px padding for anti-aliasing
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      // Calculate distance from center
+      const dx = x - centerX + 0.5;
+      const dy = y - centerY + 0.5;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= radius) {
+        // Inside the circle - red color
+        buffer[i] = 255; // R
+        buffer[i + 1] = 59; // G (slightly off-red for better visibility)
+        buffer[i + 2] = 48; // B
+        buffer[i + 3] = 255; // A (fully opaque)
+      } else {
+        // Outside the circle - transparent
+        buffer[i] = 0; // R
+        buffer[i + 1] = 0; // G
+        buffer[i + 2] = 0; // B
+        buffer[i + 3] = 0; // A (transparent)
+      }
+    }
+  }
+
+  const icon = nativeImage.createFromBuffer(buffer, { width: size, height: size });
+
+  // Do NOT mark as template image - we want to preserve the red color
+  // Template images on macOS are rendered as monochrome
+
+  return icon;
+}
+
+/**
+ * Gets the cached idle icon, creating it on first access.
+ */
+function getIdleIcon(): Electron.NativeImage {
+  if (!iconCache.idle) {
+    iconCache.idle = createIdleIcon();
+  }
+  return iconCache.idle;
+}
+
+/**
+ * Gets the cached recording icon, creating it on first access.
+ */
+function getRecordingIcon(): Electron.NativeImage {
+  if (!iconCache.recording) {
+    iconCache.recording = createRecordingIcon();
+  }
+  return iconCache.recording;
+}
+
+/**
+ * Updates the tray icon based on the current input state.
+ * Shows a red circle when recording, black square otherwise.
+ * Uses cached icons to avoid repeated buffer allocation.
+ *
+ * @param state - The current input state
+ */
+function updateTrayIcon(state: InputState): void {
+  if (!tray) {
+    return;
+  }
+
+  const icon = state === InputState.RECORDING ? getRecordingIcon() : getIdleIcon();
+  tray.setImage(icon);
+}
+
+/**
  * Builds the tray context menu with current client connection status.
  * Called whenever the menu needs to be rebuilt (initial creation or status change).
  *
@@ -200,48 +297,58 @@ function buildTrayMenu(): Electron.Menu {
     // Registry not initialized yet - use defaults
   }
 
-  // Build menu template with client status
-  const template: Electron.MenuItemConstructorOptions[] = [
-    {
-      label: `${clientCount} client${clientCount !== 1 ? "s" : ""} connected`,
-      enabled: false, // Display-only label
-    },
-  ];
+  // Get current input state (with fallback for early initialization)
+  let currentInputState: InputState = InputState.IDLE;
+  let isRecording = false;
 
-  // Add connected clients submenu when clients are connected
-  if (clientCount > 0) {
-    template.push({
-      label: "Connected Clients",
-      submenu: connectedClients.map((client) => ({
-        label: client.name,
-        sublabel: client.description,
-        enabled: false,
-      })),
-    });
+  try {
+    currentInputState = getInputState().getCurrentState();
+    isRecording = getAudioCapture().isRecording();
+  } catch {
+    // Services not initialized yet - use defaults
   }
 
-  // Add separator and standard menu items
-  template.push(
-    { type: "separator" },
-    {
-      label: "About SmartHole",
-      click: (): void => {
-        dialog.showMessageBox({
-          type: "info",
-          title: "About SmartHole",
-          message: "SmartHole",
-          detail: `Version ${app.getVersion()}`,
-          buttons: ["OK"],
-        });
-      },
+  // Build menu actions
+  const actions: TrayMenuActions = {
+    onOpenTextInput: (): void => {
+      try {
+        getTextInputPopup().show();
+      } catch {
+        // Service not initialized yet
+      }
     },
-    { type: "separator" },
-    {
-      label: "Quit",
-      click: (): void => {
-        app.quit();
-      },
-    }
+    onStartRecording: (): void => {
+      try {
+        void getAudioCapture().startRecording();
+      } catch {
+        // Service not initialized yet
+      }
+    },
+    onStopRecording: (): void => {
+      try {
+        void getAudioCapture().stopRecording();
+      } catch {
+        // Service not initialized yet
+      }
+    },
+    onAbout: (): void => {
+      dialog.showMessageBox({
+        type: "info",
+        title: "About SmartHole",
+        message: "SmartHole",
+        detail: `Version ${app.getVersion()}`,
+        buttons: ["OK"],
+      });
+    },
+    onQuit: (): void => {
+      app.quit();
+    },
+  };
+
+  // Build template and create menu
+  const template = buildTrayMenuTemplate(
+    { clientCount, connectedClients, currentInputState, isRecording },
+    actions
   );
 
   return Menu.buildFromTemplate(template);
@@ -260,7 +367,7 @@ function updateTrayMenu(): void {
 }
 
 function createTray(): void {
-  const icon = createTrayIcon();
+  const icon = getIdleIcon();
 
   tray = new Tray(icon);
   tray.setToolTip("SmartHole");
@@ -479,6 +586,12 @@ app.whenReady().then(async () => {
 
   // Wire input state to IPC for state change broadcasts
   wireInputStateToIpc(inputState.inputStateService, inputStateLogger);
+
+  // Subscribe to input state changes to update tray menu and icon
+  inputState.inputStateService.on("stateChanged", (event) => {
+    updateTrayMenu();
+    updateTrayIcon(event.newState);
+  });
 
   // Register input state IPC handler
   const inputStateGetter = (): InputStateService => getInputState();

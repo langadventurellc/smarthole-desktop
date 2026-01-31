@@ -69,28 +69,48 @@ const POPUP_HEIGHT = 60;
  * In both dev and production, the preload script is output alongside main.
  */
 function getPreloadPath(): string {
-  return path.join(__dirname, "preload-popup.js");
+  return path.join(__dirname, "popup.js");
 }
 
 /**
- * Gets the URL to load for the popup window.
- * Uses Electron Forge VitePlugin environment variables.
+ * Result of getPopupUrl - either a URL string or a file path.
  */
-function getPopupUrl(): string {
-  // The VitePlugin sets POPUP_WINDOW_VITE_DEV_SERVER_URL in dev mode
-  // Format: {NAME}_VITE_DEV_SERVER_URL where NAME is uppercase renderer name
-  if (process.env.POPUP_WINDOW_VITE_DEV_SERVER_URL) {
-    // In dev mode, Vite serves from the root, so we access popup.html directly
-    return `${process.env.POPUP_WINDOW_VITE_DEV_SERVER_URL}popup.html`;
+interface PopupUrlResult {
+  type: "url" | "file";
+  value: string;
+}
+
+// Vite define plugin injects these as global constants at build time
+declare const POPUP_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
+declare const POPUP_WINDOW_VITE_NAME: string | undefined;
+
+/**
+ * Gets the URL or file path to load for the popup window.
+ * Uses Electron Forge VitePlugin define constants (not process.env).
+ */
+function getPopupUrl(): PopupUrlResult {
+  // The VitePlugin injects POPUP_WINDOW_VITE_DEV_SERVER_URL via Vite's define plugin
+  // in dev mode. This is a build-time replacement, not a runtime env var.
+  if (typeof POPUP_WINDOW_VITE_DEV_SERVER_URL !== "undefined") {
+    // In dev mode, Vite serves index.html from the root
+    // Ensure trailing slash before appending path
+    const baseUrl = POPUP_WINDOW_VITE_DEV_SERVER_URL.endsWith("/")
+      ? POPUP_WINDOW_VITE_DEV_SERVER_URL
+      : `${POPUP_WINDOW_VITE_DEV_SERVER_URL}/`;
+    return {
+      type: "url",
+      value: `${baseUrl}index.html`,
+    };
   }
 
-  // In production, use file path
+  // In production (or dev without the define), use file path
   // VitePlugin sets POPUP_WINDOW_VITE_NAME for the renderer output directory
-  // The entry point is popup.html (from our rollupOptions.input config)
-  return path.join(
-    __dirname,
-    `../renderer/${process.env.POPUP_WINDOW_VITE_NAME || "popup_window"}/popup.html`
-  );
+  const rendererName =
+    typeof POPUP_WINDOW_VITE_NAME !== "undefined" ? POPUP_WINDOW_VITE_NAME : "popup_window";
+  return {
+    type: "file",
+    value: path.join(__dirname, `../renderer/${rendererName}/index.html`),
+  };
 }
 
 // ============================================================================
@@ -127,6 +147,8 @@ class TextInputPopupImpl implements TextInputPopupService {
   private readonly emitter: EventEmitter;
   private window: BrowserWindow | null = null;
   private previouslyFocusedWindow: BrowserWindow | null = null;
+  /** Flag to prevent blur handler from hiding the window during initial show */
+  private isShowing = false;
 
   constructor() {
     this.logger = getLogger().child({ component: "TextInputPopup" });
@@ -150,6 +172,17 @@ class TextInputPopupImpl implements TextInputPopupService {
    * Creates the popup BrowserWindow (hidden by default).
    */
   private createWindow(): BrowserWindow {
+    const preloadPath = getPreloadPath();
+    const popupUrlResult = getPopupUrl();
+
+    this.logger.info("Creating popup window", {
+      preloadPath,
+      popupUrlType: popupUrlResult.type,
+      popupUrlValue: popupUrlResult.value,
+      width: POPUP_WIDTH,
+      height: POPUP_HEIGHT,
+    });
+
     const popupWindow = new BrowserWindow({
       width: POPUP_WIDTH,
       height: POPUP_HEIGHT,
@@ -162,19 +195,43 @@ class TextInputPopupImpl implements TextInputPopupService {
       show: false, // Created hidden, shown on demand
       focusable: true,
       webPreferences: {
-        preload: getPreloadPath(),
+        preload: preloadPath,
         contextIsolation: true,
         nodeIntegration: false,
       },
     });
 
+    // Set up error handlers for content loading
+    popupWindow.webContents.on(
+      "did-fail-load",
+      (_event, errorCode, errorDescription, validatedURL) => {
+        this.logger.error("Popup failed to load content", {
+          errorCode,
+          errorDescription,
+          validatedURL,
+        });
+      }
+    );
+
+    popupWindow.webContents.on("did-finish-load", () => {
+      this.logger.info("Popup content finished loading");
+    });
+
+    popupWindow.webContents.on("render-process-gone", (_event, details) => {
+      this.logger.error("Popup render process gone", { reason: details.reason });
+    });
+
     // Load the popup HTML/URL
-    popupWindow.loadURL(getPopupUrl());
+    if (popupUrlResult.type === "url") {
+      popupWindow.loadURL(popupUrlResult.value);
+    } else {
+      popupWindow.loadFile(popupUrlResult.value);
+    }
 
     // Set up window events
     this.setupWindowEvents(popupWindow);
 
-    this.logger.debug("Text input popup window created");
+    this.logger.info("Text input popup window created");
     return popupWindow;
   }
 
@@ -183,7 +240,12 @@ class TextInputPopupImpl implements TextInputPopupService {
    */
   private setupWindowEvents(window: BrowserWindow): void {
     // Handle blur - dismiss the popup
+    // Only hide if not in the middle of showing (prevents race condition)
     window.on("blur", () => {
+      if (this.isShowing) {
+        this.logger.debug("Text input popup blur ignored during show");
+        return;
+      }
       this.logger.debug("Text input popup lost focus");
       this.emitter.emit("dismissed");
       this.hide();
@@ -207,18 +269,81 @@ class TextInputPopupImpl implements TextInputPopupService {
   }
 
   show(options?: TextInputOpenPayload): void {
+    this.logger.info("show() called", { hasOptions: !!options });
+
+    // Set showing flag to prevent blur handler from hiding window during activation
+    this.isShowing = true;
+
     // Create window if it doesn't exist
-    if (!this.window || this.window.isDestroyed()) {
+    const needsCreate = !this.window || this.window.isDestroyed();
+    this.logger.info("Window state check", {
+      needsCreate,
+      windowExists: !!this.window,
+      isDestroyed: this.window?.isDestroyed() ?? "N/A",
+    });
+
+    if (needsCreate) {
       this.window = this.createWindow();
     }
+
+    // At this point window is guaranteed to exist (createWindow always returns a window)
+
+    const window = this.window!;
 
     // Store reference to currently focused window for focus restoration
     this.previouslyFocusedWindow = BrowserWindow.getFocusedWindow();
 
-    // Position and show
+    // Position the window before showing
     this.centerOnActiveDisplay();
+    const bounds = window.getBounds();
+    this.logger.info("Window positioned", {
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+    });
+
+    // Check if webContents have already loaded
+    const webContents = window.webContents;
+    const isLoading = webContents.isLoading();
+    this.logger.info("Content loading state", { isLoading });
+
+    if (!isLoading) {
+      // Content is already loaded, show immediately
+      this.activateAndShow(options);
+    } else {
+      // Wait for content to finish loading before showing
+      this.logger.info("Waiting for content to finish loading...");
+      webContents.once("did-finish-load", () => {
+        this.logger.info("Content loaded, now activating window");
+        this.activateAndShow(options);
+      });
+    }
+  }
+
+  /**
+   * Activates the window and shows it after content is ready.
+   */
+  private activateAndShow(options?: TextInputOpenPayload): void {
+    this.logger.info("activateAndShow() called");
+
+    if (!this.window || this.window.isDestroyed()) {
+      this.logger.warn("activateAndShow() aborted - window is null or destroyed");
+      this.isShowing = false;
+      return;
+    }
+
+    // Show and focus the window
+    this.logger.info("Calling window.show() and window.focus()");
     this.window.show();
     this.window.focus();
+
+    // Log visibility state after show
+    this.logger.info("Window state after show()", {
+      isVisible: this.window.isVisible(),
+      isFocused: this.window.isFocused(),
+      bounds: this.window.getBounds(),
+    });
 
     // Send placeholder if provided
     if (options?.placeholder) {
@@ -226,7 +351,14 @@ class TextInputPopupImpl implements TextInputPopupService {
     }
 
     this.emitter.emit("focused");
-    this.logger.debug("Text input popup shown");
+    this.logger.info("Text input popup shown and focused");
+
+    // Clear the showing flag after a brief delay to allow focus to settle
+    // This prevents the blur handler from firing during the window activation
+    setTimeout(() => {
+      this.isShowing = false;
+      this.logger.info("isShowing flag cleared");
+    }, 100);
   }
 
   hide(): void {
@@ -278,6 +410,7 @@ class TextInputPopupImpl implements TextInputPopupService {
     }
     this.window = null;
     this.previouslyFocusedWindow = null;
+    this.isShowing = false;
     this.emitter.removeAllListeners();
   }
 }

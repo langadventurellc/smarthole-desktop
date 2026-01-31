@@ -188,7 +188,18 @@ affectedFiles:
     initialization, IPC handler registration, hotkey wiring, and submitted event
     subscription; Added audio capture service initialization, IPC wiring, hotkey
     integration, audioReady event handling, and cleanup in will-quit handler.
-    Added audioState tracking object and required imports."
+    Added audioState tracking object and required imports.; Extended
+    buildTrayMenu() to add input state detection and input menu items (Open Text
+    Input, Start/Stop Recording toggle). Added stateChanged event subscription
+    after input state initialization to trigger menu updates. Menu items have
+    dynamic labels and enabled states based on current input state.; Updated to
+    import buildTrayMenuTemplate from tray-menu.ts. Added enabled state to Open
+    Text Input menu item during PROCESSING. Added stateChanged event
+    subscription for menu updates.; Refactored createTrayIcon() to
+    createIdleIcon(). Added createRecordingIcon() for red circle. Added
+    updateTrayIcon(state) function. Updated createTray() to use
+    createIdleIcon(). Extended stateChanged subscription to call
+    updateTrayIcon()."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -372,14 +383,19 @@ affectedFiles:
     calculateCenteredPosition(), focus management, EventEmitter for callbacks,
     path resolution for preload/popup URL, and app cleanup handlers; Updated
     getPopupUrl() to use POPUP_WINDOW_VITE_DEV_SERVER_URL env var and correct
-    production path to popup.html
+    production path to popup.html; Added isShowing flag to prevent blur during
+    show, added activateAndShow() private method, modified show() to wait for
+    content load and use isShowing protection, modified blur handler to check
+    isShowing flag, updated destroy() to reset isShowing
   src/windows/index.ts: Created module exports for TextInputPopupService,
     functions (initialize, get, reset, getImpl), calculateCenteredPosition, and
     event types
   src/windows/text-input-popup.test.ts: Added 20 unit tests covering singleton
     lifecycle, show (positioning, focus, placeholder, events), hide (window,
     input clearing, focus restoration), isVisible, event
-    subscription/unsubscription, and getWindow accessor
+    subscription/unsubscription, and getWindow accessor; Added isLoading and
+    once mocks to webContents, updated blur event test to use fake timers, added
+    new test for blur-during-show race condition prevention
   src/preload-popup.ts: Created preload script with PopupAPI exposing submit,
     dismiss, notifyFocused methods and onPlaceholderChange, onClear event
     listeners via contextBridge
@@ -416,15 +432,20 @@ affectedFiles:
     explaining the directory purpose - holds renderer-side modules that use
     browser/Web APIs and run in renderer context; Updated barrel export to
     include all audio capture module exports
-  src/services/audio-capture.ts: Created main process audio capture service with
+  src/services/audio-capture.ts: "Created main process audio capture service with
     singleton pattern, recording lifecycle management (start/stop/isRecording),
     macOS permission checking, push-to-talk and toggle mode support,
     handleAudioData for receiving audio from renderer, and EventEmitter for
-    state/permission/audioReady/error events
-  src/services/audio-capture.test.ts: Created 24 unit tests covering singleton
+    state/permission/audioReady/error events; Added no-audio timeout mechanism:
+    noAudioTimeoutId field, NO_AUDIO_TIMEOUT_MS constant (500ms),
+    handleNoAudioReceived() method, timeout scheduling in stopRecording(),
+    timeout cancellation in handleAudioData() and reset()"
+  src/services/audio-capture.test.ts: "Created 24 unit tests covering singleton
     management, recording lifecycle, audio data handling, voice input modes,
     permission status, permission denied scenarios, event subscription, and
-    reset functionality
+    reset functionality; Added 4 new tests for no-audio timeout behavior:
+    transition to IDLE after timeout, InputState transition, handleAudioData
+    cancels timeout, reset clears timeout"
   src/ipc/audio-handler.ts: Created IPC handlers including broadcast functions
     (broadcastAudioStateChanged, broadcastAudioPermissionChanged,
     broadcastAudioStart, broadcastAudioStop), createAudioDataHandler for
@@ -441,6 +462,11 @@ affectedFiles:
   src/renderer/audio-capture.test.ts: Created 20 unit tests for WAV encoding,
     resampling, mono conversion, configuration, state management, and error
     handling
+  src/tray-menu.ts: "New module: Extracted tray menu template building logic for
+    testability. Contains TrayMenuState, TrayMenuActions, MenuItemOptions
+    interfaces and buildTrayMenuTemplate() function."
+  src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
+    building logic covering all input states and menu structure."
 log: []
 schema: v1.0
 childrenIds:

@@ -211,7 +211,6 @@ describe("ErrorBoundary", () => {
 
     it("should not throw if electronAPI is not available", () => {
       const originalElectronAPI = window.electronAPI;
-      // @ts-expect-error - intentionally setting to undefined for test
       window.electronAPI = undefined;
 
       expect(() => {
