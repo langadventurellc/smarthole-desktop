@@ -37,7 +37,7 @@ src/
 ├── popup/               # Text input popup UI (React)
 ├── settings/            # Settings window UI (React, components/)
 ├── onboarding/          # First-run onboarding wizard UI (React)
-├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state, audio-capture, config-manager, credential-manager, stt-service)
+├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state, audio-capture, config-manager, credential-manager, stt-service, stt-pipeline)
 ├── renderer/            # Renderer-side modules (audio-capture)
 ├── windows/             # Window management (text-input-popup, settings-window, onboarding-window)
 ├── ipc/                 # IPC handlers for main/renderer communication

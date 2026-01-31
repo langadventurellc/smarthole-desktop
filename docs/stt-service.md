@@ -177,24 +177,162 @@ interface SttService {
 type SttCloudProvider = "groq" | "openai";
 ```
 
+## STT Pipeline
+
+Location: `src/services/stt-pipeline.ts`
+
+The STT Pipeline service orchestrates the complete audio-to-transcription flow, connecting the audio capture system to the STT service with state management, error handling, and event emission.
+
+### Architecture
+
+```
+┌─────────────────┐     ┌───────────────┐     ┌───────────────┐
+│  AudioCapture   │────▶│  SttPipeline  │────▶│   SttService  │
+│    Service      │     │  (orchestrator)│     │   (backend)   │
+└─────────────────┘     └───────┬───────┘     └───────────────┘
+                                │
+                    ┌───────────┼───────────┐
+                    ▼           ▼           ▼
+             ┌───────────┐ ┌─────────┐ ┌────────────┐
+             │InputState │ │  IPC    │ │Notification│
+             │  Service  │ │Broadcast│ │  Service   │
+             └───────────┘ └─────────┘ └────────────┘
+```
+
+### Initialization
+
+```typescript
+import { initializeSttPipeline, getSttPipeline } from "./services/stt-pipeline";
+
+// Inside app.whenReady() after stt-service, input-state, notifications
+const sttPipeline = initializeSttPipeline();
+
+// Wire to audio capture
+audioCapture.on("audioReady", (event) => {
+  sttPipeline.processAudio(event.result);
+});
+
+// Listen for transcription results
+sttPipeline.on("transcriptionReady", (event) => {
+  // Route transcription to downstream consumers
+  console.log("Transcription ready:", event.text.length, "chars");
+});
+```
+
+### API
+
+| Method                        | Description                                             |
+| ----------------------------- | ------------------------------------------------------- |
+| `processAudio(result)`        | Process captured audio through the pipeline             |
+| `isReady(): Promise<boolean>` | Check if pipeline (and underlying STT service) is ready |
+| `on(event, listener)`         | Subscribe to pipeline events                            |
+| `off(event, listener)`        | Unsubscribe from pipeline events                        |
+
+### Events
+
+| Event                | Payload                   | Description                          |
+| -------------------- | ------------------------- | ------------------------------------ |
+| `transcriptionReady` | `TranscriptionReadyEvent` | Transcription completed successfully |
+| `transcriptionError` | `TranscriptionErrorEvent` | Transcription failed                 |
+
+### TranscriptionReadyEvent
+
+```typescript
+interface TranscriptionReadyEvent {
+  text: string; // Transcribed text
+  confidence?: number; // Confidence score (0-1) if available
+  inputMethod: "voice"; // Always "voice" for STT results
+  audioMetadata: {
+    durationMs: number; // Original audio duration
+    startedAt: string; // When recording started
+    stoppedAt: string; // When recording stopped
+  };
+  sttMetadata: {
+    backendUsed: SttBackendType; // Which backend transcribed
+    processingTimeMs: number; // How long transcription took
+  };
+}
+```
+
+### Error Handling
+
+The pipeline maps STT errors to user-friendly error codes and shows notifications:
+
+| Error Code             | Notification           | Description                       |
+| ---------------------- | ---------------------- | --------------------------------- |
+| `NO_API_KEY`           | "STT Not Configured"   | API key missing or invalid        |
+| `NETWORK_ERROR`        | "Transcription Failed" | Network connectivity issues       |
+| `RATE_LIMIT`           | "Too Many Requests"    | API rate limit exceeded           |
+| `EMPTY_RESULT`         | "No Speech Detected"   | Transcription returned empty text |
+| `INVALID_AUDIO`        | "Audio Error"          | Audio format issues               |
+| `TRANSCRIPTION_FAILED` | "Transcription Failed" | Generic transcription failure     |
+
+### IPC Events
+
+The pipeline broadcasts events to all renderer windows for UI feedback:
+
+| Channel            | Direction        | Payload                   | Description             |
+| ------------------ | ---------------- | ------------------------- | ----------------------- |
+| `stt:transcribing` | Main -> Renderer | `{ audioId: string }`     | STT processing started  |
+| `stt:result`       | Main -> Renderer | `TranscriptionReadyEvent` | Transcription completed |
+| `stt:error`        | Main -> Renderer | `TranscriptionErrorEvent` | Transcription failed    |
+
+### Renderer API
+
+The preload script exposes these methods via `window.electronAPI`:
+
+```typescript
+// Listen for STT transcribing start
+const unsub = electronAPI.onSttTranscribing((payload) => {
+  console.log("STT processing audio:", payload.audioId);
+});
+
+// Listen for STT results
+const unsub = electronAPI.onSttResult((result) => {
+  console.log("Transcription:", result.text);
+  console.log("Backend:", result.sttMetadata.backendUsed);
+  console.log("Processing time:", result.sttMetadata.processingTimeMs, "ms");
+});
+
+// Listen for STT errors
+const unsub = electronAPI.onSttError((error) => {
+  console.log("STT error:", error.code, error.message);
+});
+```
+
+### Input State Integration
+
+The pipeline manages input state transitions during transcription:
+
+```
+IDLE → PROCESSING (on processAudio) → IDLE (on completion or error)
+```
+
+This allows the UI to show a "processing" indicator while transcription is in progress.
+
 ## Integration with Audio Capture
 
-The STT service is designed to receive audio from the audio capture service:
+The STT pipeline automatically connects to the audio capture service in `main.ts`:
 
 ```typescript
 import { getAudioCapture } from "./services/audio-capture";
-import { getSttService } from "./services/stt-service";
+import { getSttPipeline } from "./services/stt-pipeline";
 
 const audioCapture = getAudioCapture();
-const sttService = getSttService();
+const sttPipeline = getSttPipeline();
 
-audioCapture.on("audioReady", async (event) => {
-  try {
-    const result = await sttService.transcribe(event.result.audio);
-    console.log("Transcription:", result.text);
-  } catch (error) {
-    console.error("STT failed:", error);
-  }
+// Wire audio capture to STT pipeline
+audioCapture.on("audioReady", (event) => {
+  sttPipeline.processAudio(event.result);
+});
+
+// Listen for transcription results
+sttPipeline.on("transcriptionReady", (event) => {
+  // Route to downstream consumers (e.g., routing agent)
+  logger.info("Transcription complete", {
+    processingTimeMs: event.sttMetadata.processingTimeMs,
+    audioDurationMs: event.audioMetadata.durationMs,
+  });
 });
 ```
 
@@ -227,6 +365,8 @@ Run tests:
 ```bash
 mise run test src/services/stt-service.test.ts
 mise run test src/services/stt-backends/groq-backend.test.ts
+mise run test src/services/stt-pipeline.test.ts
+mise run test src/ipc/stt-handler.test.ts
 mise run test src/types/stt.test.ts
 ```
 
@@ -237,6 +377,9 @@ Tests cover:
 - Transcription delegation to backend
 - Error handling and error code mapping
 - Type guards for runtime validation
+- STT pipeline audio processing flow
+- IPC event broadcasting to renderer windows
+- Input state transitions during transcription
 
 ## Dependencies
 
