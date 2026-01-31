@@ -56,6 +56,8 @@ log:
   - "Documentation updated: Created docs/settings-window.md, updated CLAUDE.md,
     docs/configuration-system.md, and docs/credential-system.md with
     cross-references."
+  - Feature complete. All 2 tasks implemented, reviewed, and committed.
+    Documentation updated and committed.
 schema: v1.0
 childrenIds:
   - T-build-settings-react-ui-with
