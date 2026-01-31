@@ -30,6 +30,11 @@ import {
   getAudioCapture,
   AudioCaptureService,
 } from "./services/audio-capture";
+import {
+  initializeConfigManager,
+  getConfigManager,
+  ConfigManagerService,
+} from "./services/config-manager";
 import { InputState } from "./types";
 import { buildTrayMenuTemplate, TrayMenuActions } from "./tray-menu";
 import {
@@ -62,6 +67,11 @@ import {
   wireAudioCaptureToIpc,
   wireAudioCaptureToHotkey,
 } from "./ipc/audio-handler";
+import {
+  createConfigGetHandler,
+  createConfigSetHandler,
+  broadcastConfigChange,
+} from "./ipc/config-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -113,6 +123,15 @@ const audioState: {
   audioCapture: AudioCaptureService | null;
 } = {
   audioCapture: null,
+};
+
+/**
+ * Mutable state for config manager.
+ */
+const configState: {
+  configManager: ConfigManagerService | null;
+} = {
+  configManager: null,
 };
 
 /**
@@ -391,6 +410,26 @@ app.whenReady().then(async () => {
 
   const ipcLogger = logger.child({ component: "IPC" });
   const notifyLogger = logger.child({ component: "NotificationIPC" });
+
+  // Initialize config manager early (other services may depend on it)
+  configState.configManager = initializeConfigManager();
+  logger.info("Config manager initialized");
+
+  // Register config IPC handlers
+  const configLogger = logger.child({ component: "ConfigIPC" });
+  ipcMain.handle(
+    IPC_CHANNELS.CONFIG_GET,
+    createConfigGetHandler(() => getConfigManager(), configLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.CONFIG_SET,
+    createConfigSetHandler(() => getConfigManager(), configLogger)
+  );
+
+  // Wire config changes to broadcast to all renderer windows
+  configState.configManager.on("configChanged", (config, changedKeys) => {
+    broadcastConfigChange({ config, changedKeys }, configLogger);
+  });
 
   // Initialize notification services
   const notificationService = initializeNotificationService();

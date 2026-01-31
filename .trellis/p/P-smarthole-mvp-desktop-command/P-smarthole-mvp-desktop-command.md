@@ -202,7 +202,9 @@ affectedFiles:
     createIdleIcon(). Added createRecordingIcon() for red circle. Added
     updateTrayIcon(state) function. Updated createTray() to use
     createIdleIcon(). Extended stateChanged subscription to call
-    updateTrayIcon()."
+    updateTrayIcon().; Added config manager imports, state tracking,
+    initialization in app.whenReady(), IPC handler registration, and config
+    change event wiring to broadcast"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -483,6 +485,10 @@ affectedFiles:
     Created comprehensive unit tests (24 tests) covering singleton
     initialization, getConfig, setConfig, deep merge behavior, changed keys
     tracking, event emission, and reset functionality
+  src/ipc/config-handler.ts: Created IPC handler for config management with
+    createConfigGetHandler, createConfigSetHandler, and broadcastConfigChange
+    functions
+  src/ipc/config-handler.test.ts: Created 11 unit tests covering get/set handlers and broadcast functionality
 log: []
 schema: v1.0
 childrenIds:

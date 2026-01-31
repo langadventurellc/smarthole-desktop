@@ -24,6 +24,13 @@ affectedFiles:
     tracking, event emission, and reset functionality
   src/services/index.ts: Added export for config-manager module; Added export for
     config-manager module
+  src/ipc/config-handler.ts: Created IPC handler for config management with
+    createConfigGetHandler, createConfigSetHandler, and broadcastConfigChange
+    functions
+  src/ipc/config-handler.test.ts: Created 11 unit tests covering get/set handlers and broadcast functionality
+  src/main.ts: Added config manager imports, state tracking, initialization in
+    app.whenReady(), IPC handler registration, and config change event wiring to
+    broadcast
 log: []
 schema: v1.0
 childrenIds:

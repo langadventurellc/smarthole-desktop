@@ -1,13 +1,55 @@
 ---
 id: T-implement-config-ipc-handlers
 title: Implement config IPC handlers and main process integration
-status: open
+status: done
 priority: high
 parent: F-configuration-storage-ipc
 prerequisites:
   - T-implement-config-manager
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/ipc/config-handler.ts: Created IPC handler for config management with
+    createConfigGetHandler, createConfigSetHandler, and broadcastConfigChange
+    functions
+  src/ipc/config-handler.test.ts: Created 11 unit tests covering get/set handlers and broadcast functionality
+  src/main.ts: Added config manager imports, state tracking, initialization in
+    app.whenReady(), IPC handler registration, and config change event wiring to
+    broadcast
+log:
+  - >-
+    Starting implementation. Researched codebase patterns:
+
+    - IPC handler pattern from client-status-handler.ts
+
+    - Config manager service interface
+
+    - Preload bridge already has getConfig/setConfig/onConfigChanged stubs
+    calling IPC channels
+
+    - IPC types already defined in types/ipc.ts (ConfigGetResponse,
+    ConfigSetPayload, ConfigChangedPayload)
+  - >-
+    Implementation complete:
+
+    1. Created src/ipc/config-handler.ts with createConfigGetHandler,
+    createConfigSetHandler, and broadcastConfigChange functions
+
+    2. Created src/ipc/config-handler.test.ts with 11 unit tests
+
+    3. Updated src/main.ts to initialize config manager and register IPC
+    handlers
+
+    4. All 844 tests pass
+
+    5. All quality checks pass (lint, format, type-check)
+  - Implemented config IPC handlers and main process integration. Created
+    createConfigGetHandler and createConfigSetHandler functions following the
+    existing IPC handler patterns from client-status-handler.ts. Added
+    broadcastConfigChange function to send config changes to all renderer
+    windows. Integrated into main.ts by initializing config manager early in
+    app.whenReady() and registering IPC handlers for CONFIG_GET and CONFIG_SET
+    channels. Wired configChanged events to broadcast to all renderer windows.
+    The renderer can now call window.electronAPI.getConfig() and
+    window.electronAPI.setConfig() and changes will persist via electron-store.
 schema: v1.0
 childrenIds: []
 created: 2026-01-31T06:29:27.101Z
