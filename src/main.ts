@@ -116,6 +116,17 @@ const audioState: {
 };
 
 /**
+ * Cached tray icons to avoid repeated buffer allocation during state changes.
+ */
+const iconCache: {
+  idle: Electron.NativeImage | null;
+  recording: Electron.NativeImage | null;
+} = {
+  idle: null,
+  recording: null,
+};
+
+/**
  * Broadcasts the current WebSocket server status to all renderer windows.
  */
 function notifyWebSocketStatusChange(): void {
@@ -229,8 +240,29 @@ function createRecordingIcon(): Electron.NativeImage {
 }
 
 /**
+ * Gets the cached idle icon, creating it on first access.
+ */
+function getIdleIcon(): Electron.NativeImage {
+  if (!iconCache.idle) {
+    iconCache.idle = createIdleIcon();
+  }
+  return iconCache.idle;
+}
+
+/**
+ * Gets the cached recording icon, creating it on first access.
+ */
+function getRecordingIcon(): Electron.NativeImage {
+  if (!iconCache.recording) {
+    iconCache.recording = createRecordingIcon();
+  }
+  return iconCache.recording;
+}
+
+/**
  * Updates the tray icon based on the current input state.
  * Shows a red circle when recording, black square otherwise.
+ * Uses cached icons to avoid repeated buffer allocation.
  *
  * @param state - The current input state
  */
@@ -239,7 +271,7 @@ function updateTrayIcon(state: InputState): void {
     return;
   }
 
-  const icon = state === InputState.RECORDING ? createRecordingIcon() : createIdleIcon();
+  const icon = state === InputState.RECORDING ? getRecordingIcon() : getIdleIcon();
   tray.setImage(icon);
 }
 
@@ -335,7 +367,7 @@ function updateTrayMenu(): void {
 }
 
 function createTray(): void {
-  const icon = createIdleIcon();
+  const icon = getIdleIcon();
 
   tray = new Tray(icon);
   tray.setToolTip("SmartHole");

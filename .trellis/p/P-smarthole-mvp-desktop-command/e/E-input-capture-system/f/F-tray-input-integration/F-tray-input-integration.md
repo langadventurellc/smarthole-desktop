@@ -61,6 +61,20 @@ log:
 
     Committing task changes.
   - "Auto-completed: All child tasks are complete"
+  - >-
+    T-add-tray-icon-state completed:
+
+    - Added tray icon state indication (idle=black square, recording=red circle)
+
+    - Icons generated programmatically (no external assets)
+
+    - Cached icons at module level to avoid repeated allocation
+
+    - macOS template image handling correct (idle uses template, recording does
+    not to preserve red)
+
+
+    Both tasks complete. Committing and proceeding to documentation update.
 schema: v1.0
 childrenIds:
   - T-add-input-menu-items-and

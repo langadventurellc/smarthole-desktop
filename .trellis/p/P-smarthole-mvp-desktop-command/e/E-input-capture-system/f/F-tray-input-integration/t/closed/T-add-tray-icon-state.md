@@ -57,6 +57,22 @@ log:
     stateChanged events to switch the icon when recording starts/stops. All
     acceptance criteria met with programmatic icon generation (no external
     assets).
+  - >-
+    Review finding addressed:
+
+
+    Added icon caching to avoid repeated buffer allocation during state changes:
+
+    - Created iconCache object at module level to store idle and recording icons
+
+    - Added getIdleIcon() and getRecordingIcon() helper functions that lazily
+    create and cache icons
+
+    - Updated updateTrayIcon() and createTray() to use cached icons via the
+    getter functions
+
+
+    All quality checks pass.
 schema: v1.0
 childrenIds: []
 created: 2026-01-31T03:00:59.510Z
