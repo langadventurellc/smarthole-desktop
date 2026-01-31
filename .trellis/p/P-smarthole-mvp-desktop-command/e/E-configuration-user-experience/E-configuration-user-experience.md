@@ -33,7 +33,9 @@ affectedFiles:
   src/main.ts: Added config manager imports, state tracking, initialization in
     app.whenReady(), IPC handler registration, and config change event wiring to
     broadcast; Added credential manager imports, state object, initialization
-    after config manager, and registered IPC handlers with child logger.
+    after config manager, and registered IPC handlers with child logger.; Added
+    settings window import, initialization, state tracking, dialog handler
+    registration, and tray menu wiring
   src/services/credential-manager.ts: New service implementing
     CredentialManagerService interface with keytar for OS keychain access.
     Follows singleton pattern with
@@ -43,15 +45,49 @@ affectedFiles:
     type coverage for all CredentialKey variants.
   src/types/ipc.ts: Added CREDENTIAL_STORE, CREDENTIAL_DELETE, CREDENTIAL_HAS
     channels. Added CredentialStorePayload and CredentialKeyPayload types. Added
-    entries to IpcPayloadMap and IpcResponseMap. Re-exported CredentialKey type.
+    entries to IpcPayloadMap and IpcResponseMap. Re-exported CredentialKey
+    type.; Added DIALOG_OPEN channel, DialogOpenOptions and DialogOpenResponse
+    types, updated payload/response maps
   src/ipc/credential-handler.ts: New file implementing
     createCredentialStoreHandler, createCredentialDeleteHandler, and
     createCredentialHasHandler factory functions following existing patterns.
   src/ipc/credential-handler.test.ts: New test file with 13 tests covering all
     three handlers, error propagation, and credential key type coverage.
   src/preload/main.ts: Extended electronAPI with storeCredential,
-    deleteCredential, and hasCredential methods using ipcRenderer.invoke.
-  src/types/ipc.test.ts: Added test for credential channels and updated channel count from 32 to 35.
+    deleteCredential, and hasCredential methods using ipcRenderer.invoke.; Added
+    showOpenDialog() method to electronAPI for renderer access to file dialogs
+  src/types/ipc.test.ts: Added test for credential channels and updated channel
+    count from 32 to 35.; Updated channel count to 36 and added DIALOG_OPEN
+    channel test
+  src/windows/settings-window.ts: Created settings window singleton service with
+    show/hide/isVisible/getWindow methods, escape key handling, and
+    single-instance behavior; Updated to use SETTINGS_WINDOW_VITE_DEV_SERVER_URL
+    instead of MAIN_WINDOW
+  src/ipc/dialog-handler.ts: Created file dialog IPC handler for native open file/directory dialog
+  src/tray-menu.ts: Added onSettings action to TrayMenuActions and Settings... menu item
+  src/tray-menu.test.ts: Updated mock actions and menu structure tests to include Settings menu item
+  src/windows/index.ts: Exported settings window service types and functions
+  src/ipc/index.ts: Exported dialog handler
+  src/settings/index.html: Updated title to SmartHole Settings
+  vite.settings-renderer.config.ts: "Created Vite config for settings window renderer with root: src/settings"
+  forge.config.ts: Added settings_window renderer entry to VitePlugin configuration
+  src/windows/settings-window.test.ts: Created unit tests for settings window service (23 tests)
+  src/settings/App.tsx: "Replaced stub with full settings container: tab
+    navigation, config state management, validation, save/cancel handlers,
+    keyboard shortcuts"
+  src/settings/App.test.tsx: Added 17 tests covering loading state, tab
+    navigation, save/cancel, validation, voice input, and logging settings
+  src/settings/index.css: "Enhanced with comprehensive styling: CSS variables,
+    dark mode, high contrast, responsive layout, all component styles"
+  src/settings/components/SettingsSection.tsx: Created section wrapper component with title and description
+  src/settings/components/HotkeyInput.tsx: Created hotkey capture input with Electron accelerator format conversion
+  src/settings/components/SecretInput.tsx: Created masked credential input with
+    show/hide toggle and hasCredential() integration
+  src/settings/components/SelectInput.tsx: Created dropdown select component for enum values
+  src/settings/components/NumberInput.tsx: Created number input with min/max validation and error display
+  src/settings/components/ToggleInput.tsx: Created accessible toggle switch with aria-checked attribute
+  src/settings/components/PathInput.tsx: Created file path input with browse button using showOpenDialog()
+  src/settings/components/index.ts: Created barrel export for all settings components
 log: []
 schema: v1.0
 childrenIds:

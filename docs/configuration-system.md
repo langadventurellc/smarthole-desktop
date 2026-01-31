@@ -152,6 +152,10 @@ interface ConfigChangedPayload {
 - Logger auto-redacts sensitive fields (apiKey, password, token, secret, auth, credential, bearer)
 - Config file should not be committed to version control
 
+## Settings UI
+
+The [Settings Window](settings-window.md) provides a React-based UI for editing configuration. It uses the IPC channels above to load, save, and subscribe to configuration changes.
+
 ## Testing
 
 Unit tests cover:

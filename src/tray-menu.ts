@@ -28,6 +28,7 @@ export interface TrayMenuActions {
   onOpenTextInput: () => void;
   onStartRecording: () => void;
   onStopRecording: () => void;
+  onSettings: () => void;
   onAbout: () => void;
   onQuit: () => void;
 }
@@ -113,6 +114,10 @@ export function buildTrayMenuTemplate(
   // Add separator and standard menu items
   template.push(
     { type: "separator" },
+    {
+      label: "Settings...",
+      click: actions.onSettings,
+    },
     {
       label: "About SmartHole",
       click: actions.onAbout,

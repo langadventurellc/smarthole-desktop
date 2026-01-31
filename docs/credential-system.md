@@ -147,6 +147,8 @@ Settings UI should:
 - Send new credentials to main process via `storeCredential()`
 - Never request actual credential values
 
+See [Settings Window](settings-window.md) for the React-based settings UI implementation that uses these APIs.
+
 ## Testing
 
 Unit tests cover:

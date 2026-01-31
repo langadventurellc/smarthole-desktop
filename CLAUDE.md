@@ -14,6 +14,7 @@ Use `mise` for all development tasks:
 mise run dev        # Start dev mode
 mise run build      # Build for distribution
 mise run test       # Run tests
+mise run smoke-test # Run smoke tests
 mise run quality    # All quality checks (lint + format + type-check)
 mise run lint       # ESLint only
 mise run format     # Prettier only
@@ -33,9 +34,10 @@ src/
 ├── renderer.tsx         # React entry point (main window)
 ├── App.tsx              # Main React component
 ├── popup/               # Text input popup UI (React)
+├── settings/            # Settings window UI (React, components/)
 ├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state, audio-capture, config-manager, credential-manager)
 ├── renderer/            # Renderer-side modules (audio-capture)
-├── windows/             # Window management (text-input-popup)
+├── windows/             # Window management (text-input-popup, settings-window)
 ├── ipc/                 # IPC handlers for main/renderer communication
 └── types/               # TypeScript type definitions
 ```
@@ -82,4 +84,5 @@ src/
 - [Tray Input Integration](docs/tray-input-integration.md) - tray menu input controls, icon state indication
 - [Configuration System](docs/configuration-system.md) - persistent config storage, IPC, electron-store
 - [Credential System](docs/credential-system.md) - secure credential storage, OS keychain, keytar
+- [Settings Window](docs/settings-window.md) - React settings UI, tab navigation, input components
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements

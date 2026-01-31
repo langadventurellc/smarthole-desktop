@@ -20,3 +20,4 @@ export * from "./input-state-handler";
 export * from "./text-input-handler";
 export * from "./audio-handler";
 export * from "./config-handler";
+export * from "./dialog-handler";

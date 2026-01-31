@@ -1,16 +1,67 @@
 ---
 id: F-settings-window-ui
 title: Settings Window UI
-status: open
+status: done
 priority: medium
 parent: E-configuration-user-experience
 prerequisites:
   - F-configuration-storage-ipc
   - F-secure-credential-storage
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/windows/settings-window.ts: Created settings window singleton service with
+    show/hide/isVisible/getWindow methods, escape key handling, and
+    single-instance behavior; Updated to use SETTINGS_WINDOW_VITE_DEV_SERVER_URL
+    instead of MAIN_WINDOW
+  src/ipc/dialog-handler.ts: Created file dialog IPC handler for native open file/directory dialog
+  src/types/ipc.ts: Added DIALOG_OPEN channel, DialogOpenOptions and
+    DialogOpenResponse types, updated payload/response maps
+  src/preload/main.ts: Added showOpenDialog() method to electronAPI for renderer
+    access to file dialogs
+  src/tray-menu.ts: Added onSettings action to TrayMenuActions and Settings... menu item
+  src/tray-menu.test.ts: Updated mock actions and menu structure tests to include Settings menu item
+  src/main.ts: Added settings window import, initialization, state tracking,
+    dialog handler registration, and tray menu wiring
+  src/windows/index.ts: Exported settings window service types and functions
+  src/ipc/index.ts: Exported dialog handler
+  src/types/ipc.test.ts: Updated channel count to 36 and added DIALOG_OPEN channel test
+  src/settings/index.html: Updated title to SmartHole Settings
+  vite.settings-renderer.config.ts: "Created Vite config for settings window renderer with root: src/settings"
+  forge.config.ts: Added settings_window renderer entry to VitePlugin configuration
+  src/windows/settings-window.test.ts: Created unit tests for settings window service (23 tests)
+  src/settings/App.tsx: "Replaced stub with full settings container: tab
+    navigation, config state management, validation, save/cancel handlers,
+    keyboard shortcuts"
+  src/settings/App.test.tsx: Added 17 tests covering loading state, tab
+    navigation, save/cancel, validation, voice input, and logging settings
+  src/settings/index.css: "Enhanced with comprehensive styling: CSS variables,
+    dark mode, high contrast, responsive layout, all component styles"
+  src/settings/components/SettingsSection.tsx: Created section wrapper component with title and description
+  src/settings/components/HotkeyInput.tsx: Created hotkey capture input with Electron accelerator format conversion
+  src/settings/components/SecretInput.tsx: Created masked credential input with
+    show/hide toggle and hasCredential() integration
+  src/settings/components/SelectInput.tsx: Created dropdown select component for enum values
+  src/settings/components/NumberInput.tsx: Created number input with min/max validation and error display
+  src/settings/components/ToggleInput.tsx: Created accessible toggle switch with aria-checked attribute
+  src/settings/components/PathInput.tsx: Created file path input with browse button using showOpenDialog()
+  src/settings/components/index.ts: Created barrel export for all settings components
+log:
+  - "Started orchestration. Created feature branch feature/F-settings-window-ui.
+    Tasks to execute in order: T-create-settings-window →
+    T-build-settings-react-ui-with"
+  - Completed T-create-settings-window. Committed as 610668b. Moving to
+    T-build-settings-react-ui-with.
+  - "Auto-completed: All child tasks are complete"
+  - Completed T-build-settings-react-ui-with. Committed as 5b9f341. Both tasks
+    complete. Running docs-updater.
+  - "Documentation updated: Created docs/settings-window.md, updated CLAUDE.md,
+    docs/configuration-system.md, and docs/credential-system.md with
+    cross-references."
+  - Feature complete. All 2 tasks implemented, reviewed, and committed.
+    Documentation updated and committed.
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-build-settings-react-ui-with
+  - T-create-settings-window
 created: 2026-01-31T06:21:18.379Z
 updated: 2026-01-31T06:21:18.379Z
 ---
