@@ -358,7 +358,9 @@ affectedFiles:
   src/windows/text-input-popup.ts: Created singleton service with
     TextInputPopupService interface, show/hide methods, screen positioning via
     calculateCenteredPosition(), focus management, EventEmitter for callbacks,
-    path resolution for preload/popup URL, and app cleanup handlers
+    path resolution for preload/popup URL, and app cleanup handlers; Updated
+    getPopupUrl() to use POPUP_WINDOW_VITE_DEV_SERVER_URL env var and correct
+    production path to popup.html
   src/windows/index.ts: Created module exports for TextInputPopupService,
     functions (initialize, get, reset, getImpl), calculateCenteredPosition, and
     event types
@@ -370,7 +372,7 @@ affectedFiles:
     dismiss, notifyFocused methods and onPlaceholderChange, onClear event
     listeners via contextBridge
   src/popup/index.html: Created minimal HTML entry point for popup window with
-    module script reference
+    module script reference; Deleted - replaced by popup.html at project root
   src/popup/popup.tsx: Created React component with auto-focus, keyboard handling
     (Enter submits, Escape dismisses), placeholder/clear subscriptions
   src/popup/popup.css: Created Spotlight-like styling with semi-transparent
@@ -381,6 +383,15 @@ affectedFiles:
     registerTextInputHandlers)
   src/ipc/text-input-handler.test.ts: Created 10 unit tests for submit handler
     validation, dismissed handler, focused handler, and hotkey wiring scenarios
+  vite.popup-preload.config.ts: Created new Vite config for popup preload script with electron external
+  vite.popup-renderer.config.ts: Created new Vite config for popup renderer with
+    React plugin and rollupOptions.input pointing to popup.html
+  forge.config.ts: Added popup preload entry (src/preload-popup.ts) and
+    popup_window renderer entry to VitePlugin configuration
+  index.html: Created at project root (moved from src/index.html) - fixes
+    pre-existing production build issue
+  popup.html: Created at project root as popup window entry point
+  src/index.html: Deleted - moved to project root
 log: []
 schema: v1.0
 childrenIds:

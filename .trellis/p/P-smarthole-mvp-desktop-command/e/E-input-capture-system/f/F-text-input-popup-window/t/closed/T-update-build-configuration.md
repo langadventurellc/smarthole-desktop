@@ -1,13 +1,70 @@
 ---
 id: T-update-build-configuration
 title: Update build configuration for popup window
-status: open
+status: done
 priority: medium
 parent: F-text-input-popup-window
 prerequisites:
   - T-create-popup-preload-script
-affectedFiles: {}
-log: []
+affectedFiles:
+  vite.popup-preload.config.ts: Created new Vite config for popup preload script with electron external
+  vite.popup-renderer.config.ts: Created new Vite config for popup renderer with
+    React plugin and rollupOptions.input pointing to popup.html
+  forge.config.ts: Added popup preload entry (src/preload-popup.ts) and
+    popup_window renderer entry to VitePlugin configuration
+  src/windows/text-input-popup.ts: Updated getPopupUrl() to use
+    POPUP_WINDOW_VITE_DEV_SERVER_URL env var and correct production path to
+    popup.html
+  index.html: Created at project root (moved from src/index.html) - fixes
+    pre-existing production build issue
+  popup.html: Created at project root as popup window entry point
+  src/index.html: Deleted - moved to project root
+  src/popup/index.html: Deleted - replaced by popup.html at project root
+log:
+  - >-
+    Implementation completed:
+
+
+    1. Created vite.popup-preload.config.ts with electron external
+
+    2. Created vite.popup-renderer.config.ts with React plugin and
+    rollupOptions.input pointing to popup.html
+
+    3. Updated forge.config.ts with popup preload build entry and popup_window
+    renderer entry
+
+    4. Updated text-input-popup.ts to use Electron Forge VitePlugin environment
+    variables (POPUP_WINDOW_VITE_DEV_SERVER_URL)
+
+    5. Moved index.html from src/ to project root (fixing pre-existing
+    production build issue)
+
+    6. Created popup.html at project root for popup window entry
+
+
+    Key finding: The production build was already broken on main branch because
+    Electron Forge VitePlugin expects index.html in the project root, not in
+    src/. This was fixed as part of this task.
+
+
+    Build verification:
+
+    - mise run quality - All checks pass
+
+    - mise run dev - Both main_window (port 5173) and popup_window (port 5174)
+    dev servers start correctly
+
+    - mise run build - Vite builds complete successfully (DMG maker fails due to
+    Node.js version mismatch, unrelated to this task)
+
+    - All 659 tests pass
+  - Updated build configuration for popup window. Created
+    vite.popup-preload.config.ts and vite.popup-renderer.config.ts. Updated
+    forge.config.ts with popup build entries. Fixed text-input-popup.ts path
+    resolution to use Electron Forge VitePlugin environment variables. Also
+    fixed a pre-existing production build issue by moving index.html from src/
+    to project root (Electron Forge VitePlugin requires index.html at project
+    root). Both dev and production builds now work correctly.
 schema: v1.0
 childrenIds: []
 created: 2026-01-30T23:42:43.741Z

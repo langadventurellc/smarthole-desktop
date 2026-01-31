@@ -65,27 +65,32 @@ const POPUP_HEIGHT = 60;
 
 /**
  * Gets the path to the popup preload script.
- * Handles different paths for dev vs production builds.
+ * Uses Electron Forge VitePlugin conventions.
+ * In both dev and production, the preload script is output alongside main.
  */
 function getPreloadPath(): string {
-  if (app.isPackaged) {
-    return path.join(__dirname, "preload-popup.js");
-  }
-  // In dev, Vite outputs to .vite/build
-  return path.join(__dirname, "../.vite/build/preload-popup.js");
+  return path.join(__dirname, "preload-popup.js");
 }
 
 /**
  * Gets the URL to load for the popup window.
- * Uses Vite dev server in dev, file:// path in production.
+ * Uses Electron Forge VitePlugin environment variables.
  */
 function getPopupUrl(): string {
-  if (app.isPackaged) {
-    return `file://${path.join(__dirname, "../renderer/popup_window/index.html")}`;
+  // The VitePlugin sets POPUP_WINDOW_VITE_DEV_SERVER_URL in dev mode
+  // Format: {NAME}_VITE_DEV_SERVER_URL where NAME is uppercase renderer name
+  if (process.env.POPUP_WINDOW_VITE_DEV_SERVER_URL) {
+    // In dev mode, Vite serves from the root, so we access popup.html directly
+    return `${process.env.POPUP_WINDOW_VITE_DEV_SERVER_URL}popup.html`;
   }
-  // In dev, use Vite dev server (configured in forge.config.ts)
-  // The VitePlugin provides POPUP_WINDOW_VITE_DEV_SERVER_URL env var
-  return process.env.POPUP_WINDOW_VITE_DEV_SERVER_URL || "http://localhost:5174";
+
+  // In production, use file path
+  // VitePlugin sets POPUP_WINDOW_VITE_NAME for the renderer output directory
+  // The entry point is popup.html (from our rollupOptions.input config)
+  return path.join(
+    __dirname,
+    `../renderer/${process.env.POPUP_WINDOW_VITE_NAME || "popup_window"}/popup.html`
+  );
 }
 
 // ============================================================================
