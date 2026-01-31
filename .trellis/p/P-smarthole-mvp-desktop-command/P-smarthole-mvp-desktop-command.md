@@ -192,7 +192,10 @@ affectedFiles:
     buildTrayMenu() to add input state detection and input menu items (Open Text
     Input, Start/Stop Recording toggle). Added stateChanged event subscription
     after input state initialization to trigger menu updates. Menu items have
-    dynamic labels and enabled states based on current input state."
+    dynamic labels and enabled states based on current input state.; Updated to
+    import buildTrayMenuTemplate from tray-menu.ts. Added enabled state to Open
+    Text Input menu item during PROCESSING. Added stateChanged event
+    subscription for menu updates."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -445,6 +448,11 @@ affectedFiles:
   src/renderer/audio-capture.test.ts: Created 20 unit tests for WAV encoding,
     resampling, mono conversion, configuration, state management, and error
     handling
+  src/tray-menu.ts: "New module: Extracted tray menu template building logic for
+    testability. Contains TrayMenuState, TrayMenuActions, MenuItemOptions
+    interfaces and buildTrayMenuTemplate() function."
+  src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
+    building logic covering all input states and menu structure."
 log: []
 schema: v1.0
 childrenIds:

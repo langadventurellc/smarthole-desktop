@@ -31,6 +31,7 @@ import {
   AudioCaptureService,
 } from "./services/audio-capture";
 import { InputState } from "./types";
+import { buildTrayMenuTemplate, TrayMenuActions } from "./tray-menu";
 import {
   IPC_CHANNELS,
   LogLevel,
@@ -211,91 +212,47 @@ function buildTrayMenu(): Electron.Menu {
     // Services not initialized yet - use defaults
   }
 
-  // Build menu template with client status
-  const template: Electron.MenuItemConstructorOptions[] = [
-    {
-      label: `${clientCount} client${clientCount !== 1 ? "s" : ""} connected`,
-      enabled: false, // Display-only label
-    },
-  ];
-
-  // Add connected clients submenu when clients are connected
-  if (clientCount > 0) {
-    template.push({
-      label: "Connected Clients",
-      submenu: connectedClients.map((client) => ({
-        label: client.name,
-        sublabel: client.description,
-        enabled: false,
-      })),
-    });
-  }
-
-  // Add separator and input menu items
-  template.push({ type: "separator" });
-
-  // Open Text Input menu item
-  template.push({
-    label: "Open Text Input",
-    click: (): void => {
+  // Build menu actions
+  const actions: TrayMenuActions = {
+    onOpenTextInput: (): void => {
       try {
         getTextInputPopup().show();
       } catch {
         // Service not initialized yet
       }
     },
-  });
-
-  // Recording toggle menu item - label and behavior depend on current state
-  const recordingItem: Electron.MenuItemConstructorOptions = isRecording
-    ? {
-        label: "Stop Recording",
-        click: (): void => {
-          try {
-            void getAudioCapture().stopRecording();
-          } catch {
-            // Service not initialized yet
-          }
-        },
-        // Only enabled when actually in RECORDING state (not during transitions)
-        enabled: currentInputState === InputState.RECORDING,
+    onStartRecording: (): void => {
+      try {
+        void getAudioCapture().startRecording();
+      } catch {
+        // Service not initialized yet
       }
-    : {
-        label: "Start Recording",
-        click: (): void => {
-          try {
-            void getAudioCapture().startRecording();
-          } catch {
-            // Service not initialized yet
-          }
-        },
-        // Only enabled when in IDLE state
-        enabled: currentInputState === InputState.IDLE,
-      };
-  template.push(recordingItem);
-
-  // Add separator and standard menu items
-  template.push(
-    { type: "separator" },
-    {
-      label: "About SmartHole",
-      click: (): void => {
-        dialog.showMessageBox({
-          type: "info",
-          title: "About SmartHole",
-          message: "SmartHole",
-          detail: `Version ${app.getVersion()}`,
-          buttons: ["OK"],
-        });
-      },
     },
-    { type: "separator" },
-    {
-      label: "Quit",
-      click: (): void => {
-        app.quit();
-      },
-    }
+    onStopRecording: (): void => {
+      try {
+        void getAudioCapture().stopRecording();
+      } catch {
+        // Service not initialized yet
+      }
+    },
+    onAbout: (): void => {
+      dialog.showMessageBox({
+        type: "info",
+        title: "About SmartHole",
+        message: "SmartHole",
+        detail: `Version ${app.getVersion()}`,
+        buttons: ["OK"],
+      });
+    },
+    onQuit: (): void => {
+      app.quit();
+    },
+  };
+
+  // Build template and create menu
+  const template = buildTrayMenuTemplate(
+    { clientCount, connectedClients, currentInputState, isRecording },
+    actions
   );
 
   return Menu.buildFromTemplate(template);

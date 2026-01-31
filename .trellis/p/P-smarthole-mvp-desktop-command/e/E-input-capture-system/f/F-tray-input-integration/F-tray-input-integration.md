@@ -13,7 +13,14 @@ affectedFiles:
     menu items (Open Text Input, Start/Stop Recording toggle). Added
     stateChanged event subscription after input state initialization to trigger
     menu updates. Menu items have dynamic labels and enabled states based on
-    current input state.
+    current input state.; Updated to import buildTrayMenuTemplate from
+    tray-menu.ts. Added enabled state to Open Text Input menu item during
+    PROCESSING. Added stateChanged event subscription for menu updates.
+  src/tray-menu.ts: "New module: Extracted tray menu template building logic for
+    testability. Contains TrayMenuState, TrayMenuActions, MenuItemOptions
+    interfaces and buildTrayMenuTemplate() function."
+  src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
+    building logic covering all input states and menu structure."
 log:
   - >-
     Started feature implementation. Created feature branch
@@ -41,10 +48,18 @@ log:
 
 
     Starting implementation of T-add-input-menu-items-and.
+  - |-
+    T-add-input-menu-items-and completed:
+    - Added input menu items (Open Text Input, Start/Stop Recording)
+    - Added dynamic state updates via stateChanged subscription
+    - Review findings addressed (disabled state for PROCESSING, unit tests)
+    - Created src/tray-menu.ts module with 22 unit tests
+
+    Committing task changes.
 schema: v1.0
 childrenIds:
-  - T-add-input-menu-items-and
   - T-add-tray-icon-state
+  - T-add-input-menu-items-and
 created: 2026-01-30T22:15:47.857Z
 updated: 2026-01-30T22:15:47.857Z
 ---

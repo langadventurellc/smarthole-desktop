@@ -10,7 +10,14 @@ affectedFiles:
     menu items (Open Text Input, Start/Stop Recording toggle). Added
     stateChanged event subscription after input state initialization to trigger
     menu updates. Menu items have dynamic labels and enabled states based on
-    current input state.
+    current input state.; Updated to import buildTrayMenuTemplate from
+    tray-menu.ts. Added enabled state to Open Text Input menu item during
+    PROCESSING. Added stateChanged event subscription for menu updates.
+  src/tray-menu.ts: "New module: Extracted tray menu template building logic for
+    testability. Contains TrayMenuState, TrayMenuActions, MenuItemOptions
+    interfaces and buildTrayMenuTemplate() function."
+  src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
+    building logic covering all input states and menu structure."
 log:
   - >-
     Implementation completed:
@@ -40,6 +47,24 @@ log:
     Recording" when idle and "Stop Recording" when recording, with appropriate
     enabled/disabled states based on the input state machine. Menu automatically
     rebuilds when input state changes via the stateChanged event subscription.
+  - >-
+    Review findings addressed:
+
+
+    1. Fixed: Added `enabled: currentInputState !== InputState.PROCESSING` to
+    "Open Text Input" menu item for consistency with recording toggle behavior.
+
+
+    2. Fixed: Extracted `buildTrayMenuTemplate()` into a separate testable
+    module (`src/tray-menu.ts`) and created comprehensive unit tests
+    (`src/tray-menu.test.ts`) with 22 test cases covering:
+       - Client status display (singular/plural, submenu)
+       - Open Text Input menu item states (enabled/disabled in different input states)
+       - Recording toggle menu item (Start/Stop labels, enabled states)
+       - Standard menu items (About, Quit)
+       - Menu structure order verification
+
+    All 798 tests pass including the 22 new tray menu tests.
 schema: v1.0
 childrenIds: []
 created: 2026-01-31T03:00:39.386Z
