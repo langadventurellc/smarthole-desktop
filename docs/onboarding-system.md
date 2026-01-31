@@ -21,8 +21,9 @@ Main Process                              Renderer Process (Onboarding)
      |<-- permission:checkAccessibility ----------|  (macOS only)
      |<-- credential:store -----------------------|  (save API keys)
      |<-- config:set { firstRunCompleted: true } -|  (mark complete)
+     |<-- onboarding:close -----------------------|  (close window)
      |                                              |
-     |-- start normal tray operation              |
+     |-- transition to tray mode                  |
 ```
 
 ## First-Run Detection
@@ -56,10 +57,11 @@ Users can skip at any step (except Welcome and Complete). Skipping jumps to the 
 
 When setup is incomplete, a "Setup Incomplete" item appears at the top of the tray menu.
 
-## Permission IPC Channels
+## Onboarding IPC Channels
 
 | Channel                                | Direction        | Description                                     |
 | -------------------------------------- | ---------------- | ----------------------------------------------- |
+| `onboarding:close`                     | Renderer -> Main | Closes onboarding window, transitions to tray   |
 | `permission:checkMicrophone`           | Renderer -> Main | Returns current microphone permission status    |
 | `permission:requestMicrophone`         | Renderer -> Main | Triggers permission request dialog              |
 | `permission:checkAccessibility`        | Renderer -> Main | Returns accessibility permission status (macOS) |
@@ -117,8 +119,11 @@ getOnboardingWindow().show();
 
 - **Size**: 600x500 pixels, fixed (non-resizable)
 - **Frame**: Standard window frame with title bar
-- **Preload**: Uses main preload script (shares IPC with settings window)
-- **Close**: Escape key closes the window
+- **Preload**: Uses main preload script (`preload.js`, shares IPC with settings window)
+- **Close behavior**: Window closes and transitions to tray mode via:
+  - "Finish Setup" button (sends `onboarding:close` IPC)
+  - Escape key
+  - Window close button (X)
 
 ## Integration with Main Process
 
@@ -158,5 +163,6 @@ src/onboarding/
 ```bash
 mise run test src/windows/onboarding-window.test.ts
 mise run test src/ipc/permission-handler.test.ts
+mise run test src/ipc/onboarding-handler.test.ts
 mise run test src/onboarding/OnboardingApp.test.tsx
 ```

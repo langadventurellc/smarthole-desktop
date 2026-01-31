@@ -29,8 +29,9 @@ For pretty-printed logs in dev: `mise run dev 2>&1 | npx pino-pretty`
 src/
 ├── main.ts              # Electron main process, tray setup
 ├── tray-menu.ts         # Tray menu template building (testable, no Electron deps)
-├── preload.ts           # Secure IPC bridge for main renderer (contextBridge)
-├── preload-popup.ts     # Secure IPC bridge for popup window (popupAPI)
+├── preload/             # Secure IPC bridges (contextBridge)
+│   ├── preload.ts       # Main preload for settings, onboarding, main window
+│   └── popup.ts         # Popup-specific preload (popupAPI)
 ├── renderer.tsx         # React entry point (main window)
 ├── App.tsx              # Main React component
 ├── popup/               # Text input popup UI (React)
