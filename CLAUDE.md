@@ -88,3 +88,8 @@ src/
 - [Settings Window](docs/settings-window.md) - React settings UI, tab navigation, input components
 - [Onboarding System](docs/onboarding-system.md) - first-run wizard, permission requests, setup flow
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements
+
+## IMPORTANT RULES ABOUT SPAWN SUBAGENT TASKS
+
+- **NEVER USE HAIKU**
+- **ALWAYS USE OPUS 4.5** - All of our sub-agents are performing critical pieces of work to complete a project that needs to be of high quality. In order to achieve this, we must use OPUS 4.5 for all the agents that we spawn to do the development work or any of the work surrounding the development process.
