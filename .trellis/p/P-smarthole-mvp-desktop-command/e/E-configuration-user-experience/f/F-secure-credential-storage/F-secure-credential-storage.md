@@ -1,15 +1,30 @@
 ---
 id: F-secure-credential-storage
 title: Secure Credential Storage
-status: open
+status: in-progress
 priority: medium
 parent: E-configuration-user-experience
 prerequisites:
   - F-configuration-storage-ipc
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/services/credential-manager.ts: New service implementing
+    CredentialManagerService interface with keytar for OS keychain access.
+    Follows singleton pattern with
+    initializeCredentialManager/getCredentialManager/resetCredentialManager.
+  src/services/credential-manager.test.ts: Unit tests covering singleton
+    management, all CRUD operations, error handling for keytar failures, and
+    type coverage for all CredentialKey variants.
+  src/services/index.ts: Added export for credential-manager module.
+  package.json: Added keytar dependency.
+  package-lock.json: Updated lockfile with keytar and its dependencies.
+log:
+  - "Started orchestration. Created feature branch
+    feature/F-secure-credential-storage. Tasks to execute in order:
+    T-install-keytar-and-implement → T-add-credential-ipc-handlers"
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-add-credential-ipc-handlers
+  - T-install-keytar-and-implement
 created: 2026-01-31T06:21:18.286Z
 updated: 2026-01-31T06:21:18.286Z
 ---

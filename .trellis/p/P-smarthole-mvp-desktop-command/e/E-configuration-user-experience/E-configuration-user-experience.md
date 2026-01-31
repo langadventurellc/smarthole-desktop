@@ -9,8 +9,10 @@ prerequisites:
 affectedFiles:
   src/types/config.ts: "Added firstRunCompleted: boolean field to AppConfig
     interface and firstRunCompleted: false to DEFAULT_CONFIG"
-  package.json: Added electron-store ^11.0.2 as dependency (via npm install)
-  package-lock.json: Updated with electron-store and its dependencies
+  package.json: Added electron-store ^11.0.2 as dependency (via npm install);
+    Added keytar dependency.
+  package-lock.json: Updated with electron-store and its dependencies; Updated
+    lockfile with keytar and its dependencies.
   src/services/config-manager.ts: Created config manager service with
     electron-store integration, singleton pattern, configChanged event emission,
     and changed key path tracking; Created config manager service with
@@ -23,7 +25,7 @@ affectedFiles:
     initialization, getConfig, setConfig, deep merge behavior, changed keys
     tracking, event emission, and reset functionality
   src/services/index.ts: Added export for config-manager module; Added export for
-    config-manager module
+    config-manager module; Added export for credential-manager module.
   src/ipc/config-handler.ts: Created IPC handler for config management with
     createConfigGetHandler, createConfigSetHandler, and broadcastConfigChange
     functions
@@ -31,6 +33,13 @@ affectedFiles:
   src/main.ts: Added config manager imports, state tracking, initialization in
     app.whenReady(), IPC handler registration, and config change event wiring to
     broadcast
+  src/services/credential-manager.ts: New service implementing
+    CredentialManagerService interface with keytar for OS keychain access.
+    Follows singleton pattern with
+    initializeCredentialManager/getCredentialManager/resetCredentialManager.
+  src/services/credential-manager.test.ts: Unit tests covering singleton
+    management, all CRUD operations, error handling for keytar failures, and
+    type coverage for all CredentialKey variants.
 log: []
 schema: v1.0
 childrenIds:

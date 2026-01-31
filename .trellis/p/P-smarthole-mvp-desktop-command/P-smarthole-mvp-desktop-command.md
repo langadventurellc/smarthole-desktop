@@ -138,7 +138,7 @@ affectedFiles:
     dev dependencies; Added pino and pino-pretty dependencies; Added @types/ws
     as a dev dependency (ws was already installed); Added uiohook-napi
     dependency (via npm install); Added electron-store ^11.0.2 as dependency
-    (via npm install)
+    (via npm install); Added keytar dependency.
   src/utils/error-recovery.ts: Created error recovery utilities with
     retryWithBackoff(), withFallback(), withFallbackSync(),
     getRecoveryStrategy(), and isRetryable() functions
@@ -219,7 +219,8 @@ affectedFiles:
     export for client-registry service; Added export for registration-handler
     module.; Added export for hotkey-manager module; Added export for
     input-state service module; Added export for audio-capture service; Added
-    export for config-manager module; Added export for config-manager module
+    export for config-manager module; Added export for config-manager module;
+    Added export for credential-manager module.
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -227,7 +228,7 @@ affectedFiles:
     applyContentRedaction (all content fields, nested objects, arrays,
     null/undefined handling), and Logger Privacy Integration tests.
   package-lock.json: Updated with new dependencies; Updated with electron-store
-    and its dependencies
+    and its dependencies; Updated lockfile with keytar and its dependencies.
   src/ipc/log-handler.ts: Created new module with createLogMessageHandler() and
     processLogMessage() functions for handling renderer log messages with
     payload validation and context enrichment
@@ -489,6 +490,13 @@ affectedFiles:
     createConfigGetHandler, createConfigSetHandler, and broadcastConfigChange
     functions
   src/ipc/config-handler.test.ts: Created 11 unit tests covering get/set handlers and broadcast functionality
+  src/services/credential-manager.ts: New service implementing
+    CredentialManagerService interface with keytar for OS keychain access.
+    Follows singleton pattern with
+    initializeCredentialManager/getCredentialManager/resetCredentialManager.
+  src/services/credential-manager.test.ts: Unit tests covering singleton
+    management, all CRUD operations, error handling for keytar failures, and
+    type coverage for all CredentialKey variants.
 log: []
 schema: v1.0
 childrenIds:
