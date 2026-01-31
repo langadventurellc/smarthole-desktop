@@ -36,6 +36,16 @@ affectedFiles:
     background, blur, dark mode and high contrast support
   src/types/electron.d.ts: Added PopupAPI type import and Window.popupAPI
     declaration for type-safe popup renderer code
+  src/ipc/text-input-handler.ts: Created IPC handlers for text input popup
+    (createTextInputSubmitHandler, createTextInputDismissedHandler,
+    createTextInputFocusedHandler, wireTextInputToHotkey,
+    registerTextInputHandlers)
+  src/ipc/index.ts: Added export for text-input-handler module
+  src/main.ts: Added popup service imports, popupState tracking, TextInputPopup
+    initialization, IPC handler registration, hotkey wiring, and submitted event
+    subscription
+  src/ipc/text-input-handler.test.ts: Created 10 unit tests for submit handler
+    validation, dismissed handler, focused handler, and hotkey wiring scenarios
 log:
   - >-
     Started feature implementation. Created feature branch
@@ -150,12 +160,30 @@ log:
 
 
     Commit created. Moving to next task: T-create-popup-preload-script
+  - >-
+    Completed T-create-popup-preload-script:
+
+    - Created src/preload-popup.ts with secure IPC bridge (submit, dismiss,
+    notifyFocused, onPlaceholderChange, onClear)
+
+    - Created src/popup/index.html entry point
+
+    - Created src/popup/popup.tsx React component with auto-focus and keyboard
+    handling
+
+    - Created src/popup/popup.css with Spotlight-like styling, dark mode, high
+    contrast support
+
+    - Updated src/types/electron.d.ts with PopupAPI type declaration
+
+
+    Commit created. Moving to next task: T-add-text-input-ipc-handlers
 schema: v1.0
 childrenIds:
   - T-add-text-input-ipc-handlers
-  - T-create-popup-preload-script
   - T-update-build-configuration
   - T-add-text-input-popup-ipc
+  - T-create-popup-preload-script
   - T-create-text-input-popup
 created: 2026-01-30T22:15:30.255Z
 updated: 2026-01-30T22:15:30.255Z

@@ -20,6 +20,11 @@ import {
   HotkeyManagerService,
 } from "./services/hotkey-manager";
 import { initializeInputState, getInputState, InputStateService } from "./services/input-state";
+import {
+  initializeTextInputPopup,
+  getTextInputPopup,
+  TextInputPopupService,
+} from "./windows/text-input-popup";
 import { InputState } from "./types";
 import {
   IPC_CHANNELS,
@@ -45,6 +50,7 @@ import {
 } from "./ipc/client-status-handler";
 import { wireHotkeyManagerToIpc } from "./ipc/hotkey-handler";
 import { createInputStateHandler, wireInputStateToIpc } from "./ipc/input-state-handler";
+import { registerTextInputHandlers, wireTextInputToHotkey } from "./ipc/text-input-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -78,6 +84,15 @@ const inputState: {
 } = {
   hotkeyManager: null,
   inputStateService: null,
+};
+
+/**
+ * Mutable state for popup windows.
+ */
+const popupState: {
+  textInput: TextInputPopupService | null;
+} = {
+  textInput: null,
 };
 
 /**
@@ -492,6 +507,25 @@ app.whenReady().then(async () => {
       code: event.code,
       accelerator: event.accelerator,
     });
+  });
+
+  // Initialize text input popup
+  popupState.textInput = initializeTextInputPopup();
+  logger.info("Text input popup initialized");
+
+  // Register text input IPC handlers
+  const textInputLogger = logger.child({ component: "TextInputIPC" });
+  registerTextInputHandlers(ipcMain, () => getTextInputPopup(), textInputLogger);
+
+  // Wire text input popup to hotkey manager
+  wireTextInputToHotkey(inputState.hotkeyManager, () => getTextInputPopup(), textInputLogger);
+
+  // Wire popup submitted event to downstream processing
+  popupState.textInput.on("submitted", (payload) => {
+    logger.info("Text input ready for processing", {
+      textLength: payload.text.length,
+    });
+    // TODO: Route to message processing in future task
   });
 
   // Register error handlers

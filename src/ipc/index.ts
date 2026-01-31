@@ -17,3 +17,4 @@ export * from "./notification-handler";
 export * from "./client-status-handler";
 export * from "./hotkey-handler";
 export * from "./input-state-handler";
+export * from "./text-input-handler";

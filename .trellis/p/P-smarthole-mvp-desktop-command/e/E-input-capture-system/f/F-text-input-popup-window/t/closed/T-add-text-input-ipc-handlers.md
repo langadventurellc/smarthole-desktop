@@ -1,14 +1,60 @@
 ---
 id: T-add-text-input-ipc-handlers
 title: Add text input IPC handlers and hotkey integration
-status: open
+status: done
 priority: high
 parent: F-text-input-popup-window
 prerequisites:
   - T-add-text-input-popup-ipc
   - T-create-text-input-popup
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/ipc/text-input-handler.ts: Created IPC handlers for text input popup
+    (createTextInputSubmitHandler, createTextInputDismissedHandler,
+    createTextInputFocusedHandler, wireTextInputToHotkey,
+    registerTextInputHandlers)
+  src/ipc/index.ts: Added export for text-input-handler module
+  src/main.ts: Added popup service imports, popupState tracking, TextInputPopup
+    initialization, IPC handler registration, hotkey wiring, and submitted event
+    subscription
+  src/ipc/text-input-handler.test.ts: Created 10 unit tests for submit handler
+    validation, dismissed handler, focused handler, and hotkey wiring scenarios
+log:
+  - >-
+    Implementation completed:
+
+
+    1. Created src/ipc/text-input-handler.ts with:
+       - createTextInputSubmitHandler - validates payload, hides popup, emits submitted event
+       - createTextInputDismissedHandler - hides popup on dismiss
+       - createTextInputFocusedHandler - logs focus events
+       - wireTextInputToHotkey - opens popup on textInput hotkey activation
+       - registerTextInputHandlers - convenience function to register all handlers
+
+    2. Updated src/ipc/index.ts to export the new handlers
+
+
+    3. Updated src/main.ts to:
+       - Import text input popup service and handlers
+       - Add popupState tracking for TextInputPopupService
+       - Initialize TextInputPopupService inside app.whenReady()
+       - Register text input IPC handlers
+       - Wire textInput hotkey to open popup via wireTextInputToHotkey
+       - Subscribe to submitted event for future message processing
+
+    4. Created src/ipc/text-input-handler.test.ts with 10 tests covering:
+       - Submit handler validation and popup hiding
+       - Invalid payload handling (missing text, timestamp, wrong types, null)
+       - Dismissed handler popup hiding
+       - Focused handler logging
+       - Hotkey wiring (opens popup, focuses if visible, ignores voiceInput)
+
+    All quality checks pass (lint, format, type-check). All 659 tests pass.
+  - Implemented text input IPC handlers and hotkey integration. Created handlers
+    for TEXT_INPUT_SUBMIT, TEXT_INPUT_DISMISSED, and TEXT_INPUT_FOCUSED
+    channels. Added wireTextInputToHotkey function to open popup on textInput
+    hotkey activation. Updated main.ts to initialize popup service, register
+    handlers, and wire hotkey events. Added 10 unit tests covering all handler
+    functions and hotkey wiring scenarios.
 schema: v1.0
 childrenIds: []
 created: 2026-01-30T23:42:28.512Z

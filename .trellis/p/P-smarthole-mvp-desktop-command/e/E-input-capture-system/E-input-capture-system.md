@@ -39,12 +39,15 @@ affectedFiles:
   src/ipc/input-state-handler.ts: Created new IPC handler with
     broadcastInputStateChanged, createInputStateHandler, and wireInputStateToIpc
     functions
-  src/ipc/index.ts: Added exports for hotkey-handler and input-state-handler modules
+  src/ipc/index.ts: Added exports for hotkey-handler and input-state-handler
+    modules; Added export for text-input-handler module
   src/preload.ts: Added onHotkeyActivated, onHotkeyReleased, getInputState, and
     onInputStateChanged APIs to electronAPI
   src/main.ts: Added imports for services and handlers, initialized hotkey manager
     and input state service, wired events to IPC broadcasts and state
-    transitions, added cleanup in will-quit handler
+    transitions, added cleanup in will-quit handler; Added popup service
+    imports, popupState tracking, TextInputPopup initialization, IPC handler
+    registration, hotkey wiring, and submitted event subscription
   src/types/ipc.test.ts: Updated channel count test from 17 to 21, added tests for
     new hotkey and input state channels; Added tests for new text input popup
     channels, TextInputSubmitPayload type guard tests, TextInputOpenPayload
@@ -81,6 +84,12 @@ affectedFiles:
     background, blur, dark mode and high contrast support
   src/types/electron.d.ts: Added PopupAPI type import and Window.popupAPI
     declaration for type-safe popup renderer code
+  src/ipc/text-input-handler.ts: Created IPC handlers for text input popup
+    (createTextInputSubmitHandler, createTextInputDismissedHandler,
+    createTextInputFocusedHandler, wireTextInputToHotkey,
+    registerTextInputHandlers)
+  src/ipc/text-input-handler.test.ts: Created 10 unit tests for submit handler
+    validation, dismissed handler, focused handler, and hotkey wiring scenarios
 log: []
 schema: v1.0
 childrenIds:

@@ -174,7 +174,10 @@ affectedFiles:
     notifications. Added response:notification event listener that validates,
     maps, and enqueues client notifications.; Added imports for services and
     handlers, initialized hotkey manager and input state service, wired events
-    to IPC broadcasts and state transitions, added cleanup in will-quit handler"
+    to IPC broadcasts and state transitions, added cleanup in will-quit handler;
+    Added popup service imports, popupState tracking, TextInputPopup
+    initialization, IPC handler registration, hotkey wiring, and submitted event
+    subscription"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -202,7 +205,7 @@ affectedFiles:
   src/ipc/index.ts: Created barrel export for IPC module; Added export for
     notification-handler module to barrel export file.; Added export for
     client-status-handler module; Added exports for hotkey-handler and
-    input-state-handler modules
+    input-state-handler modules; Added export for text-input-handler module
   src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
     covering handler creation, payload validation, log level mapping, context
     enrichment, and edge cases
@@ -372,6 +375,12 @@ affectedFiles:
     (Enter submits, Escape dismisses), placeholder/clear subscriptions
   src/popup/popup.css: Created Spotlight-like styling with semi-transparent
     background, blur, dark mode and high contrast support
+  src/ipc/text-input-handler.ts: Created IPC handlers for text input popup
+    (createTextInputSubmitHandler, createTextInputDismissedHandler,
+    createTextInputFocusedHandler, wireTextInputToHotkey,
+    registerTextInputHandlers)
+  src/ipc/text-input-handler.test.ts: Created 10 unit tests for submit handler
+    validation, dismissed handler, focused handler, and hotkey wiring scenarios
 log: []
 schema: v1.0
 childrenIds:
