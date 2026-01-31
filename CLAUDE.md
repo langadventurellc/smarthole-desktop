@@ -32,7 +32,8 @@ src/
 ├── renderer.tsx         # React entry point (main window)
 ├── App.tsx              # Main React component
 ├── popup/               # Text input popup UI (React)
-├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state)
+├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state, audio-capture)
+├── renderer/            # Renderer-side modules (audio-capture)
 ├── windows/             # Window management (text-input-popup)
 ├── ipc/                 # IPC handlers for main/renderer communication
 └── types/               # TypeScript type definitions
@@ -76,4 +77,5 @@ src/
 - [Message Delivery](docs/message-delivery.md) - routing messages to clients, response handling
 - [Global Hotkey System](docs/global-hotkey-system.md) - hotkey registration, input state machine, IPC events
 - [Text Input Popup](docs/text-input-popup.md) - Spotlight-style text input window, IPC integration
+- [Voice Recording Service](docs/voice-recording-service.md) - microphone capture, WAV encoding, hotkey integration
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements

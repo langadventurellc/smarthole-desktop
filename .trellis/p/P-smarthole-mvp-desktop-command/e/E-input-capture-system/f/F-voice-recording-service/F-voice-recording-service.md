@@ -102,6 +102,67 @@ log:
 
     All 772 tests pass. Starting final task T-add-audio-capture-preload-api.
   - "Auto-completed: All child tasks are complete"
+  - >-
+    Documentation updated for voice recording service:
+
+
+    1. Created
+    `/Users/zach/code/smarthole-desktop/docs/voice-recording-service.md` -
+    Comprehensive documentation covering:
+       - Architecture overview with ASCII diagram
+       - AudioCaptureService (main process) API and events
+       - Renderer audio capture module functions
+       - IPC channel definitions
+       - Renderer API via electronAPI
+       - Complete type definitions (AudioCaptureState, AudioBuffer, etc.)
+       - Hotkey integration (push-to-talk and toggle modes)
+       - Platform-specific notes (macOS permissions, Windows)
+       - Audio format specifications (16kHz, mono, WAV)
+       - Wiring instructions for main.ts
+       - Error handling guidance
+
+    2. Updated `/Users/zach/code/smarthole-desktop/CLAUDE.md`:
+       - Added `src/renderer/` to project structure
+       - Added `audio-capture` to services list
+       - Added Voice Recording Service to Detailed Documentation section
+
+    3. Updated
+    `/Users/zach/code/smarthole-desktop/docs/global-hotkey-system.md`:
+       - Updated architecture diagram to show AudioCapture service
+       - Added "Audio Capture Integration" section explaining voiceInput hotkey wiring
+  - |-
+    All 5 tasks completed:
+    1. T-add-audio-types-and-ipc - Audio types and IPC channels
+    2. T-create-srcrenderer-directory - src/renderer directory structure
+    3. T-implement-main-process-audio - Main process audio service
+    4. T-implement-renderer-side-audio - Renderer-side audio capture
+    5. T-add-audio-capture-preload-api - Preload API and main.ts wiring
+
+    Documentation created/updated:
+    - Created docs/voice-recording-service.md
+    - Updated CLAUDE.md
+    - Updated docs/global-hotkey-system.md
+
+    Feature implementation complete.
+  - >-
+    Review remediation completed:
+
+
+    1. **InputStateService integration** (gap fix):
+       - Added import for `getInputState` and `InputState` in audio-capture.ts
+       - `startRecording()` now transitions InputState to RECORDING
+       - `stopRecording()` now transitions InputState to PROCESSING
+       - `handleAudioData()` now transitions InputState to IDLE
+       - Added 4 new unit tests for InputState integration
+
+    2. **Removed unused `recordingStartedAt` field** (dead code):
+       - Removed field from AudioCaptureServiceImpl class
+       - Removed assignments in startRecording, handleAudioData, reset
+
+    3. **Fixed error fallback using string literal**:
+       - Changed `"unknown"` to `AudioCapturePermission.UNKNOWN` in createAudioPermissionHandler
+
+    All 776 tests pass. Quality checks pass.
 schema: v1.0
 childrenIds:
   - T-add-audio-capture-preload-api

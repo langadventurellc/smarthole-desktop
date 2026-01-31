@@ -25,6 +25,17 @@ vi.mock("./logger", () => ({
   })),
 }));
 
+// Mock the input-state service
+const mockInputState = {
+  canTransitionTo: vi.fn().mockReturnValue(true),
+  transitionTo: vi.fn().mockReturnValue(true),
+  getCurrentState: vi.fn().mockReturnValue("idle"),
+};
+
+vi.mock("./input-state", () => ({
+  getInputState: vi.fn(() => mockInputState),
+}));
+
 describe("audio-capture service", () => {
   let service: AudioCaptureService;
 
@@ -32,6 +43,12 @@ describe("audio-capture service", () => {
     // Reset mock to granted before each test
     const { systemPreferences } = await import("electron");
     vi.mocked(systemPreferences.getMediaAccessStatus).mockReturnValue("granted");
+
+    // Reset input state mock
+    mockInputState.canTransitionTo.mockReturnValue(true);
+    mockInputState.transitionTo.mockReturnValue(true);
+    mockInputState.canTransitionTo.mockClear();
+    mockInputState.transitionTo.mockClear();
 
     resetAudioCapture();
     service = initializeAudioCapture();
@@ -318,6 +335,59 @@ describe("audio-capture service", () => {
       await service.startRecording();
 
       expect(listener).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("InputState integration", () => {
+    it("transitions InputState to RECORDING on startRecording", async () => {
+      await service.startRecording();
+
+      expect(mockInputState.canTransitionTo).toHaveBeenCalledWith("recording");
+      expect(mockInputState.transitionTo).toHaveBeenCalledWith("recording");
+    });
+
+    it("transitions InputState to PROCESSING on stopRecording", async () => {
+      await service.startRecording();
+      mockInputState.canTransitionTo.mockClear();
+      mockInputState.transitionTo.mockClear();
+
+      await service.stopRecording();
+
+      expect(mockInputState.canTransitionTo).toHaveBeenCalledWith("processing");
+      expect(mockInputState.transitionTo).toHaveBeenCalledWith("processing");
+    });
+
+    it("transitions InputState to IDLE on handleAudioData", async () => {
+      await service.startRecording();
+      await service.stopRecording();
+      mockInputState.canTransitionTo.mockClear();
+      mockInputState.transitionTo.mockClear();
+
+      const mockResult: AudioCaptureResult = {
+        audio: {
+          data: new ArrayBuffer(100),
+          format: "wav",
+          sampleRate: 16000,
+          channels: 1,
+          durationMs: 1000,
+        },
+        startedAt: "2024-01-01T00:00:00Z",
+        stoppedAt: "2024-01-01T00:00:01Z",
+      };
+
+      service.handleAudioData(mockResult);
+
+      expect(mockInputState.canTransitionTo).toHaveBeenCalledWith("idle");
+      expect(mockInputState.transitionTo).toHaveBeenCalledWith("idle");
+    });
+
+    it("does not transition InputState if canTransitionTo returns false", async () => {
+      mockInputState.canTransitionTo.mockReturnValue(false);
+
+      await service.startRecording();
+
+      expect(mockInputState.canTransitionTo).toHaveBeenCalledWith("recording");
+      expect(mockInputState.transitionTo).not.toHaveBeenCalled();
     });
   });
 });

@@ -8,6 +8,7 @@
 import { EventEmitter } from "events";
 import { systemPreferences } from "electron";
 import { getLogger, Logger } from "./logger";
+import { getInputState } from "./input-state";
 import {
   AudioCaptureState,
   AudioCapturePermission,
@@ -19,6 +20,7 @@ import {
   AudioReadyEvent,
   AudioErrorEvent,
   VoiceInputMode,
+  InputState,
 } from "../types";
 
 // ============================================================================
@@ -105,7 +107,6 @@ class AudioCaptureServiceImpl implements AudioCaptureService {
   private currentState: AudioCaptureState = AudioCaptureState.IDLE;
   private currentMode: VoiceInputMode = "push-to-talk";
   private lastPermission: AudioCapturePermission = AudioCapturePermission.UNKNOWN;
-  private recordingStartedAt?: string;
 
   constructor() {
     this.logger = getLogger().child({ component: "AudioCapture" });
@@ -130,7 +131,12 @@ class AudioCaptureServiceImpl implements AudioCaptureService {
     // Transition to recording state
     const previousState = this.currentState;
     this.currentState = AudioCaptureState.RECORDING;
-    this.recordingStartedAt = new Date().toISOString();
+
+    // Update InputState to RECORDING
+    const inputState = getInputState();
+    if (inputState.canTransitionTo(InputState.RECORDING)) {
+      inputState.transitionTo(InputState.RECORDING);
+    }
 
     this.logger.info("Recording started", { mode: this.currentMode });
 
@@ -151,6 +157,12 @@ class AudioCaptureServiceImpl implements AudioCaptureService {
     // Transition to stopped state
     const previousState = this.currentState;
     this.currentState = AudioCaptureState.STOPPED;
+
+    // Update InputState to PROCESSING (audio is being processed)
+    const inputState = getInputState();
+    if (inputState.canTransitionTo(InputState.PROCESSING)) {
+      inputState.transitionTo(InputState.PROCESSING);
+    }
 
     this.logger.info("Recording stopped");
 
@@ -238,7 +250,12 @@ class AudioCaptureServiceImpl implements AudioCaptureService {
     // Transition back to idle
     const previousState = this.currentState;
     this.currentState = AudioCaptureState.IDLE;
-    this.recordingStartedAt = undefined;
+
+    // Update InputState to IDLE
+    const inputState = getInputState();
+    if (inputState.canTransitionTo(InputState.IDLE)) {
+      inputState.transitionTo(InputState.IDLE);
+    }
 
     // Emit state change
     this.emitStateChanged(previousState, AudioCaptureState.IDLE);
@@ -262,7 +279,6 @@ class AudioCaptureServiceImpl implements AudioCaptureService {
     this.currentState = AudioCaptureState.IDLE;
     this.currentMode = "push-to-talk";
     this.lastPermission = AudioCapturePermission.UNKNOWN;
-    this.recordingStartedAt = undefined;
     this.emitter.removeAllListeners();
     this.logger.debug("Audio capture service reset");
   }

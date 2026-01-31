@@ -12,6 +12,7 @@ import {
   AudioStateChangedEvent,
   AudioPermissionChangedEvent,
   AudioPermissionStatus,
+  AudioCapturePermission,
   isAudioCaptureResult,
 } from "../types";
 import { AudioCaptureService } from "../services/audio-capture";
@@ -155,7 +156,7 @@ export function createAudioPermissionHandler(
 
       // Return a default unknown status rather than throwing
       return {
-        permission: "unknown",
+        permission: AudioCapturePermission.UNKNOWN,
         canRequest: false,
       };
     }

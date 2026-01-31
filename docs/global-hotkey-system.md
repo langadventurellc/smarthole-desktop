@@ -19,11 +19,12 @@ The global hotkey system provides:
 │    Service      │     │  (broadcasting)  │     │   (React UI)    │
 └────────┬────────┘     └──────────────────┘     └─────────────────┘
          │
-         ▼
-┌─────────────────┐
-│  InputState     │
-│    Service      │
-└─────────────────┘
+         ├─────────────────────┐
+         ▼                     ▼
+┌─────────────────┐   ┌─────────────────┐
+│  InputState     │   │  AudioCapture   │
+│    Service      │   │    Service      │
+└─────────────────┘   └─────────────────┘
 ```
 
 ## Services
@@ -279,3 +280,23 @@ hotkeyManager.on("error", (event) => {
   }
 });
 ```
+
+## Audio Capture Integration
+
+The `voiceInput` hotkey type triggers the audio capture service for voice recording:
+
+```typescript
+import { wireAudioCaptureToHotkey } from "./ipc/audio-handler";
+
+// After initializing both services
+wireAudioCaptureToHotkey(hotkeyManager, getAudioCapture, logger);
+```
+
+This enables:
+
+- **Push-to-talk**: Hold `voiceInput` hotkey while speaking, release to stop and process
+- **Toggle**: Press `voiceInput` to start recording, press again to stop
+
+The audio capture service listens to `hotkey:activated` and `hotkey:released` events for the `voiceInput` hotkey type and coordinates recording accordingly.
+
+See [Voice Recording Service](voice-recording-service.md) for full audio capture documentation.
