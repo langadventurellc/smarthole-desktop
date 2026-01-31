@@ -1,15 +1,23 @@
 ---
 id: E-configuration-user-experience
 title: Configuration & User Experience
-status: open
+status: in-progress
 priority: medium
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
   - E-foundation-core-infrastructure
-affectedFiles: {}
+affectedFiles:
+  src/types/config.ts: "Added firstRunCompleted: boolean field to AppConfig
+    interface and firstRunCompleted: false to DEFAULT_CONFIG"
+  package.json: Added electron-store ^11.0.2 as dependency (via npm install)
+  package-lock.json: Updated with electron-store and its dependencies
 log: []
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - F-configuration-storage-ipc
+  - F-first-run-experience
+  - F-secure-credential-storage
+  - F-settings-window-ui
 created: 2026-01-29T01:45:51.040Z
 updated: 2026-01-29T01:45:51.040Z
 ---

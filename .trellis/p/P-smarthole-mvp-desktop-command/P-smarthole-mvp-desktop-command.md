@@ -20,9 +20,11 @@ affectedFiles:
     module; Added export for audio types module
   src/types/common.test.ts: Created comprehensive unit tests for all types and
     functions (37 tests) including type-level constraint verification
-  src/types/config.ts: Created configuration type definitions including LogLevel,
+  src/types/config.ts: "Created configuration type definitions including LogLevel,
     VoiceInputMode, SttBackend, LlmProvider, SttConfig, LlmConfig, HotkeyConfig,
-    AppConfig interfaces plus DEFAULT_CONFIG values and type guards
+    AppConfig interfaces plus DEFAULT_CONFIG values and type guards; Added
+    firstRunCompleted: boolean field to AppConfig interface and
+    firstRunCompleted: false to DEFAULT_CONFIG"
   src/types/config.test.ts: Created comprehensive unit tests for configuration
     types (44 tests) covering type guards, DEFAULT_CONFIG values, interface
     validation, and type-level constraints
@@ -135,7 +137,8 @@ affectedFiles:
   package.json: Added @testing-library/react, @testing-library/jest-dom, and jsdom
     dev dependencies; Added pino and pino-pretty dependencies; Added @types/ws
     as a dev dependency (ws was already installed); Added uiohook-napi
-    dependency (via npm install)
+    dependency (via npm install); Added electron-store ^11.0.2 as dependency
+    (via npm install)
   src/utils/error-recovery.ts: Created error recovery utilities with
     retryWithBackoff(), withFallback(), withFallbackSync(),
     getRecoveryStrategy(), and isRetryable() functions
@@ -220,7 +223,8 @@ affectedFiles:
     preservation, nested object handling, array handling, mixed data),
     applyContentRedaction (all content fields, nested objects, arrays,
     null/undefined handling), and Logger Privacy Integration tests.
-  package-lock.json: Updated with new dependencies
+  package-lock.json: Updated with new dependencies; Updated with electron-store
+    and its dependencies
   src/ipc/log-handler.ts: Created new module with createLogMessageHandler() and
     processLogMessage() functions for handling renderer log messages with
     payload validation and context enrichment

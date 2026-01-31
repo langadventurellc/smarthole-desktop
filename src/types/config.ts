@@ -148,6 +148,11 @@ export interface AppConfig {
    * Server binds to 127.0.0.1 only (localhost).
    */
   websocketPort: number;
+
+  // --- First-Run Settings ---
+
+  /** Whether the first-run experience has been completed */
+  firstRunCompleted: boolean;
 }
 
 // ============================================================================
@@ -175,6 +180,7 @@ export const DEFAULT_CONFIG: Readonly<AppConfig> = {
   logLevel: LogLevel.INFO,
   logMessageContent: false,
   websocketPort: 9473,
+  firstRunCompleted: false,
 };
 
 // ============================================================================
