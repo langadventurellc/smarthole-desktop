@@ -31,6 +31,11 @@ import {
   SettingsWindowService,
 } from "./windows/settings-window";
 import {
+  initializeOnboardingWindow,
+  getOnboardingWindow,
+  OnboardingWindowService,
+} from "./windows/onboarding-window";
+import {
   initializeAudioCapture,
   getAudioCapture,
   AudioCaptureService,
@@ -148,6 +153,19 @@ const settingsState: {
 };
 
 /**
+ * Mutable state for onboarding window.
+ */
+const onboardingState: {
+  onboardingWindow: OnboardingWindowService | null;
+  isOnboarding: boolean;
+  setupIncomplete: boolean;
+} = {
+  onboardingWindow: null,
+  isOnboarding: false,
+  setupIncomplete: false,
+};
+
+/**
  * Mutable state for audio capture.
  */
 const audioState: {
@@ -191,6 +209,47 @@ const iconCache: {
 function notifyWebSocketStatusChange(): void {
   const status = buildWebSocketStatus(wsState.server, wsState.lastError, WS_DEFAULT_PORT);
   broadcastWebSocketStatusChange(status);
+}
+
+/**
+ * Checks if essential setup is incomplete.
+ * Returns true if firstRunCompleted is true but required credentials are missing.
+ */
+async function checkSetupIncomplete(): Promise<boolean> {
+  try {
+    const credentialManager = getCredentialManager();
+    const hasAnthropicKey = await credentialManager.hasCredential("anthropic-api-key");
+
+    // Setup is incomplete if the Anthropic API key is missing
+    // This is the minimum required credential for the app to function
+    return !hasAnthropicKey;
+  } catch {
+    // If credential check fails, assume setup is incomplete
+    return true;
+  }
+}
+
+/**
+ * Initializes core services that are needed for normal app operation.
+ * Called after onboarding is complete or skipped.
+ */
+async function initializeNormalOperation(): Promise<void> {
+  // Hide dock icon on macOS since this is a tray-only app
+  if (process.platform === "darwin" && app.dock) {
+    app.dock.hide();
+  }
+
+  // Check if setup is incomplete (missing essential credentials)
+  const config = getConfigManager().getConfig();
+  if (config.firstRunCompleted) {
+    onboardingState.setupIncomplete = await checkSetupIncomplete();
+    if (onboardingState.setupIncomplete) {
+      logger.info("Setup incomplete - essential credentials missing");
+    }
+  }
+
+  createTray();
+  logger.info("Application ready", { platform: process.platform });
 }
 
 /**
@@ -409,11 +468,24 @@ function buildTrayMenu(): Electron.Menu {
     onQuit: (): void => {
       app.quit();
     },
+    onSetupIncomplete: (): void => {
+      try {
+        getSettingsWindow().show();
+      } catch {
+        // Service not initialized yet
+      }
+    },
   };
 
   // Build template and create menu
   const template = buildTrayMenuTemplate(
-    { clientCount, connectedClients, currentInputState, isRecording },
+    {
+      clientCount,
+      connectedClients,
+      currentInputState,
+      isRecording,
+      setupIncomplete: onboardingState.setupIncomplete,
+    },
     actions
   );
 
@@ -829,14 +901,50 @@ app.whenReady().then(async () => {
 
   logger.info("Application starting", { version: app.getVersion() });
 
-  createTray();
+  // Initialize onboarding window service (but don't show yet)
+  onboardingState.onboardingWindow = initializeOnboardingWindow();
+  logger.info("Onboarding window service initialized");
 
-  // Hide dock icon on macOS since this is a tray-only app
-  if (process.platform === "darwin" && app.dock) {
-    app.dock.hide();
+  // Check if first-run experience is needed
+  const config = configState.configManager.getConfig();
+  if (!config.firstRunCompleted) {
+    // First run: show onboarding window
+    logger.info("First run detected, showing onboarding window");
+    onboardingState.isOnboarding = true;
+
+    // Get the BrowserWindow to listen for close event
+    const onboardingWindow = getOnboardingWindow();
+    onboardingWindow.show();
+
+    // Listen for onboarding window close to transition to normal mode
+    const browserWindow = onboardingWindow.getWindow();
+    if (browserWindow) {
+      browserWindow.on("closed", () => {
+        logger.info("Onboarding window closed");
+        onboardingState.isOnboarding = false;
+
+        // Check if firstRunCompleted was set (user finished or skipped)
+        const updatedConfig = getConfigManager().getConfig();
+        if (updatedConfig.firstRunCompleted) {
+          logger.info("Onboarding completed, transitioning to normal operation");
+          initializeNormalOperation().catch((error) => {
+            logger.error("Failed to initialize normal operation", {
+              error: error instanceof Error ? error.message : String(error),
+            });
+            app.quit();
+          });
+        } else {
+          // User closed without completing - quit the app
+          logger.info("Onboarding closed without completion, quitting");
+          app.quit();
+        }
+      });
+    }
+  } else {
+    // Not first run: proceed with normal initialization
+    logger.info("First run already completed, starting normal operation");
+    await initializeNormalOperation();
   }
-
-  logger.info("Application ready", { platform: process.platform });
 });
 
 app.on("window-all-closed", () => {

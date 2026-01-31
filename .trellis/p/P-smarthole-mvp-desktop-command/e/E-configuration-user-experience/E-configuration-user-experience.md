@@ -1,7 +1,7 @@
 ---
 id: E-configuration-user-experience
 title: Configuration & User Experience
-status: in-progress
+status: done
 priority: medium
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
@@ -36,7 +36,10 @@ affectedFiles:
     after config manager, and registered IPC handlers with child logger.; Added
     settings window import, initialization, state tracking, dialog handler
     registration, and tray menu wiring; Registered permission IPC handlers in
-    app.whenReady() callback
+    app.whenReady() callback; Added onboarding window imports, onboardingState
+    tracking, checkSetupIncomplete() function, initializeNormalOperation()
+    function, and modified startup flow to detect first-run and show onboarding
+    window. Integrated setupIncomplete state into tray menu building.
   src/services/credential-manager.ts: New service implementing
     CredentialManagerService interface with keytar for OS keychain access.
     Follows singleton pattern with
@@ -71,8 +74,15 @@ affectedFiles:
     single-instance behavior; Updated to use SETTINGS_WINDOW_VITE_DEV_SERVER_URL
     instead of MAIN_WINDOW
   src/ipc/dialog-handler.ts: Created file dialog IPC handler for native open file/directory dialog
-  src/tray-menu.ts: Added onSettings action to TrayMenuActions and Settings... menu item
-  src/tray-menu.test.ts: Updated mock actions and menu structure tests to include Settings menu item
+  src/tray-menu.ts: Added onSettings action to TrayMenuActions and Settings...
+    menu item; Added setupIncomplete field to TrayMenuState interface, added
+    onSetupIncomplete action to TrayMenuActions interface, updated
+    buildTrayMenuTemplate to show 'Setup Incomplete' item at top of menu when
+    setupIncomplete is true.
+  src/tray-menu.test.ts: "Updated mock actions and menu structure tests to include
+    Settings menu item; Added 6 new tests for setup incomplete reminder
+    functionality: showing/hiding based on setupIncomplete flag, click handler
+    behavior, and menu position."
   src/windows/index.ts: Exported settings window service types and functions;
     Added exports for initializeOnboardingWindow, getOnboardingWindow,
     resetOnboardingWindow, and OnboardingWindowService type
@@ -138,7 +148,8 @@ affectedFiles:
   src/onboarding/components/CompleteStep.tsx: Created completion step with
     configuration summary, status icons, and Finish button that sets
     firstRunCompleted
-log: []
+log:
+  - "Auto-completed: All child features are complete"
 schema: v1.0
 childrenIds:
   - F-configuration-storage-ipc

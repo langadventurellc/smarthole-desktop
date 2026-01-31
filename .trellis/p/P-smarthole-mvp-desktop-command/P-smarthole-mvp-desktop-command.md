@@ -219,7 +219,11 @@ affectedFiles:
     object, initialization after config manager, and registered IPC handlers
     with child logger.; Added settings window import, initialization, state
     tracking, dialog handler registration, and tray menu wiring; Registered
-    permission IPC handlers in app.whenReady() callback"
+    permission IPC handlers in app.whenReady() callback; Added onboarding window
+    imports, onboardingState tracking, checkSetupIncomplete() function,
+    initializeNormalOperation() function, and modified startup flow to detect
+    first-run and show onboarding window. Integrated setupIncomplete state into
+    tray menu building."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -493,10 +497,15 @@ affectedFiles:
   src/tray-menu.ts: "New module: Extracted tray menu template building logic for
     testability. Contains TrayMenuState, TrayMenuActions, MenuItemOptions
     interfaces and buildTrayMenuTemplate() function.; Added onSettings action to
-    TrayMenuActions and Settings... menu item"
+    TrayMenuActions and Settings... menu item; Added setupIncomplete field to
+    TrayMenuState interface, added onSetupIncomplete action to TrayMenuActions
+    interface, updated buildTrayMenuTemplate to show 'Setup Incomplete' item at
+    top of menu when setupIncomplete is true."
   src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
     building logic covering all input states and menu structure.; Updated mock
-    actions and menu structure tests to include Settings menu item"
+    actions and menu structure tests to include Settings menu item; Added 6 new
+    tests for setup incomplete reminder functionality: showing/hiding based on
+    setupIncomplete flag, click handler behavior, and menu position."
   src/services/config-manager.ts: Created config manager service with
     electron-store integration, singleton pattern, configChanged event emission,
     and changed key path tracking; Created config manager service with

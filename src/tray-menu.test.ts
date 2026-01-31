@@ -349,4 +349,70 @@ describe("buildTrayMenuTemplate", () => {
       expect(template[9].label).toBe("Quit");
     });
   });
+
+  describe("setup incomplete reminder", () => {
+    it("shows setup incomplete item when setupIncomplete is true", () => {
+      const state = createDefaultState({ setupIncomplete: true });
+      const actions = createMockActions();
+
+      const template = buildTrayMenuTemplate(state, actions);
+
+      const setupItem = findMenuItem(template, "Setup Incomplete - Click to Configure");
+      expect(setupItem).toBeDefined();
+      expect(setupItem?.click).toBeDefined();
+    });
+
+    it("does not show setup incomplete item when setupIncomplete is false", () => {
+      const state = createDefaultState({ setupIncomplete: false });
+      const actions = createMockActions();
+
+      const template = buildTrayMenuTemplate(state, actions);
+
+      const setupItem = findMenuItem(template, "Setup Incomplete - Click to Configure");
+      expect(setupItem).toBeUndefined();
+    });
+
+    it("does not show setup incomplete item when setupIncomplete is undefined", () => {
+      const state = createDefaultState();
+      const actions = createMockActions();
+
+      const template = buildTrayMenuTemplate(state, actions);
+
+      const setupItem = findMenuItem(template, "Setup Incomplete - Click to Configure");
+      expect(setupItem).toBeUndefined();
+    });
+
+    it("calls onSetupIncomplete action when setup incomplete clicked", () => {
+      const state = createDefaultState({ setupIncomplete: true });
+      const actions = createMockActions();
+      actions.onSetupIncomplete = vi.fn();
+
+      const template = buildTrayMenuTemplate(state, actions);
+
+      const setupItem = findMenuItem(template, "Setup Incomplete - Click to Configure");
+      expect(setupItem?.click).toBe(actions.onSetupIncomplete);
+    });
+
+    it("falls back to onSettings when onSetupIncomplete is not provided", () => {
+      const state = createDefaultState({ setupIncomplete: true });
+      const actions = createMockActions();
+      // onSetupIncomplete is undefined by default
+
+      const template = buildTrayMenuTemplate(state, actions);
+
+      const setupItem = findMenuItem(template, "Setup Incomplete - Click to Configure");
+      expect(setupItem?.click).toBe(actions.onSettings);
+    });
+
+    it("places setup incomplete item at the top of the menu", () => {
+      const state = createDefaultState({ setupIncomplete: true });
+      const actions = createMockActions();
+
+      const template = buildTrayMenuTemplate(state, actions);
+
+      expect(template[0].label).toBe("Setup Incomplete - Click to Configure");
+      expect(template[1].type).toBe("separator");
+      expect(template[2].label).toBe("0 clients connected");
+    });
+  });
 });

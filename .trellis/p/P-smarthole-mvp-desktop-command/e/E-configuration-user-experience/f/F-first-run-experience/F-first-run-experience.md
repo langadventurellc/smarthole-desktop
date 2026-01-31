@@ -1,7 +1,7 @@
 ---
 id: F-first-run-experience
 title: First-Run Experience & Permissions
-status: in-progress
+status: done
 priority: medium
 parent: E-configuration-user-experience
 prerequisites:
@@ -21,7 +21,11 @@ affectedFiles:
   src/preload/main.ts: "Added 4 permission bridge methods:
     checkMicrophonePermission, requestMicrophonePermission,
     checkAccessibilityPermission, openAccessibilitySettings"
-  src/main.ts: Registered permission IPC handlers in app.whenReady() callback
+  src/main.ts: Registered permission IPC handlers in app.whenReady() callback;
+    Added onboarding window imports, onboardingState tracking,
+    checkSetupIncomplete() function, initializeNormalOperation() function, and
+    modified startup flow to detect first-run and show onboarding window.
+    Integrated setupIncomplete state into tray menu building.
   src/types/ipc.test.ts: Updated channel count assertion from 36 to 40
   src/windows/onboarding-window.ts: Created onboarding window service with
     BrowserWindow management, singleton pattern, show/hide/isVisible/getWindow
@@ -60,6 +64,13 @@ affectedFiles:
   src/onboarding/components/CompleteStep.tsx: Created completion step with
     configuration summary, status icons, and Finish button that sets
     firstRunCompleted
+  src/tray-menu.ts: Added setupIncomplete field to TrayMenuState interface, added
+    onSetupIncomplete action to TrayMenuActions interface, updated
+    buildTrayMenuTemplate to show 'Setup Incomplete' item at top of menu when
+    setupIncomplete is true.
+  src/tray-menu.test.ts: "Added 6 new tests for setup incomplete reminder
+    functionality: showing/hiding based on setupIncomplete flag, click handler
+    behavior, and menu position."
 log:
   - "Started orchestration. Created feature branch
     feature/F-first-run-experience. Tasks to execute in order:
@@ -69,12 +80,15 @@ log:
     T-create-onboarding-window.
   - Completed T-create-onboarding-window. Committed as cd83487. Moving to
     T-implement-onboarding-wizard.
+  - "Completed T-implement-onboarding-wizard. Committed as d737d7d. Moving to
+    final task: T-integrate-first-run-detection."
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
-  - T-implement-onboarding-wizard
-  - T-integrate-first-run-detection
   - T-add-permission-ipc-infrastruct
   - T-create-onboarding-window
+  - T-implement-onboarding-wizard
+  - T-integrate-first-run-detection
 created: 2026-01-31T06:21:18.472Z
 updated: 2026-01-31T06:21:18.472Z
 ---
