@@ -150,7 +150,7 @@ affectedFiles:
     dev dependencies; Added pino and pino-pretty dependencies; Added @types/ws
     as a dev dependency (ws was already installed); Added uiohook-napi
     dependency (via npm install); Added electron-store ^11.0.2 as dependency
-    (via npm install); Added keytar dependency.
+    (via npm install); Added keytar dependency.; Added groq-sdk dependency
   src/utils/error-recovery.ts: Created error recovery utilities with
     retryWithBackoff(), withFallback(), withFallbackSync(),
     getRecoveryStrategy(), and isRetryable() functions
@@ -248,7 +248,8 @@ affectedFiles:
     applyContentRedaction (all content fields, nested objects, arrays,
     null/undefined handling), and Logger Privacy Integration tests.
   package-lock.json: Updated with new dependencies; Updated with electron-store
-    and its dependencies; Updated lockfile with keytar and its dependencies.
+    and its dependencies; Updated lockfile with keytar and its dependencies.;
+    Updated with groq-sdk and its dependencies
   src/ipc/log-handler.ts: Created new module with createLogMessageHandler() and
     processLogMessage() functions for handling renderer log messages with
     payload validation and context enrichment
@@ -606,6 +607,12 @@ affectedFiles:
   src/types/stt.ts: Created new file with SttCloudProvider type, SttResult
     interface, ISttBackend interface, SttService interface, and type guards
     (isSttBackendType, isSttCloudProvider, isSttResult)
+  src/services/stt-backends/groq-backend.ts: Created Groq Whisper API backend
+    implementation with ISttBackend interface, error handling, timeout
+    configuration, and privacy-aware logging
+  src/services/stt-backends/groq-backend.test.ts: Created comprehensive unit tests
+    for GroqSttBackend covering initialization, availability, transcription, and
+    error scenarios with mock-based API testing
 log: []
 schema: v1.0
 childrenIds:

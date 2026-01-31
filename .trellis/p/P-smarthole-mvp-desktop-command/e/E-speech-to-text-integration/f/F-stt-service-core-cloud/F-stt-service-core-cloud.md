@@ -10,12 +10,20 @@ affectedFiles:
     interface, ISttBackend interface, SttService interface, and type guards
     (isSttBackendType, isSttCloudProvider, isSttResult)
   src/types/index.ts: Added export for the new stt.ts module
+  src/services/stt-backends/groq-backend.ts: Created Groq Whisper API backend
+    implementation with ISttBackend interface, error handling, timeout
+    configuration, and privacy-aware logging
+  src/services/stt-backends/groq-backend.test.ts: Created comprehensive unit tests
+    for GroqSttBackend covering initialization, availability, transcription, and
+    error scenarios with mock-based API testing
+  package.json: Added groq-sdk dependency
+  package-lock.json: Updated with groq-sdk and its dependencies
 log: []
 schema: v1.0
 childrenIds:
   - T-implement-groq-whisper-api
-  - T-implement-stt-service-core
   - T-implement-stt-service
+  - T-implement-stt-service-core
 created: 2026-01-31T19:14:34.757Z
 updated: 2026-01-31T19:14:34.757Z
 ---
