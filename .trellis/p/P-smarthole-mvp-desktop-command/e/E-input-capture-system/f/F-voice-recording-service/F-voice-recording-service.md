@@ -26,6 +26,26 @@ affectedFiles:
   src/renderer/index.ts: Created barrel export file with documentation comment
     explaining the directory purpose - holds renderer-side modules that use
     browser/Web APIs and run in renderer context
+  src/services/audio-capture.ts: Created main process audio capture service with
+    singleton pattern, recording lifecycle management (start/stop/isRecording),
+    macOS permission checking, push-to-talk and toggle mode support,
+    handleAudioData for receiving audio from renderer, and EventEmitter for
+    state/permission/audioReady/error events
+  src/services/audio-capture.test.ts: Created 24 unit tests covering singleton
+    management, recording lifecycle, audio data handling, voice input modes,
+    permission status, permission denied scenarios, event subscription, and
+    reset functionality
+  src/ipc/audio-handler.ts: Created IPC handlers including broadcast functions
+    (broadcastAudioStateChanged, broadcastAudioPermissionChanged,
+    broadcastAudioStart, broadcastAudioStop), createAudioDataHandler for
+    AUDIO_DATA channel, createAudioPermissionHandler for AUDIO_PERMISSION_GET
+    channel, wireAudioCaptureToIpc, wireAudioCaptureToHotkey, and
+    registerAudioHandlers
+  src/ipc/audio-handler.test.ts: Created 20 unit tests covering broadcast
+    functions, handler creators, IPC wiring, and hotkey integration for both
+    push-to-talk and toggle modes
+  src/services/index.ts: Added export for audio-capture service
+  src/ipc/index.ts: Added export for audio-handler
 log:
   - >-
     Started feature implementation. Created feature branch
@@ -46,13 +66,23 @@ log:
 
 
     Starting with T-add-audio-types-and-ipc first.
+  - >-
+    Completed first two tasks:
+
+    1. T-add-audio-types-and-ipc - Created audio types, IPC channels, and 47
+    unit tests
+
+    2. T-create-srcrenderer-directory - Created src/renderer directory structure
+
+
+    Both commits made. Now starting T-implement-main-process-audio.
 schema: v1.0
 childrenIds:
   - T-add-audio-capture-preload-api
-  - T-create-srcrenderer-directory
   - T-implement-main-process-audio
   - T-implement-renderer-side-audio
   - T-add-audio-types-and-ipc
+  - T-create-srcrenderer-directory
 created: 2026-01-30T22:15:08.998Z
 updated: 2026-01-30T22:15:08.998Z
 ---

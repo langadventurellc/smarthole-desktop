@@ -17,7 +17,7 @@ affectedFiles:
   src/services/hotkey-manager.test.ts: Added unit tests for initialization,
     registration, event emission, unregistration, and accessibility permissions
   src/services/index.ts: Added export for hotkey-manager module; Added export for
-    input-state service module
+    input-state service module; Added export for audio-capture service
   package.json: Added uiohook-napi dependency (via npm install)
   src/types/input.ts: "Created input state types: InputState enum, InputStateInfo
     interface, InputStateChangedEvent, InputModeChangedEvent, and
@@ -45,7 +45,8 @@ affectedFiles:
     broadcastInputStateChanged, createInputStateHandler, and wireInputStateToIpc
     functions
   src/ipc/index.ts: Added exports for hotkey-handler and input-state-handler
-    modules; Added export for text-input-handler module
+    modules; Added export for text-input-handler module; Added export for
+    audio-handler
   src/preload.ts: Added onHotkeyActivated, onHotkeyReleased, getInputState, and
     onInputStateChanged APIs to electronAPI
   src/main.ts: Added imports for services and handlers, initialized hotkey manager
@@ -118,6 +119,24 @@ affectedFiles:
   src/renderer/index.ts: Created barrel export file with documentation comment
     explaining the directory purpose - holds renderer-side modules that use
     browser/Web APIs and run in renderer context
+  src/services/audio-capture.ts: Created main process audio capture service with
+    singleton pattern, recording lifecycle management (start/stop/isRecording),
+    macOS permission checking, push-to-talk and toggle mode support,
+    handleAudioData for receiving audio from renderer, and EventEmitter for
+    state/permission/audioReady/error events
+  src/services/audio-capture.test.ts: Created 24 unit tests covering singleton
+    management, recording lifecycle, audio data handling, voice input modes,
+    permission status, permission denied scenarios, event subscription, and
+    reset functionality
+  src/ipc/audio-handler.ts: Created IPC handlers including broadcast functions
+    (broadcastAudioStateChanged, broadcastAudioPermissionChanged,
+    broadcastAudioStart, broadcastAudioStop), createAudioDataHandler for
+    AUDIO_DATA channel, createAudioPermissionHandler for AUDIO_PERMISSION_GET
+    channel, wireAudioCaptureToIpc, wireAudioCaptureToHotkey, and
+    registerAudioHandlers
+  src/ipc/audio-handler.test.ts: Created 20 unit tests covering broadcast
+    functions, handler creators, IPC wiring, and hotkey integration for both
+    push-to-talk and toggle modes
 log: []
 schema: v1.0
 childrenIds:

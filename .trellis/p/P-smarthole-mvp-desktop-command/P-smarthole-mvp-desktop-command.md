@@ -197,7 +197,7 @@ affectedFiles:
     for notifications module; Added export for notification-queue module; Added
     export for client-registry service; Added export for registration-handler
     module.; Added export for hotkey-manager module; Added export for
-    input-state service module
+    input-state service module; Added export for audio-capture service
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -211,7 +211,8 @@ affectedFiles:
   src/ipc/index.ts: Created barrel export for IPC module; Added export for
     notification-handler module to barrel export file.; Added export for
     client-status-handler module; Added exports for hotkey-handler and
-    input-state-handler modules; Added export for text-input-handler module
+    input-state-handler modules; Added export for text-input-handler module;
+    Added export for audio-handler
   src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
     covering handler creation, payload validation, log level mapping, context
     enrichment, and edge cases
@@ -409,6 +410,24 @@ affectedFiles:
   src/renderer/index.ts: Created barrel export file with documentation comment
     explaining the directory purpose - holds renderer-side modules that use
     browser/Web APIs and run in renderer context
+  src/services/audio-capture.ts: Created main process audio capture service with
+    singleton pattern, recording lifecycle management (start/stop/isRecording),
+    macOS permission checking, push-to-talk and toggle mode support,
+    handleAudioData for receiving audio from renderer, and EventEmitter for
+    state/permission/audioReady/error events
+  src/services/audio-capture.test.ts: Created 24 unit tests covering singleton
+    management, recording lifecycle, audio data handling, voice input modes,
+    permission status, permission denied scenarios, event subscription, and
+    reset functionality
+  src/ipc/audio-handler.ts: Created IPC handlers including broadcast functions
+    (broadcastAudioStateChanged, broadcastAudioPermissionChanged,
+    broadcastAudioStart, broadcastAudioStop), createAudioDataHandler for
+    AUDIO_DATA channel, createAudioPermissionHandler for AUDIO_PERMISSION_GET
+    channel, wireAudioCaptureToIpc, wireAudioCaptureToHotkey, and
+    registerAudioHandlers
+  src/ipc/audio-handler.test.ts: Created 20 unit tests covering broadcast
+    functions, handler creators, IPC wiring, and hotkey integration for both
+    push-to-talk and toggle modes
 log: []
 schema: v1.0
 childrenIds:
