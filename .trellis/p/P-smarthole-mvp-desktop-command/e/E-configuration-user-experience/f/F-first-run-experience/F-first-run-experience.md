@@ -36,8 +36,30 @@ affectedFiles:
   forge.config.ts: Added onboarding_window entry to renderer array in VitePlugin configuration
   src/onboarding/index.html: Created HTML entry point for onboarding window
   src/onboarding/renderer.tsx: Created React renderer entry point
-  src/onboarding/OnboardingApp.tsx: Created minimal OnboardingApp component placeholder
-  src/onboarding/index.css: Created CSS styles for onboarding window with light/dark theme support
+  src/onboarding/OnboardingApp.tsx: Created minimal OnboardingApp component
+    placeholder; Completely rewritten with wizard state management, step
+    navigation, config loading, and STT config persistence
+  src/onboarding/index.css: Created CSS styles for onboarding window with
+    light/dark theme support; Expanded with comprehensive wizard styles
+    including progress indicator, step layouts, permission cards, buttons, and
+    form elements
+  src/onboarding/OnboardingApp.test.tsx: Created 9 unit tests for wizard
+    functionality including navigation, skip, and config saving
+  src/onboarding/components/index.ts: Created exports for all onboarding components
+  src/onboarding/components/ProgressIndicator.tsx: Created step indicator with
+    completion state, current step highlight, and step labels
+  src/onboarding/components/StepLayout.tsx: Created consistent layout wrapper with title, description, and content areas
+  src/onboarding/components/WelcomeStep.tsx: Created welcome screen with app logo,
+    feature highlights, and Get Started button
+  src/onboarding/components/PermissionsStep.tsx: Created permissions step with
+    microphone request, accessibility check (macOS), and polling for permission
+    changes
+  src/onboarding/components/SttStep.tsx: Created STT configuration with backend
+    selection (cloud/local), API key input, and Whisper path selection
+  src/onboarding/components/AiStep.tsx: Created Anthropic API key configuration with explanation and secure input
+  src/onboarding/components/CompleteStep.tsx: Created completion step with
+    configuration summary, status icons, and Finish button that sets
+    firstRunCompleted
 log:
   - "Started orchestration. Created feature branch
     feature/F-first-run-experience. Tasks to execute in order:
@@ -45,12 +67,14 @@ log:
     T-implement-onboarding-wizard → T-integrate-first-run-detection"
   - Completed T-add-permission-ipc-infrastruct. Committed as f9b2a32. Moving to
     T-create-onboarding-window.
+  - Completed T-create-onboarding-window. Committed as cd83487. Moving to
+    T-implement-onboarding-wizard.
 schema: v1.0
 childrenIds:
-  - T-create-onboarding-window
   - T-implement-onboarding-wizard
   - T-integrate-first-run-detection
   - T-add-permission-ipc-infrastruct
+  - T-create-onboarding-window
 created: 2026-01-31T06:21:18.472Z
 updated: 2026-01-31T06:21:18.472Z
 ---
