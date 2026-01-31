@@ -25,6 +25,11 @@ import {
   getTextInputPopup,
   TextInputPopupService,
 } from "./windows/text-input-popup";
+import {
+  initializeAudioCapture,
+  getAudioCapture,
+  AudioCaptureService,
+} from "./services/audio-capture";
 import { InputState } from "./types";
 import {
   IPC_CHANNELS,
@@ -51,6 +56,11 @@ import {
 import { wireHotkeyManagerToIpc } from "./ipc/hotkey-handler";
 import { createInputStateHandler, wireInputStateToIpc } from "./ipc/input-state-handler";
 import { registerTextInputHandlers, wireTextInputToHotkey } from "./ipc/text-input-handler";
+import {
+  registerAudioHandlers,
+  wireAudioCaptureToIpc,
+  wireAudioCaptureToHotkey,
+} from "./ipc/audio-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -93,6 +103,15 @@ const popupState: {
   textInput: TextInputPopupService | null;
 } = {
   textInput: null,
+};
+
+/**
+ * Mutable state for audio capture.
+ */
+const audioState: {
+  audioCapture: AudioCaptureService | null;
+} = {
+  audioCapture: null,
 };
 
 /**
@@ -528,6 +547,29 @@ app.whenReady().then(async () => {
     // TODO: Route to message processing in future task
   });
 
+  // Initialize audio capture service
+  const audioLogger = logger.child({ component: "AudioIPC" });
+  audioState.audioCapture = initializeAudioCapture();
+  logger.info("Audio capture service initialized");
+
+  // Wire audio capture to IPC for state/permission broadcasts
+  wireAudioCaptureToIpc(audioState.audioCapture, audioLogger);
+
+  // Wire audio capture to hotkey manager for voice input
+  wireAudioCaptureToHotkey(inputState.hotkeyManager, () => getAudioCapture(), audioLogger);
+
+  // Register audio IPC handlers
+  registerAudioHandlers(ipcMain, () => getAudioCapture(), audioLogger);
+
+  // Wire audio ready event for downstream STT processing
+  audioState.audioCapture.on("audioReady", (event) => {
+    logger.info("Audio ready for STT processing", {
+      durationMs: event.result.audio.durationMs,
+      format: event.result.audio.format,
+    });
+    // TODO: Route to STT processing in future task
+  });
+
   // Register error handlers
   registerProcessErrorHandlers({
     logger,
@@ -562,6 +604,13 @@ app.on("will-quit", async () => {
     getHotkeyManager()?.unregisterAll();
   } catch {
     // Manager may not be initialized if app quits early
+  }
+
+  // Clean up audio capture service
+  try {
+    getAudioCapture()?.reset();
+  } catch {
+    // Service may not be initialized if app quits early
   }
 
   // Clean up WebSocket server

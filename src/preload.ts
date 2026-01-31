@@ -25,6 +25,10 @@ import type {
   HotkeyReleasedEvent,
   InputStateInfo,
   InputStateChangedEvent,
+  AudioCaptureResult,
+  AudioCapturePermission,
+  AudioStateChangedEvent,
+  AudioPermissionStatus,
 } from "./types";
 import { IPC_CHANNELS } from "./types";
 import type { LogLevel, AppConfig } from "./types";
@@ -421,6 +425,113 @@ const electronAPI = {
     // Return unsubscribe function
     return (): void => {
       ipcRenderer.removeListener(IPC_CHANNELS.INPUT_STATE_CHANGED, handler);
+    };
+  },
+
+  // ============================================
+  // Audio Capture
+  // ============================================
+
+  /**
+   * Get the current microphone permission status.
+   *
+   * @returns Promise resolving to the current permission status
+   */
+  getAudioPermission: (): Promise<AudioPermissionStatus> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.AUDIO_PERMISSION_GET);
+  },
+
+  /**
+   * Send captured audio data to the main process.
+   * Called by the renderer after recording completes.
+   *
+   * @param result - The captured audio result
+   */
+  sendAudioData: (result: AudioCaptureResult): void => {
+    ipcRenderer.send(IPC_CHANNELS.AUDIO_DATA, { result });
+  },
+
+  /**
+   * Listen for audio state changes from the main process.
+   * Called whenever the audio capture state transitions.
+   *
+   * @param callback - Function called with the state changed event
+   * @returns Unsubscribe function to stop listening
+   */
+  onAudioStateChanged: (callback: (event: AudioStateChangedEvent) => void): (() => void) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      stateEvent: AudioStateChangedEvent
+    ): void => {
+      callback(stateEvent);
+    };
+    ipcRenderer.on(IPC_CHANNELS.AUDIO_STATE_CHANGED, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.AUDIO_STATE_CHANGED, handler);
+    };
+  },
+
+  /**
+   * Listen for audio permission changes from the main process.
+   * Called whenever the microphone permission status changes.
+   *
+   * @param callback - Function called with the new permission state
+   * @returns Unsubscribe function to stop listening
+   */
+  onAudioPermissionChanged: (
+    callback: (permission: AudioCapturePermission) => void
+  ): (() => void) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      event: { newPermission: AudioCapturePermission }
+    ): void => {
+      callback(event.newPermission);
+    };
+    ipcRenderer.on(IPC_CHANNELS.AUDIO_PERMISSION_CHANGED, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.AUDIO_PERMISSION_CHANGED, handler);
+    };
+  },
+
+  /**
+   * Listen for audio start commands from the main process.
+   * Called when main process requests the renderer to start recording.
+   *
+   * @param callback - Function called when recording should start
+   * @returns Unsubscribe function to stop listening
+   */
+  onAudioStart: (callback: () => void): (() => void) => {
+    const handler = (): void => {
+      callback();
+    };
+    ipcRenderer.on(IPC_CHANNELS.AUDIO_START, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.AUDIO_START, handler);
+    };
+  },
+
+  /**
+   * Listen for audio stop commands from the main process.
+   * Called when main process requests the renderer to stop recording.
+   *
+   * @param callback - Function called when recording should stop
+   * @returns Unsubscribe function to stop listening
+   */
+  onAudioStop: (callback: () => void): (() => void) => {
+    const handler = (): void => {
+      callback();
+    };
+    ipcRenderer.on(IPC_CHANNELS.AUDIO_STOP, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.AUDIO_STOP, handler);
     };
   },
 };

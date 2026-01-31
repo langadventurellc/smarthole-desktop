@@ -47,13 +47,19 @@ affectedFiles:
   src/ipc/index.ts: Added exports for hotkey-handler and input-state-handler
     modules; Added export for text-input-handler module; Added export for
     audio-handler
-  src/preload.ts: Added onHotkeyActivated, onHotkeyReleased, getInputState, and
-    onInputStateChanged APIs to electronAPI
+  src/preload.ts: "Added onHotkeyActivated, onHotkeyReleased, getInputState, and
+    onInputStateChanged APIs to electronAPI; Added audio capture API methods:
+    getAudioPermission(), sendAudioData(), onAudioStateChanged(),
+    onAudioPermissionChanged(), onAudioStart(), onAudioStop(). Added required
+    type imports."
   src/main.ts: Added imports for services and handlers, initialized hotkey manager
     and input state service, wired events to IPC broadcasts and state
     transitions, added cleanup in will-quit handler; Added popup service
     imports, popupState tracking, TextInputPopup initialization, IPC handler
-    registration, hotkey wiring, and submitted event subscription
+    registration, hotkey wiring, and submitted event subscription; Added audio
+    capture service initialization, IPC wiring, hotkey integration, audioReady
+    event handling, and cleanup in will-quit handler. Added audioState tracking
+    object and required imports.
   src/types/ipc.test.ts: Updated channel count test from 17 to 21, added tests for
     new hotkey and input state channels; Added tests for new text input popup
     channels, TextInputSubmitPayload type guard tests, TextInputOpenPayload

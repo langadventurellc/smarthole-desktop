@@ -1,7 +1,7 @@
 ---
 id: F-voice-recording-service
 title: Voice Recording Service
-status: in-progress
+status: done
 priority: high
 parent: E-input-capture-system
 prerequisites:
@@ -54,6 +54,12 @@ affectedFiles:
   src/renderer/audio-capture.test.ts: Created 20 unit tests for WAV encoding,
     resampling, mono conversion, configuration, state management, and error
     handling
+  src/preload.ts: "Added audio capture API methods: getAudioPermission(),
+    sendAudioData(), onAudioStateChanged(), onAudioPermissionChanged(),
+    onAudioStart(), onAudioStop(). Added required type imports."
+  src/main.ts: Added audio capture service initialization, IPC wiring, hotkey
+    integration, audioReady event handling, and cleanup in will-quit handler.
+    Added audioState tracking object and required imports.
 log:
   - >-
     Started feature implementation. Created feature branch
@@ -84,13 +90,25 @@ log:
 
 
     Both commits made. Now starting T-implement-main-process-audio.
+  - >-
+    Completed tasks 3 and 4:
+
+    3. T-implement-main-process-audio - Main process audio service with
+    push-to-talk/toggle modes, IPC handlers, 44 unit tests
+
+    4. T-implement-renderer-side-audio - Renderer-side capture with
+    MediaRecorder, WAV encoding, resampling, 20 unit tests
+
+
+    All 772 tests pass. Starting final task T-add-audio-capture-preload-api.
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
   - T-add-audio-capture-preload-api
-  - T-implement-renderer-side-audio
   - T-add-audio-types-and-ipc
   - T-create-srcrenderer-directory
   - T-implement-main-process-audio
+  - T-implement-renderer-side-audio
 created: 2026-01-30T22:15:08.998Z
 updated: 2026-01-30T22:15:08.998Z
 ---

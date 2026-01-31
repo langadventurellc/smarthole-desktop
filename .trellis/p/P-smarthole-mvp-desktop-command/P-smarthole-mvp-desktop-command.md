@@ -91,7 +91,10 @@ affectedFiles:
     getMessageStatus, getRecentDeliveries with full TypeScript types.; Added
     getClientCount, getClientList, getClientDetails, and onClientStatusChange
     methods to the preload API; Added onHotkeyActivated, onHotkeyReleased,
-    getInputState, and onInputStateChanged APIs to electronAPI"
+    getInputState, and onInputStateChanged APIs to electronAPI; Added audio
+    capture API methods: getAudioPermission(), sendAudioData(),
+    onAudioStateChanged(), onAudioPermissionChanged(), onAudioStart(),
+    onAudioStop(). Added required type imports."
   src/types/electron.d.ts: Created global Window interface augmentation declaring
     electronAPI property with ElectronAPI type; Added PopupAPI type import and
     Window.popupAPI declaration for type-safe popup renderer code
@@ -183,7 +186,9 @@ affectedFiles:
     to IPC broadcasts and state transitions, added cleanup in will-quit handler;
     Added popup service imports, popupState tracking, TextInputPopup
     initialization, IPC handler registration, hotkey wiring, and submitted event
-    subscription"
+    subscription; Added audio capture service initialization, IPC wiring, hotkey
+    integration, audioReady event handling, and cleanup in will-quit handler.
+    Added audioState tracking object and required imports."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added

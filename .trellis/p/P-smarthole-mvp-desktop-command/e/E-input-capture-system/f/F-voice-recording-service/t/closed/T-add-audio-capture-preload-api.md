@@ -1,14 +1,57 @@
 ---
 id: T-add-audio-capture-preload-api
 title: Add audio capture preload API and wire to main
-status: open
+status: done
 priority: high
 parent: F-voice-recording-service
 prerequisites:
   - T-implement-renderer-side-audio
   - T-implement-main-process-audio
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/preload.ts: "Added audio capture API methods: getAudioPermission(),
+    sendAudioData(), onAudioStateChanged(), onAudioPermissionChanged(),
+    onAudioStart(), onAudioStop(). Added required type imports."
+  src/main.ts: Added audio capture service initialization, IPC wiring, hotkey
+    integration, audioReady event handling, and cleanup in will-quit handler.
+    Added audioState tracking object and required imports.
+log:
+  - >-
+    Implementation complete:
+
+
+    1. Updated src/preload.ts:
+       - Added audio type imports (AudioCaptureResult, AudioCapturePermission, AudioStateChangedEvent, AudioPermissionStatus)
+       - Added getAudioPermission() - queries microphone permission status via IPC
+       - Added sendAudioData(result) - sends captured audio data to main process
+       - Added onAudioStateChanged(callback) - listens for state change broadcasts
+       - Added onAudioPermissionChanged(callback) - listens for permission change broadcasts
+       - Added onAudioStart(callback) - listens for start recording command from main
+       - Added onAudioStop(callback) - listens for stop recording command from main
+
+    2. Updated src/main.ts:
+       - Added imports for audio capture service and IPC handlers
+       - Added audioState tracking object
+       - Initialize audio capture service after text input popup
+       - Wire audio capture to IPC for state/permission broadcasts
+       - Wire audio capture to hotkey manager for voice input
+       - Register audio IPC handlers
+       - Wire audioReady event for downstream STT processing
+       - Added audio capture cleanup in will-quit handler
+
+    3. Type declarations automatically updated via ElectronAPI = typeof
+    electronAPI pattern
+
+
+    All 772 tests pass. Quality checks pass (lint, format, type-check).
+  - "Extended the preload script to expose audio capture APIs
+    (getAudioPermission, sendAudioData, onAudioStateChanged,
+    onAudioPermissionChanged, onAudioStart, onAudioStop) and wired audio capture
+    service into main.ts with initialization, hotkey integration, IPC handlers,
+    and cleanup. The full audio capture flow is now operational: hotkey triggers
+    recording via audio-capture service which broadcasts AUDIO_START to
+    renderer, renderer captures audio with MediaRecorder, on stop the renderer
+    sends audio data via sendAudioData which the main process receives and emits
+    an audioReady event for downstream STT processing."
 schema: v1.0
 childrenIds: []
 created: 2026-01-31T00:54:53.988Z
