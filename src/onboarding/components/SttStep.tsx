@@ -15,7 +15,7 @@ interface SttStepProps {
 const BACKEND_OPTIONS = [
   {
     value: "cloud" as const,
-    label: "Cloud (OpenAI Whisper API)",
+    label: "Cloud (Groq Whisper API)",
     description: "Easiest setup. Requires an API key and internet connection.",
   },
   {
@@ -112,9 +112,9 @@ export function SttStep({
         {backend === "cloud" && (
           <div className="stt-config-section">
             <div className="setting-field">
-              <label className="setting-field-label">OpenAI API Key</label>
+              <label className="setting-field-label">Groq API Key</label>
               <span className="setting-field-description">
-                Your API key for the OpenAI Whisper speech-to-text service.
+                Your API key for the Groq Whisper speech-to-text service.
               </span>
 
               {hasApiKey === null && <div className="setting-field-loading">Loading...</div>}
@@ -156,7 +156,7 @@ export function SttStep({
                       className="setting-field-input"
                       value={apiKeyInput}
                       onChange={(e) => setApiKeyInput(e.target.value)}
-                      placeholder="sk-..."
+                      placeholder="gsk_..."
                       autoFocus
                     />
                     <button
