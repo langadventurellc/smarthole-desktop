@@ -624,6 +624,18 @@ const electronAPI = {
   openAccessibilitySettings: (): Promise<PermissionOpenAccessibilitySettingsResponse> => {
     return ipcRenderer.invoke(IPC_CHANNELS.PERMISSION_OPEN_ACCESSIBILITY_SETTINGS);
   },
+
+  // ============================================
+  // Onboarding
+  // ============================================
+
+  /**
+   * Close the onboarding window.
+   * Called when user completes or skips onboarding setup.
+   */
+  closeOnboardingWindow: (): void => {
+    ipcRenderer.send(IPC_CHANNELS.ONBOARDING_CLOSE);
+  },
 };
 
 // Expose the API to the renderer process

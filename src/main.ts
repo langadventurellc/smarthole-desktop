@@ -99,6 +99,7 @@ import {
   createAccessibilityCheckHandler,
   createAccessibilitySettingsHandler,
 } from "./ipc/permission-handler";
+import { registerOnboardingHandlers } from "./ipc/onboarding-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -904,6 +905,10 @@ app.whenReady().then(async () => {
   // Initialize onboarding window service (but don't show yet)
   onboardingState.onboardingWindow = initializeOnboardingWindow();
   logger.info("Onboarding window service initialized");
+
+  // Register onboarding IPC handlers
+  const onboardingLogger = logger.child({ component: "OnboardingIPC" });
+  registerOnboardingHandlers(ipcMain, () => getOnboardingWindow(), onboardingLogger);
 
   // Check if first-run experience is needed
   const config = configState.configManager.getConfig();
