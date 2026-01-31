@@ -240,7 +240,8 @@ affectedFiles:
     module.; Added export for hotkey-manager module; Added export for
     input-state service module; Added export for audio-capture service; Added
     export for config-manager module; Added export for config-manager module;
-    Added export for credential-manager module.
+    Added export for credential-manager module.; Updated to export the new
+    stt-service module
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -613,6 +614,16 @@ affectedFiles:
   src/services/stt-backends/groq-backend.test.ts: Created comprehensive unit tests
     for GroqSttBackend covering initialization, availability, transcription, and
     error scenarios with mock-based API testing
+  src/services/stt-service.ts: Created main STT service singleton with
+    SttServiceImpl class implementing SttService interface. Includes
+    initializeSttService(), getSttService(), resetSttService() functions,
+    SttServiceError class, and backend factory function that creates
+    GroqSttBackend for cloud mode.
+  src/services/stt-backends/index.ts: Created barrel export file for STT backends,
+    exporting GroqSttBackend and GroqSttError from groq-backend.ts
+  src/services/stt-service.test.ts: Created comprehensive unit tests covering
+    singleton initialization, backend selection (cloud vs local), transcription
+    delegation, getActiveBackend, isReady, and SttServiceError class
 log: []
 schema: v1.0
 childrenIds:

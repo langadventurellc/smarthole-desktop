@@ -18,3 +18,4 @@ export * from "./input-state";
 export * from "./audio-capture";
 export * from "./config-manager";
 export * from "./credential-manager";
+export * from "./stt-service";

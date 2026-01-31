@@ -1,7 +1,7 @@
 ---
 id: F-stt-service-core-cloud
 title: STT Service Core & Groq Backend
-status: in-progress
+status: done
 priority: high
 parent: E-speech-to-text-integration
 prerequisites: []
@@ -18,12 +18,24 @@ affectedFiles:
     error scenarios with mock-based API testing
   package.json: Added groq-sdk dependency
   package-lock.json: Updated with groq-sdk and its dependencies
-log: []
+  src/services/stt-service.ts: Created main STT service singleton with
+    SttServiceImpl class implementing SttService interface. Includes
+    initializeSttService(), getSttService(), resetSttService() functions,
+    SttServiceError class, and backend factory function that creates
+    GroqSttBackend for cloud mode.
+  src/services/stt-backends/index.ts: Created barrel export file for STT backends,
+    exporting GroqSttBackend and GroqSttError from groq-backend.ts
+  src/services/stt-service.test.ts: Created comprehensive unit tests covering
+    singleton initialization, backend selection (cloud vs local), transcription
+    delegation, getActiveBackend, isReady, and SttServiceError class
+  src/services/index.ts: Updated to export the new stt-service module
+log:
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
   - T-implement-groq-whisper-api
-  - T-implement-stt-service
   - T-implement-stt-service-core
+  - T-implement-stt-service
 created: 2026-01-31T19:14:34.757Z
 updated: 2026-01-31T19:14:34.757Z
 ---

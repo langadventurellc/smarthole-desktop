@@ -1,13 +1,32 @@
 ---
 id: T-implement-stt-service
 title: Implement STT Service Singleton
-status: open
+status: done
 priority: high
 parent: F-stt-service-core-cloud
 prerequisites:
   - T-implement-groq-whisper-api
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/services/stt-service.ts: Created main STT service singleton with
+    SttServiceImpl class implementing SttService interface. Includes
+    initializeSttService(), getSttService(), resetSttService() functions,
+    SttServiceError class, and backend factory function that creates
+    GroqSttBackend for cloud mode.
+  src/services/stt-backends/index.ts: Created barrel export file for STT backends,
+    exporting GroqSttBackend and GroqSttError from groq-backend.ts
+  src/services/stt-service.test.ts: Created comprehensive unit tests covering
+    singleton initialization, backend selection (cloud vs local), transcription
+    delegation, getActiveBackend, isReady, and SttServiceError class
+  src/services/index.ts: Updated to export the new stt-service module
+log:
+  - Implemented the STT service singleton that provides a unified transcription
+    API. The service follows the existing singleton pattern (like
+    credential-manager and config-manager), reads backend configuration from
+    config-manager, and delegates transcription to the Groq backend when cloud
+    mode is configured. The implementation includes proper error handling with
+    SttServiceError class, logging with child loggers, and comprehensive unit
+    tests covering initialization, singleton behavior, backend selection,
+    transcription delegation, and error scenarios.
 schema: v1.0
 childrenIds: []
 created: 2026-01-31T19:19:58.960Z
