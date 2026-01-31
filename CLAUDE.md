@@ -27,6 +27,7 @@ For pretty-printed logs in dev: `mise run dev 2>&1 | npx pino-pretty`
 ```
 src/
 ├── main.ts              # Electron main process, tray setup
+├── tray-menu.ts         # Tray menu template building (testable, no Electron deps)
 ├── preload.ts           # Secure IPC bridge for main renderer (contextBridge)
 ├── preload-popup.ts     # Secure IPC bridge for popup window (popupAPI)
 ├── renderer.tsx         # React entry point (main window)
@@ -78,4 +79,5 @@ src/
 - [Global Hotkey System](docs/global-hotkey-system.md) - hotkey registration, input state machine, IPC events
 - [Text Input Popup](docs/text-input-popup.md) - Spotlight-style text input window, IPC integration
 - [Voice Recording Service](docs/voice-recording-service.md) - microphone capture, WAV encoding, hotkey integration
+- [Tray Input Integration](docs/tray-input-integration.md) - tray menu input controls, icon state indication
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements

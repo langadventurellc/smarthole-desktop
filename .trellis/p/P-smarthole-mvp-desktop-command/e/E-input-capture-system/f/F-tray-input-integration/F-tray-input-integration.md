@@ -75,6 +75,19 @@ log:
 
 
     Both tasks complete. Committing and proceeding to documentation update.
+  - >-
+    Documentation updated:
+
+    - Created docs/tray-input-integration.md with comprehensive documentation
+    for tray menu input controls and icon state indication
+
+    - Updated CLAUDE.md to add tray-menu.ts to project structure
+
+    - Added link to new documentation in CLAUDE.md detailed documentation
+    section
+
+
+    Committing documentation changes.
 schema: v1.0
 childrenIds:
   - T-add-input-menu-items-and
