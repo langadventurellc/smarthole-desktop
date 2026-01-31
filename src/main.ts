@@ -26,6 +26,11 @@ import {
   TextInputPopupService,
 } from "./windows/text-input-popup";
 import {
+  initializeSettingsWindow,
+  getSettingsWindow,
+  SettingsWindowService,
+} from "./windows/settings-window";
+import {
   initializeAudioCapture,
   getAudioCapture,
   AudioCaptureService,
@@ -82,6 +87,7 @@ import {
   createCredentialDeleteHandler,
   createCredentialHasHandler,
 } from "./ipc/credential-handler";
+import { createDialogOpenHandler } from "./ipc/dialog-handler";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -124,6 +130,15 @@ const popupState: {
   textInput: TextInputPopupService | null;
 } = {
   textInput: null,
+};
+
+/**
+ * Mutable state for settings window.
+ */
+const settingsState: {
+  settingsWindow: SettingsWindowService | null;
+} = {
+  settingsWindow: null,
 };
 
 /**
@@ -369,6 +384,13 @@ function buildTrayMenu(): Electron.Menu {
         // Service not initialized yet
       }
     },
+    onSettings: (): void => {
+      try {
+        getSettingsWindow().show();
+      } catch {
+        // Service not initialized yet
+      }
+    },
     onAbout: (): void => {
       dialog.showMessageBox({
         type: "info",
@@ -468,6 +490,10 @@ app.whenReady().then(async () => {
     IPC_CHANNELS.CREDENTIAL_HAS,
     createCredentialHasHandler(() => getCredentialManager(), credentialLogger)
   );
+
+  // Register dialog IPC handler
+  const dialogLogger = logger.child({ component: "DialogIPC" });
+  ipcMain.handle(IPC_CHANNELS.DIALOG_OPEN, createDialogOpenHandler(dialogLogger));
 
   // Initialize notification services
   const notificationService = initializeNotificationService();
@@ -721,6 +747,10 @@ app.whenReady().then(async () => {
   // Initialize text input popup
   popupState.textInput = initializeTextInputPopup();
   logger.info("Text input popup initialized");
+
+  // Initialize settings window
+  settingsState.settingsWindow = initializeSettingsWindow();
+  logger.info("Settings window initialized");
 
   // Register text input IPC handlers
   const textInputLogger = logger.child({ component: "TextInputIPC" });

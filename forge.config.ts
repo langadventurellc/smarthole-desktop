@@ -47,6 +47,10 @@ const config: ForgeConfig = {
           name: "popup_window",
           config: "vite.popup-renderer.config.ts",
         },
+        {
+          name: "settings_window",
+          config: "vite.settings-renderer.config.ts",
+        },
       ],
     }),
     new FusesPlugin({

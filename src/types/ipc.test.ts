@@ -104,10 +104,11 @@ describe("IPC_CHANNELS", () => {
       expect(IPC_CHANNELS.CREDENTIAL_STORE).toBe("credential:store");
       expect(IPC_CHANNELS.CREDENTIAL_DELETE).toBe("credential:delete");
       expect(IPC_CHANNELS.CREDENTIAL_HAS).toBe("credential:has");
+      expect(IPC_CHANNELS.DIALOG_OPEN).toBe("dialog:open");
     });
 
-    it("should have exactly 35 channels", () => {
-      expect(Object.keys(IPC_CHANNELS)).toHaveLength(35);
+    it("should have exactly 36 channels", () => {
+      expect(Object.keys(IPC_CHANNELS)).toHaveLength(36);
     });
 
     it("should follow the domain:action naming convention", () => {

@@ -33,6 +33,7 @@ function createMockActions(): TrayMenuActions {
     onOpenTextInput: vi.fn(),
     onStartRecording: vi.fn(),
     onStopRecording: vi.fn(),
+    onSettings: vi.fn(),
     onAbout: vi.fn(),
     onQuit: vi.fn(),
   };
@@ -273,6 +274,17 @@ describe("buildTrayMenuTemplate", () => {
   });
 
   describe("standard menu items", () => {
+    it("includes Settings item", () => {
+      const state = createDefaultState();
+      const actions = createMockActions();
+
+      const template = buildTrayMenuTemplate(state, actions);
+
+      const settingsItem = findMenuItem(template, "Settings...");
+      expect(settingsItem).toBeDefined();
+      expect(settingsItem?.click).toBe(actions.onSettings);
+    });
+
     it("includes About SmartHole item", () => {
       const state = createDefaultState();
       const actions = createMockActions();
@@ -303,15 +315,16 @@ describe("buildTrayMenuTemplate", () => {
 
       const template = buildTrayMenuTemplate(state, actions);
 
-      // Expected order: client count, separator, Open Text Input, Start Recording, separator, About, separator, Quit
+      // Expected order: client count, separator, Open Text Input, Start Recording, separator, Settings, About, separator, Quit
       expect(template[0].label).toBe("0 clients connected");
       expect(template[1].type).toBe("separator");
       expect(template[2].label).toBe("Open Text Input");
       expect(template[3].label).toBe("Start Recording");
       expect(template[4].type).toBe("separator");
-      expect(template[5].label).toBe("About SmartHole");
-      expect(template[6].type).toBe("separator");
-      expect(template[7].label).toBe("Quit");
+      expect(template[5].label).toBe("Settings...");
+      expect(template[6].label).toBe("About SmartHole");
+      expect(template[7].type).toBe("separator");
+      expect(template[8].label).toBe("Quit");
     });
 
     it("has correct item order with clients", () => {
@@ -323,16 +336,17 @@ describe("buildTrayMenuTemplate", () => {
 
       const template = buildTrayMenuTemplate(state, actions);
 
-      // Expected order: client count, Connected Clients, separator, Open Text Input, Start Recording, separator, About, separator, Quit
+      // Expected order: client count, Connected Clients, separator, Open Text Input, Start Recording, separator, Settings, About, separator, Quit
       expect(template[0].label).toBe("1 client connected");
       expect(template[1].label).toBe("Connected Clients");
       expect(template[2].type).toBe("separator");
       expect(template[3].label).toBe("Open Text Input");
       expect(template[4].label).toBe("Start Recording");
       expect(template[5].type).toBe("separator");
-      expect(template[6].label).toBe("About SmartHole");
-      expect(template[7].type).toBe("separator");
-      expect(template[8].label).toBe("Quit");
+      expect(template[6].label).toBe("Settings...");
+      expect(template[7].label).toBe("About SmartHole");
+      expect(template[8].type).toBe("separator");
+      expect(template[9].label).toBe("Quit");
     });
   });
 });

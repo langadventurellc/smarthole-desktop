@@ -92,6 +92,9 @@ export const IPC_CHANNELS = {
   CREDENTIAL_STORE: "credential:store", // Store a credential in OS keychain
   CREDENTIAL_DELETE: "credential:delete", // Delete a credential from OS keychain
   CREDENTIAL_HAS: "credential:has", // Check if a credential exists
+
+  // Dialog channels
+  DIALOG_OPEN: "dialog:open", // Show native open file dialog
 } as const;
 
 /**
@@ -510,6 +513,7 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.CREDENTIAL_STORE]: CredentialStorePayload;
   [IPC_CHANNELS.CREDENTIAL_DELETE]: CredentialKeyPayload;
   [IPC_CHANNELS.CREDENTIAL_HAS]: CredentialKeyPayload;
+  [IPC_CHANNELS.DIALOG_OPEN]: DialogOpenOptions;
 }
 
 /**
@@ -535,6 +539,7 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.CREDENTIAL_STORE]: void;
   [IPC_CHANNELS.CREDENTIAL_DELETE]: void;
   [IPC_CHANNELS.CREDENTIAL_HAS]: boolean;
+  [IPC_CHANNELS.DIALOG_OPEN]: DialogOpenResponse;
 }
 
 // ============================================================================
@@ -829,4 +834,35 @@ export interface CredentialStorePayload {
 
 export interface CredentialKeyPayload {
   key: CredentialKey;
+}
+
+// ============================================================================
+// Dialog IPC Types
+// ============================================================================
+
+/**
+ * Options for the open file dialog.
+ */
+export interface DialogOpenOptions {
+  /** Dialog title (shown in title bar on some platforms) */
+  title?: string;
+  /** Default path to open the dialog in */
+  defaultPath?: string;
+  /** Array of file filter groups */
+  filters?: Array<{
+    name: string;
+    extensions: string[];
+  }>;
+  /** Whether to allow selecting directories instead of files */
+  properties?: Array<"openFile" | "openDirectory">;
+}
+
+/**
+ * Response from the open file dialog.
+ */
+export interface DialogOpenResponse {
+  /** Whether a file was selected (false if canceled) */
+  canceled: boolean;
+  /** Array of selected file paths (empty if canceled) */
+  filePaths: string[];
 }

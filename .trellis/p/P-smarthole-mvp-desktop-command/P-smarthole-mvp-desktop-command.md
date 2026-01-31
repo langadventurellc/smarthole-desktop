@@ -63,7 +63,9 @@ affectedFiles:
     updated IpcResponseMap with AUDIO_PERMISSION_GET response type; Added
     CREDENTIAL_STORE, CREDENTIAL_DELETE, CREDENTIAL_HAS channels. Added
     CredentialStorePayload and CredentialKeyPayload types. Added entries to
-    IpcPayloadMap and IpcResponseMap. Re-exported CredentialKey type.
+    IpcPayloadMap and IpcResponseMap. Re-exported CredentialKey type.; Added
+    DIALOG_OPEN channel, DialogOpenOptions and DialogOpenResponse types, updated
+    payload/response maps
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -77,7 +79,8 @@ affectedFiles:
     TextInputOpenPayload interface tests, updated channel count test from 21 to
     26, updated naming convention regex to allow camelCase domains; Added test
     for audio capture channels, updated channel count from 26 to 32; Added test
-    for credential channels and updated channel count from 32 to 35.
+    for credential channels and updated channel count from 32 to 35.; Updated
+    channel count to 36 and added DIALOG_OPEN channel test
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -210,7 +213,8 @@ affectedFiles:
     initialization in app.whenReady(), IPC handler registration, and config
     change event wiring to broadcast; Added credential manager imports, state
     object, initialization after config manager, and registered IPC handlers
-    with child logger."
+    with child logger.; Added settings window import, initialization, state
+    tracking, dialog handler registration, and tray menu wiring"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -242,7 +246,7 @@ affectedFiles:
     notification-handler module to barrel export file.; Added export for
     client-status-handler module; Added exports for hotkey-handler and
     input-state-handler modules; Added export for text-input-handler module;
-    Added export for audio-handler
+    Added export for audio-handler; Exported dialog handler
   src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
     covering handler creation, payload validation, log level mapping, context
     enrichment, and edge cases
@@ -403,7 +407,7 @@ affectedFiles:
     isShowing flag, updated destroy() to reset isShowing
   src/windows/index.ts: Created module exports for TextInputPopupService,
     functions (initialize, get, reset, getImpl), calculateCenteredPosition, and
-    event types
+    event types; Exported settings window service types and functions
   src/windows/text-input-popup.test.ts: Added 20 unit tests covering singleton
     lifecycle, show (positioning, focus, placeholder, events), hide (window,
     input clearing, focus restoration), isVisible, event
@@ -429,7 +433,8 @@ affectedFiles:
   vite.popup-renderer.config.ts: Created new Vite config for popup renderer with
     React plugin and rollupOptions.input pointing to popup.html
   forge.config.ts: Added popup preload entry (src/preload-popup.ts) and
-    popup_window renderer entry to VitePlugin configuration
+    popup_window renderer entry to VitePlugin configuration; Added
+    settings_window renderer entry to VitePlugin configuration
   index.html: Created at project root (moved from src/index.html) - fixes
     pre-existing production build issue
   popup.html: Created at project root as popup window entry point
@@ -478,9 +483,11 @@ affectedFiles:
     handling
   src/tray-menu.ts: "New module: Extracted tray menu template building logic for
     testability. Contains TrayMenuState, TrayMenuActions, MenuItemOptions
-    interfaces and buildTrayMenuTemplate() function."
+    interfaces and buildTrayMenuTemplate() function.; Added onSettings action to
+    TrayMenuActions and Settings... menu item"
   src/tray-menu.test.ts: "New test file: 22 unit tests for tray menu template
-    building logic covering all input states and menu structure."
+    building logic covering all input states and menu structure.; Updated mock
+    actions and menu structure tests to include Settings menu item"
   src/services/config-manager.ts: Created config manager service with
     electron-store integration, singleton pattern, configChanged event emission,
     and changed key path tracking; Created config manager service with
@@ -509,7 +516,16 @@ affectedFiles:
   src/ipc/credential-handler.test.ts: New test file with 13 tests covering all
     three handlers, error propagation, and credential key type coverage.
   src/preload/main.ts: Extended electronAPI with storeCredential,
-    deleteCredential, and hasCredential methods using ipcRenderer.invoke.
+    deleteCredential, and hasCredential methods using ipcRenderer.invoke.; Added
+    showOpenDialog() method to electronAPI for renderer access to file dialogs
+  src/windows/settings-window.ts: Created settings window singleton service with
+    show/hide/isVisible/getWindow methods, escape key handling, and
+    single-instance behavior; Updated to use SETTINGS_WINDOW_VITE_DEV_SERVER_URL
+    instead of MAIN_WINDOW
+  src/ipc/dialog-handler.ts: Created file dialog IPC handler for native open file/directory dialog
+  src/settings/index.html: Updated title to SmartHole Settings
+  vite.settings-renderer.config.ts: "Created Vite config for settings window renderer with root: src/settings"
+  src/windows/settings-window.test.ts: Created unit tests for settings window service (23 tests)
 log: []
 schema: v1.0
 childrenIds:

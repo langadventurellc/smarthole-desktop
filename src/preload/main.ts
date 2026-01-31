@@ -31,6 +31,8 @@ import type {
   AudioStateChangedEvent,
   AudioPermissionStatus,
   CredentialKey,
+  DialogOpenOptions,
+  DialogOpenResponse,
 } from "../types";
 import { IPC_CHANNELS } from "../types";
 import type { LogLevel, AppConfig } from "../types";
@@ -554,6 +556,21 @@ const electronAPI = {
   /** Check if a credential exists. Use to show "configured" vs "not configured" in settings UI. */
   hasCredential: (key: CredentialKey): Promise<boolean> => {
     return ipcRenderer.invoke(IPC_CHANNELS.CREDENTIAL_HAS, { key });
+  },
+
+  // ============================================
+  // Dialogs
+  // ============================================
+
+  /**
+   * Show a native open file/directory dialog.
+   * Used by settings UI to pick file paths (e.g., local Whisper path).
+   *
+   * @param options - Dialog options (title, filters, properties)
+   * @returns Promise resolving to the dialog result with selected paths
+   */
+  showOpenDialog: (options?: DialogOpenOptions): Promise<DialogOpenResponse> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.DIALOG_OPEN, options);
   },
 };
 

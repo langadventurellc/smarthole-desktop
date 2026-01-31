@@ -11,3 +11,10 @@ export {
   type TextInputPopupService,
   type TextInputPopupEvents,
 } from "./text-input-popup";
+
+export {
+  initializeSettingsWindow,
+  getSettingsWindow,
+  resetSettingsWindow,
+  type SettingsWindowService,
+} from "./settings-window";

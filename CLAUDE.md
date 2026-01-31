@@ -14,6 +14,7 @@ Use `mise` for all development tasks:
 mise run dev        # Start dev mode
 mise run build      # Build for distribution
 mise run test       # Run tests
+mise run smoke-test # Run smoke tests
 mise run quality    # All quality checks (lint + format + type-check)
 mise run lint       # ESLint only
 mise run format     # Prettier only
