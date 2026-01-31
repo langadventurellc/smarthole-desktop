@@ -1,16 +1,42 @@
 ---
 id: E-speech-to-text-integration
 title: Speech-to-Text Integration
-status: open
+status: in-progress
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
   - E-foundation-core-infrastructure
   - E-input-capture-system
-affectedFiles: {}
+affectedFiles:
+  src/types/stt.ts: Created new file with SttCloudProvider type, SttResult
+    interface, ISttBackend interface, SttService interface, and type guards
+    (isSttBackendType, isSttCloudProvider, isSttResult)
+  src/types/index.ts: Added export for the new stt.ts module
+  src/services/stt-backends/groq-backend.ts: Created Groq Whisper API backend
+    implementation with ISttBackend interface, error handling, timeout
+    configuration, and privacy-aware logging
+  src/services/stt-backends/groq-backend.test.ts: Created comprehensive unit tests
+    for GroqSttBackend covering initialization, availability, transcription, and
+    error scenarios with mock-based API testing
+  package.json: Added groq-sdk dependency
+  package-lock.json: Updated with groq-sdk and its dependencies
+  src/services/stt-service.ts: Created main STT service singleton with
+    SttServiceImpl class implementing SttService interface. Includes
+    initializeSttService(), getSttService(), resetSttService() functions,
+    SttServiceError class, and backend factory function that creates
+    GroqSttBackend for cloud mode.
+  src/services/stt-backends/index.ts: Created barrel export file for STT backends,
+    exporting GroqSttBackend and GroqSttError from groq-backend.ts
+  src/services/stt-service.test.ts: Created comprehensive unit tests covering
+    singleton initialization, backend selection (cloud vs local), transcription
+    delegation, getActiveBackend, isReady, and SttServiceError class
+  src/services/index.ts: Updated to export the new stt-service module
 log: []
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - F-local-whisper-backend
+  - F-stt-pipeline-integration
+  - F-stt-service-core-cloud
 created: 2026-01-29T01:44:42.105Z
 updated: 2026-01-29T01:44:42.105Z
 ---

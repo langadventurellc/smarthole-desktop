@@ -17,7 +17,8 @@ affectedFiles:
     IPC types; Updated barrel export to include guards module; Added ElectronAPI
     type export from preload module; Added export for errors.ts to barrel
     export; Added export for client-registry types; Added export for input types
-    module; Added export for audio types module
+    module; Added export for audio types module; Added export for the new stt.ts
+    module
   src/types/common.test.ts: Created comprehensive unit tests for all types and
     functions (37 tests) including type-level constraint verification
   src/types/config.ts: "Created configuration type definitions including LogLevel,
@@ -149,7 +150,7 @@ affectedFiles:
     dev dependencies; Added pino and pino-pretty dependencies; Added @types/ws
     as a dev dependency (ws was already installed); Added uiohook-napi
     dependency (via npm install); Added electron-store ^11.0.2 as dependency
-    (via npm install); Added keytar dependency.
+    (via npm install); Added keytar dependency.; Added groq-sdk dependency
   src/utils/error-recovery.ts: Created error recovery utilities with
     retryWithBackoff(), withFallback(), withFallbackSync(),
     getRecoveryStrategy(), and isRetryable() functions
@@ -239,7 +240,8 @@ affectedFiles:
     module.; Added export for hotkey-manager module; Added export for
     input-state service module; Added export for audio-capture service; Added
     export for config-manager module; Added export for config-manager module;
-    Added export for credential-manager module.
+    Added export for credential-manager module.; Updated to export the new
+    stt-service module
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -247,7 +249,8 @@ affectedFiles:
     applyContentRedaction (all content fields, nested objects, arrays,
     null/undefined handling), and Logger Privacy Integration tests.
   package-lock.json: Updated with new dependencies; Updated with electron-store
-    and its dependencies; Updated lockfile with keytar and its dependencies.
+    and its dependencies; Updated lockfile with keytar and its dependencies.;
+    Updated with groq-sdk and its dependencies
   src/ipc/log-handler.ts: Created new module with createLogMessageHandler() and
     processLogMessage() functions for handling renderer log messages with
     payload validation and context enrichment
@@ -602,6 +605,25 @@ affectedFiles:
   src/onboarding/components/CompleteStep.tsx: Created completion step with
     configuration summary, status icons, and Finish button that sets
     firstRunCompleted
+  src/types/stt.ts: Created new file with SttCloudProvider type, SttResult
+    interface, ISttBackend interface, SttService interface, and type guards
+    (isSttBackendType, isSttCloudProvider, isSttResult)
+  src/services/stt-backends/groq-backend.ts: Created Groq Whisper API backend
+    implementation with ISttBackend interface, error handling, timeout
+    configuration, and privacy-aware logging
+  src/services/stt-backends/groq-backend.test.ts: Created comprehensive unit tests
+    for GroqSttBackend covering initialization, availability, transcription, and
+    error scenarios with mock-based API testing
+  src/services/stt-service.ts: Created main STT service singleton with
+    SttServiceImpl class implementing SttService interface. Includes
+    initializeSttService(), getSttService(), resetSttService() functions,
+    SttServiceError class, and backend factory function that creates
+    GroqSttBackend for cloud mode.
+  src/services/stt-backends/index.ts: Created barrel export file for STT backends,
+    exporting GroqSttBackend and GroqSttError from groq-backend.ts
+  src/services/stt-service.test.ts: Created comprehensive unit tests covering
+    singleton initialization, backend selection (cloud vs local), transcription
+    delegation, getActiveBackend, isReady, and SttServiceError class
 log: []
 schema: v1.0
 childrenIds:
