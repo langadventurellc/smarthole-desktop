@@ -1,7 +1,7 @@
 ---
 id: F-routing-ipc-input-pipeline
 title: Routing IPC & Input Pipeline Integration
-status: in-progress
+status: done
 priority: high
 parent: E-intelligent-routing-agent
 prerequisites:
@@ -21,17 +21,21 @@ affectedFiles:
     popupState.textInput.on('submitted') handler to route messages through
     RoutingAgentService instead of logging a TODO comment. Added async IIFE
     pattern with try-catch for proper error handling when routing services
-    aren't initialized.
+    aren't initialized.; Replaced TODO comment in transcriptionReady event
+    handler with actual routing logic that calls
+    RoutingAgentService.routeMessage() with voice source and voice-specific
+    metadata
   src/ipc/routing-handlers.test.ts: Created new test file with 16 unit tests
     covering success cases, error handling, validation, and edge cases for both
     handlers
   src/types/ipc.test.ts: Updated channel count test to 46 and added test for routing channels
-log: []
+log:
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
+  - T-implement-routing-ipc-handlers
   - T-wire-stt-pipeline-to-routing
   - T-wire-text-input-popup-to
-  - T-implement-routing-ipc-handlers
 created: 2026-02-01T01:57:40.172Z
 updated: 2026-02-01T01:57:40.172Z
 ---

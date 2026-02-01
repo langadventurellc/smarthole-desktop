@@ -1,7 +1,7 @@
 ---
 id: P-smarthole-mvp-desktop-command
 title: SmartHole MVP - Desktop Command Hub
-status: in-progress
+status: done
 priority: medium
 parent: none
 prerequisites: []
@@ -243,7 +243,10 @@ affectedFiles:
     handlers; Updated popupState.textInput.on('submitted') handler to route
     messages through RoutingAgentService instead of logging a TODO comment.
     Added async IIFE pattern with try-catch for proper error handling when
-    routing services aren't initialized."
+    routing services aren't initialized.; Replaced TODO comment in
+    transcriptionReady event handler with actual routing logic that calls
+    RoutingAgentService.routeMessage() with voice source and voice-specific
+    metadata"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -716,7 +719,8 @@ affectedFiles:
   src/ipc/routing-handlers.test.ts: Created new test file with 16 unit tests
     covering success cases, error handling, validation, and edge cases for both
     handlers
-log: []
+log:
+  - "Auto-completed: All child epics are complete"
 schema: v1.0
 childrenIds:
   - E-configuration-user-experience

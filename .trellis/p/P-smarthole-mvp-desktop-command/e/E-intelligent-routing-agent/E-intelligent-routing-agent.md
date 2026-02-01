@@ -1,7 +1,7 @@
 ---
 id: E-intelligent-routing-agent
 title: Intelligent Routing Agent
-status: in-progress
+status: done
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
@@ -80,12 +80,16 @@ affectedFiles:
     popupState.textInput.on('submitted') handler to route messages through
     RoutingAgentService instead of logging a TODO comment. Added async IIFE
     pattern with try-catch for proper error handling when routing services
-    aren't initialized.
+    aren't initialized.; Replaced TODO comment in transcriptionReady event
+    handler with actual routing logic that calls
+    RoutingAgentService.routeMessage() with voice source and voice-specific
+    metadata
   src/ipc/routing-handlers.test.ts: Created new test file with 16 unit tests
     covering success cases, error handling, validation, and edge cases for both
     handlers
   src/types/ipc.test.ts: Updated channel count test to 46 and added test for routing channels
-log: []
+log:
+  - "Auto-completed: All child features are complete"
 schema: v1.0
 childrenIds:
   - F-anthropic-api-client-tool

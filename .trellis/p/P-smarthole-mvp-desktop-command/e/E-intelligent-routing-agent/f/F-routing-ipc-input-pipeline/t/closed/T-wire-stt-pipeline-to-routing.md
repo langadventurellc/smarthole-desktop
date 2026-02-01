@@ -1,13 +1,50 @@
 ---
 id: T-wire-stt-pipeline-to-routing
 title: Wire STT pipeline to routing service
-status: open
+status: done
 priority: high
 parent: F-routing-ipc-input-pipeline
 prerequisites:
   - T-implement-routing-ipc-handlers
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/main.ts: Replaced TODO comment in transcriptionReady event handler with
+    actual routing logic that calls RoutingAgentService.routeMessage() with
+    voice source and voice-specific metadata
+log:
+  - >-
+    Started implementation. Research findings:
+
+    - The transcriptionReady handler is at lines 996-1003 in main.ts
+
+    - Text input popup routing pattern already implemented at lines 908-940
+    using async IIFE with try-catch
+
+    - getRoutingAgent already imported in main.ts (line 111)
+
+    - TranscriptionReadyEvent provides: text, confidence (optional),
+    audioMetadata (durationMs, startedAt, stoppedAt), sttMetadata (backendUsed,
+    processingTimeMs)
+
+
+    Plan:
+
+    1. Replace the TODO comment with routing logic following the text input
+    pattern
+
+    2. Pass voice-specific metadata: audioDurationMs, confidence, sttBackend,
+    sttProcessingTimeMs
+
+    3. Use async IIFE pattern with try-catch for error handling
+
+    4. Log routing outcomes appropriately
+  - Wired STT pipeline transcription output to the routing service. When
+    transcription completes via the transcriptionReady event, the transcribed
+    text is now automatically routed through the RoutingAgentService with source
+    set to "voice" and voice-specific metadata including audioDurationMs,
+    confidence, sttBackend, and sttProcessingTimeMs. The implementation follows
+    the same async IIFE pattern used for text input routing, with proper error
+    handling and logging for all routing outcomes (success, no_clients,
+    routing_failed).
 schema: v1.0
 childrenIds: []
 created: 2026-02-01T05:17:42.477Z

@@ -992,14 +992,47 @@ app.whenReady().then(async () => {
       });
   });
 
-  // Wire STT pipeline transcription ready event for downstream routing
+  // Wire STT pipeline transcription ready event to routing agent
   sttPipelineState.sttPipeline.on("transcriptionReady", (event) => {
-    logger.info("Transcription ready for routing", {
+    logger.info("Transcription complete, routing voice message", {
       textLength: event.text.length,
       backend: event.sttMetadata.backendUsed,
       processingTimeMs: event.sttMetadata.processingTimeMs,
     });
-    // TODO: Route to message processing in future task
+
+    // Route the message asynchronously (fire and forget pattern with internal error handling)
+    (async () => {
+      try {
+        const routingAgent = getRoutingAgent();
+        const outcome = await routingAgent.routeMessage({
+          message: event.text,
+          source: "voice",
+          metadata: {
+            audioDurationMs: event.audioMetadata.durationMs,
+            confidence: event.confidence,
+            sttBackend: event.sttMetadata.backendUsed,
+            sttProcessingTimeMs: event.sttMetadata.processingTimeMs,
+          },
+        });
+
+        if (outcome.type === "no_clients") {
+          // User notification already handled by routing agent
+          logger.info("No clients available for voice routing");
+        } else if (outcome.type === "routing_failed") {
+          // User notification already handled by routing agent
+          logger.warn("Voice routing failed", { error: outcome.error });
+        } else {
+          logger.info("Voice message routed successfully", {
+            deliveryCount: outcome.deliveries.length,
+          });
+        }
+      } catch (error) {
+        // This catches errors from getRoutingAgent() if routing services weren't initialized
+        logger.error("Failed to route voice message", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    })();
   });
 
   // Initialize routing services (RoutingApi and ToolGenerator are dependencies of RoutingAgent)
