@@ -17,6 +17,18 @@ affectedFiles:
     ToolGeneratorService interfaces and type guards
   src/types/index.ts: Added export for routing module
   src/utils/error-messages.ts: Added user-facing messages for routing error codes
+  src/services/tool-generator.ts: Created new file implementing
+    ToolGeneratorService - generates tools from ClientRegistry, caches with
+    event-driven invalidation, maintains tool name to client name mapping
+  src/services/routing-api.ts: Created new file implementing RoutingApiService -
+    wraps Anthropic SDK for Claude Haiku routing, handles errors and rate limit
+    retries
+  src/services/tool-generator.test.ts: Created comprehensive test suite for tool
+    generator - sanitization, generation, caching, event invalidation, client
+    name resolution
+  src/services/routing-api.test.ts: Created comprehensive test suite for routing
+    API - initialization, message routing, error handling, retry logic
+  src/services/index.ts: Added exports for tool-generator and routing-api modules
 log: []
 schema: v1.0
 childrenIds:

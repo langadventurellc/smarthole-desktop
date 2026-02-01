@@ -248,7 +248,7 @@ affectedFiles:
     input-state service module; Added export for audio-capture service; Added
     export for config-manager module; Added export for config-manager module;
     Added export for credential-manager module.; Updated to export the new
-    stt-service module
+    stt-service module; Added exports for tool-generator and routing-api modules
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -651,6 +651,17 @@ affectedFiles:
   src/types/routing.ts: Created new file with RoutingTool, RoutingDecision,
     RoutingError, RoutingResult, RoutingRequestParams, RoutingApiService,
     ToolGeneratorService interfaces and type guards
+  src/services/tool-generator.ts: Created new file implementing
+    ToolGeneratorService - generates tools from ClientRegistry, caches with
+    event-driven invalidation, maintains tool name to client name mapping
+  src/services/routing-api.ts: Created new file implementing RoutingApiService -
+    wraps Anthropic SDK for Claude Haiku routing, handles errors and rate limit
+    retries
+  src/services/tool-generator.test.ts: Created comprehensive test suite for tool
+    generator - sanitization, generation, caching, event invalidation, client
+    name resolution
+  src/services/routing-api.test.ts: Created comprehensive test suite for routing
+    API - initialization, message routing, error handling, retry logic
 log: []
 schema: v1.0
 childrenIds:

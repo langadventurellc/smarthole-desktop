@@ -19,3 +19,5 @@ export * from "./audio-capture";
 export * from "./config-manager";
 export * from "./credential-manager";
 export * from "./stt-service";
+export * from "./tool-generator";
+export * from "./routing-api";
