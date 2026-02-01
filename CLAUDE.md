@@ -39,7 +39,7 @@ src/
 ├── onboarding/          # First-run onboarding wizard UI (React)
 ├── background/          # Hidden background window for audio capture (no UI)
 ├── audio/               # Renderer-side audio capture (Web Audio API, WAV encoding)
-├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state, audio-capture, config-manager, credential-manager, stt-service, stt-pipeline)
+├── services/            # Core services (logger, notifications, websocket, registry, message-delivery, hotkey-manager, input-state, audio-capture, config-manager, credential-manager, stt-service, stt-pipeline, tool-generator, routing-api)
 ├── windows/             # Window management (text-input-popup, settings-window, onboarding-window, background-window)
 ├── ipc/                 # IPC handlers for main/renderer communication
 └── types/               # TypeScript type definitions
@@ -90,6 +90,7 @@ src/
 - [Settings Window](docs/settings-window.md) - React settings UI, tab navigation, input components
 - [Onboarding System](docs/onboarding-system.md) - first-run wizard, permission requests, setup flow
 - [STT Service](docs/stt-service.md) - speech-to-text service, Groq Whisper backend, backend abstraction
+- [Routing API](docs/routing-api.md) - Anthropic Claude routing, tool generation, message routing decisions
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements
 
 ## IMPORTANT RULES ABOUT SPAWN SUBAGENT TASKS

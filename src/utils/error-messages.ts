@@ -90,6 +90,18 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.LLM_REQUEST_FAILED]:
     "Could not process your request. Please check your settings and try again.",
   [ErrorCode.LLM_RESPONSE_INVALID]: "Received an invalid response. Please try again.",
+
+  // -------------------------------------------------------------------------
+  // Routing errors
+  // Note: User messages should NOT mention "routing" or "API" - it's technical jargon
+  // -------------------------------------------------------------------------
+
+  [ErrorCode.ROUTING_API_KEY_MISSING]: "Missing credentials. Please add your key in Settings.",
+  [ErrorCode.ROUTING_REQUEST_FAILED]:
+    "Could not process your request. Please check your connection and try again.",
+  [ErrorCode.ROUTING_RATE_LIMITED]: "Too many requests. Please wait a moment and try again.",
+  [ErrorCode.ROUTING_NO_CLIENTS]:
+    "No plugins connected. Please connect a plugin to receive messages.",
 };
 
 // ============================================================================
