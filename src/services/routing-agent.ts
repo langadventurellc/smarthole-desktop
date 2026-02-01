@@ -10,30 +10,51 @@
  * 2. Try direct routing pattern (e.g., "notebook: remember this")
  * 3. If no direct match, use LLM routing via RoutingApiService
  * 4. Deliver messages via MessageDeliveryService
+ *
+ * Rejection handling:
+ * - Subscribes to MessageDeliveryService rejection events
+ * - Tracks rejection history per message
+ * - Re-routes with excluded clients and rejection context
+ * - Notifies user when all clients reject
  */
 
+import { EventEmitter } from "events";
 import { getLogger, Logger } from "./logger";
 import { getClientRegistry, ClientRegistryService } from "./client-registry";
 import { getRoutingApi } from "./routing-api";
 import { getToolGenerator } from "./tool-generator";
 import { getMessageDelivery, MessageDeliveryService } from "./message-delivery";
+import { getNotificationService, NotificationService } from "./notifications";
 import { tryDirectRoute } from "./direct-routing";
 import {
   RoutingAgentService as IRoutingAgentService,
+  RoutingAgentEvents,
   RoutingApiService,
   ToolGeneratorService,
   RoutingOutcome,
   DeliveryInfo,
   RoutedMessage,
   InputMethod,
+  RejectionHistory,
+  RejectionRecord,
   createMessageId,
   createTimestamp,
   isRoutingSuccess,
+  MessageId,
 } from "../types";
 
 // ============================================================================
 // Constants
 // ============================================================================
+
+/** Maximum number of rejections before giving up on routing a message */
+const MAX_REJECTIONS = 3;
+
+/** Time-to-live for rejection history entries in milliseconds (5 minutes) */
+const REJECTION_HISTORY_TTL_MS = 5 * 60 * 1000;
+
+/** Interval for cleaning up stale rejection history entries (1 minute) */
+const CLEANUP_INTERVAL_MS = 60 * 1000;
 
 /**
  * System prompt for the routing LLM.
@@ -63,20 +84,47 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
   private readonly routingApi: RoutingApiService;
   private readonly toolGenerator: ToolGeneratorService;
   private readonly messageDelivery: MessageDeliveryService;
+  private readonly notificationService: NotificationService;
+  private readonly emitter: EventEmitter;
+
+  /** Rejection history tracking, keyed by messageId */
+  private readonly rejectionHistory: Map<string, RejectionHistory> = new Map();
+
+  /** Bound rejection handler for cleanup */
+  private readonly rejectionHandlerBound: (
+    messageId: MessageId,
+    clientName: string,
+    reason: string
+  ) => void;
+
+  /** Interval for cleaning up stale history entries */
+  private cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     registry: ClientRegistryService,
     routingApi: RoutingApiService,
     toolGenerator: ToolGeneratorService,
-    messageDelivery: MessageDeliveryService
+    messageDelivery: MessageDeliveryService,
+    notificationService: NotificationService
   ) {
     this.logger = getLogger().child({ component: "RoutingAgent" });
     this.registry = registry;
     this.routingApi = routingApi;
     this.toolGenerator = toolGenerator;
     this.messageDelivery = messageDelivery;
+    this.notificationService = notificationService;
+    this.emitter = new EventEmitter();
 
-    this.logger.debug("RoutingAgent initialized");
+    // Bind and subscribe to rejection events
+    this.rejectionHandlerBound = this.handleRejection.bind(this);
+    this.messageDelivery.on("response:reject", this.rejectionHandlerBound);
+
+    // Start cleanup interval
+    this.cleanupIntervalId = setInterval(() => {
+      this.cleanupStaleHistory();
+    }, CLEANUP_INTERVAL_MS);
+
+    this.logger.debug("RoutingAgent initialized with rejection handling");
   }
 
   async routeMessage(params: {
@@ -113,7 +161,13 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
         clientName: directResult.clientName,
         source,
       });
-      return this.deliverDirectRouted(directResult.clientName, directResult.message, source);
+      return this.deliverDirectRouted(
+        directResult.clientName,
+        directResult.message,
+        source,
+        message,
+        metadata
+      );
     }
 
     // Step 3: Use LLM routing
@@ -130,9 +184,21 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
   private deliverDirectRouted(
     clientName: string,
     messageContent: string,
-    source: InputMethod
+    source: InputMethod,
+    originalMessage: string,
+    metadata?: Record<string, unknown>
   ): RoutingOutcome {
     const routedMessage = this.createRoutedMessage(messageContent, source, true);
+
+    // Store routing context for potential rejection handling
+    this.rejectionHistory.set(routedMessage.id, {
+      messageId: routedMessage.id,
+      originalMessage,
+      source,
+      metadata,
+      rejections: [],
+      createdAt: createTimestamp(),
+    });
 
     const result = this.messageDelivery.sendToClient(clientName, routedMessage);
 
@@ -142,6 +208,13 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
         messageId: routedMessage.id,
         error: result.error,
       });
+      // Clean up rejection history since delivery failed
+      this.rejectionHistory.delete(routedMessage.id);
+      this.emitter.emit(
+        "routing:failed",
+        routedMessage.id,
+        `Failed to deliver message to ${clientName}: ${result.error}`
+      );
       return {
         type: "routing_failed",
         error: `Failed to deliver message to ${clientName}: ${result.error}`,
@@ -161,6 +234,9 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
       source,
     });
 
+    // Emit success event
+    this.emitter.emit("routing:success", routedMessage.id, clientName, false);
+
     return {
       type: "routed",
       deliveries: [deliveryInfo],
@@ -173,7 +249,7 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
   private async routeViaLlm(
     message: string,
     source: InputMethod,
-    _metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>
   ): Promise<RoutingOutcome> {
     // Generate tools from registered clients
     const tools = this.toolGenerator.generateTools();
@@ -203,6 +279,7 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
         errorCode: routingResult.error.code,
         errorMessage: routingResult.error.message,
       });
+      this.emitter.emit("routing:failed", "unknown", routingResult.error.message);
       return {
         type: "routing_failed",
         error: routingResult.error.message,
@@ -213,6 +290,7 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
     // If no routing decisions were made, return failure
     if (routingResult.decisions.length === 0) {
       this.logger.warn("LLM returned no routing decisions");
+      this.emitter.emit("routing:failed", "unknown", "No routing decisions were made");
       return {
         type: "routing_failed",
         error: "No routing decisions were made by the routing agent",
@@ -231,6 +309,16 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
         decision.reason
       );
 
+      // Store routing context for potential rejection handling
+      this.rejectionHistory.set(routedMessage.id, {
+        messageId: routedMessage.id,
+        originalMessage: message,
+        source,
+        metadata,
+        rejections: [],
+        createdAt: createTimestamp(),
+      });
+
       const result = this.messageDelivery.sendToClient(decision.clientName, routedMessage);
 
       if (result.success) {
@@ -246,18 +334,24 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
           messageId: routedMessage.id,
           reason: decision.reason,
         });
+
+        // Emit success event
+        this.emitter.emit("routing:success", routedMessage.id, decision.clientName, false);
       } else {
         this.logger.warn("LLM routing delivery failed", {
           clientName: decision.clientName,
           messageId: routedMessage.id,
           error: result.error,
         });
+        // Clean up rejection history for failed delivery
+        this.rejectionHistory.delete(routedMessage.id);
         // Continue delivering to other clients even if one fails
       }
     }
 
     // If all deliveries failed, return failure
     if (deliveries.length === 0) {
+      this.emitter.emit("routing:failed", "unknown", "All message deliveries failed");
       return {
         type: "routing_failed",
         error: "All message deliveries failed",
@@ -297,6 +391,254 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
       },
     };
   }
+
+  // ==========================================================================
+  // Rejection Handling Methods
+  // ==========================================================================
+
+  /**
+   * Handle a rejection event from MessageDeliveryService.
+   * Records the rejection and triggers re-routing if within limits.
+   */
+  private handleRejection(messageId: MessageId, clientName: string, reason: string): void {
+    this.logger.debug("Handling rejection", { messageId, clientName, reason });
+
+    const history = this.rejectionHistory.get(messageId);
+    if (!history) {
+      // No history for this message - it may have been cleaned up or wasn't tracked
+      this.logger.warn("Received rejection for unknown message", { messageId, clientName });
+      return;
+    }
+
+    // Add the rejection to history
+    const rejection: RejectionRecord = {
+      clientName,
+      reason,
+      rejectedAt: createTimestamp(),
+    };
+    history.rejections.push(rejection);
+
+    this.logger.info("Recorded rejection", {
+      messageId,
+      clientName,
+      reason,
+      totalRejections: history.rejections.length,
+    });
+
+    // Check if we've hit the maximum rejection limit
+    const availableClientCount = this.registry.getClientCount();
+    const effectiveMaxRejections = Math.min(MAX_REJECTIONS, availableClientCount);
+
+    if (history.rejections.length >= effectiveMaxRejections) {
+      this.handleAllClientsRejected(messageId, history);
+      return;
+    }
+
+    // Attempt re-routing
+    this.reRouteMessage(messageId, history).catch((error) => {
+      this.logger.error("Re-routing failed", {
+        messageId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      this.emitter.emit("routing:failed", messageId, "Re-routing failed unexpectedly");
+    });
+  }
+
+  /**
+   * Re-route a message after rejection, excluding clients that already rejected.
+   */
+  private async reRouteMessage(messageId: string, history: RejectionHistory): Promise<void> {
+    const rejectedClients = history.rejections.map((r) => r.clientName);
+
+    this.logger.debug("Re-routing message", {
+      messageId,
+      excludeClients: rejectedClients,
+    });
+
+    // Build rejection context for the LLM
+    const rejectionContext = history.rejections
+      .map((r) => `Routed to "${r.clientName}" but they rejected because: "${r.reason}"`)
+      .join("\n");
+
+    // Generate tools excluding rejected clients
+    const tools = this.toolGenerator.generateToolsExcluding(rejectedClients);
+
+    if (tools.length === 0) {
+      this.logger.warn("No clients available after exclusions", { messageId });
+      this.handleAllClientsRejected(messageId, history);
+      return;
+    }
+
+    // Call the routing API with exclusion context
+    const routingResult = await this.routingApi.routeMessage({
+      userMessage: history.originalMessage,
+      tools,
+      systemPrompt: ROUTING_SYSTEM_PROMPT,
+      excludeClients: rejectedClients,
+      rejectionContext: `Previous routing attempts failed:\n${rejectionContext}\nPlease route to a different, more appropriate plugin.`,
+    });
+
+    if (!isRoutingSuccess(routingResult)) {
+      this.logger.error("LLM re-routing failed", {
+        messageId,
+        errorCode: routingResult.error.code,
+        errorMessage: routingResult.error.message,
+      });
+      this.emitter.emit("routing:failed", messageId, routingResult.error.message);
+      this.rejectionHistory.delete(messageId);
+      return;
+    }
+
+    // If no routing decisions were made, treat as all rejected
+    if (routingResult.decisions.length === 0) {
+      this.logger.warn("LLM returned no routing decisions on re-route", { messageId });
+      this.handleAllClientsRejected(messageId, history);
+      return;
+    }
+
+    // Deliver to the new client(s)
+    let successfulDelivery = false;
+    for (const decision of routingResult.decisions) {
+      // Skip if this client already rejected
+      if (rejectedClients.includes(decision.clientName)) {
+        this.logger.warn("LLM suggested already-rejected client", {
+          messageId,
+          clientName: decision.clientName,
+        });
+        continue;
+      }
+
+      const routedMessage = this.createRoutedMessage(
+        decision.message,
+        history.source,
+        false,
+        decision.reason
+      );
+
+      // Update the history with the new message ID for tracking
+      this.rejectionHistory.delete(messageId);
+      this.rejectionHistory.set(routedMessage.id, {
+        ...history,
+        messageId: routedMessage.id,
+      });
+
+      const result = this.messageDelivery.sendToClient(decision.clientName, routedMessage);
+
+      if (result.success) {
+        successfulDelivery = true;
+        this.logger.info("Re-routing delivery succeeded", {
+          originalMessageId: messageId,
+          newMessageId: routedMessage.id,
+          clientName: decision.clientName,
+          reason: decision.reason,
+        });
+        this.emitter.emit("routing:success", routedMessage.id, decision.clientName, true);
+      } else {
+        this.logger.warn("Re-routing delivery failed", {
+          messageId: routedMessage.id,
+          clientName: decision.clientName,
+          error: result.error,
+        });
+      }
+    }
+
+    if (!successfulDelivery) {
+      this.handleAllClientsRejected(messageId, history);
+    }
+  }
+
+  /**
+   * Handle the case when all available clients have rejected a message.
+   * Notifies the user and cleans up tracking state.
+   */
+  private handleAllClientsRejected(messageId: string, history: RejectionHistory): void {
+    this.logger.warn("All clients rejected message", {
+      messageId,
+      rejectionCount: history.rejections.length,
+      rejections: history.rejections.map((r) => ({
+        client: r.clientName,
+        reason: r.reason,
+      })),
+    });
+
+    // Build notification body with rejection details
+    const rejectionSummary = history.rejections
+      .map((r) => `- ${r.clientName}: ${r.reason}`)
+      .join("\n");
+
+    // Notify the user
+    this.notificationService.showWarning(
+      "Unable to route message",
+      `No plugin could handle your message.\n\nTried:\n${rejectionSummary}`
+    );
+
+    // Emit the routing:rejected event
+    this.emitter.emit("routing:rejected", messageId, history.rejections);
+
+    // Clean up
+    this.rejectionHistory.delete(messageId);
+  }
+
+  /**
+   * Clean up stale rejection history entries that have exceeded the TTL.
+   */
+  private cleanupStaleHistory(): void {
+    const now = Date.now();
+    let cleanedCount = 0;
+
+    for (const [messageId, history] of this.rejectionHistory.entries()) {
+      const createdAt = new Date(history.createdAt).getTime();
+      if (now - createdAt > REJECTION_HISTORY_TTL_MS) {
+        this.rejectionHistory.delete(messageId);
+        cleanedCount++;
+      }
+    }
+
+    if (cleanedCount > 0) {
+      this.logger.debug("Cleaned up stale rejection history", { count: cleanedCount });
+    }
+  }
+
+  /**
+   * Clean up resources and unsubscribe from events.
+   * Called during service reset.
+   */
+  cleanup(): void {
+    // Unsubscribe from rejection events
+    this.messageDelivery.off("response:reject", this.rejectionHandlerBound);
+
+    // Clear the cleanup interval
+    if (this.cleanupIntervalId) {
+      clearInterval(this.cleanupIntervalId);
+      this.cleanupIntervalId = null;
+    }
+
+    // Clear rejection history
+    this.rejectionHistory.clear();
+
+    // Remove all event listeners
+    this.emitter.removeAllListeners();
+
+    this.logger.debug("RoutingAgent cleaned up");
+  }
+
+  // ==========================================================================
+  // Event Subscription Methods
+  // ==========================================================================
+
+  /**
+   * Subscribe to routing events.
+   */
+  on<K extends keyof RoutingAgentEvents>(event: K, listener: RoutingAgentEvents[K]): void {
+    this.emitter.on(event, listener);
+  }
+
+  /**
+   * Unsubscribe from routing events.
+   */
+  off<K extends keyof RoutingAgentEvents>(event: K, listener: RoutingAgentEvents[K]): void {
+    this.emitter.off(event, listener);
+  }
 }
 
 // ============================================================================
@@ -326,12 +668,14 @@ export function initializeRoutingAgent(): IRoutingAgentService {
   const routingApi = getRoutingApi();
   const toolGenerator = getToolGenerator();
   const messageDelivery = getMessageDelivery();
+  const notificationService = getNotificationService();
 
   routingAgentInstance = new RoutingAgentServiceImpl(
     registry,
     routingApi,
     toolGenerator,
-    messageDelivery
+    messageDelivery,
+    notificationService
   );
   return routingAgentInstance;
 }
@@ -357,5 +701,8 @@ export function getRoutingAgent(): IRoutingAgentService {
  * This should not be used in production code.
  */
 export function resetRoutingAgent(): void {
+  if (routingAgentInstance) {
+    routingAgentInstance.cleanup();
+  }
   routingAgentInstance = null;
 }

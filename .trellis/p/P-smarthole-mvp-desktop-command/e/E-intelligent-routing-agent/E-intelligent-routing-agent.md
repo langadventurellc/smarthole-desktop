@@ -17,7 +17,10 @@ affectedFiles:
     ToolGeneratorService interfaces and type guards; Added DeliveryInfo
     interface, RoutingOutcome discriminated union, RoutingAgentService
     interface, DirectRouteResult interface, and type guards (isDeliveryInfo,
-    isRoutingOutcome, isDirectRouteResult)
+    isRoutingOutcome, isDirectRouteResult); Added RejectionRecord,
+    RejectionHistory, and RoutingAgentEvents interfaces. Extended
+    RoutingAgentService interface with on() and off() event subscription
+    methods.
   src/types/index.ts: Added export for routing module
   src/utils/error-messages.ts: Added user-facing messages for routing error codes
   src/services/tool-generator.ts: Created new file implementing
@@ -43,10 +46,16 @@ affectedFiles:
     pattern matching scenarios and edge cases
   src/services/routing-agent.ts: Created new RoutingAgent service with singleton
     pattern, system prompt, direct routing integration, LLM routing integration,
-    and message delivery
+    and message delivery; Extended RoutingAgentServiceImpl with rejection
+    history tracking, re-routing logic, event emission, and cleanup
+    functionality. Added NotificationService dependency. Implemented
+    handleRejection(), reRouteMessage(), handleAllClientsRejected(),
+    cleanupStaleHistory(), cleanup(), on(), and off() methods.
   src/services/routing-agent.test.ts: Added 19 comprehensive tests for
     initialization, no clients scenario, direct routing, LLM routing, error
-    handling, message metadata, and source handling
+    handling, message metadata, and source handling; Added tests for rejection
+    handling and routing events. Added NotificationService initialization. Added
+    tests for event subscription/unsubscription and typed event handlers.
 log: []
 schema: v1.0
 childrenIds:

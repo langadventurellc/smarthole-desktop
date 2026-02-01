@@ -15,8 +15,13 @@ import {
   getClientRegistry,
 } from "./client-registry";
 import { initializeRoutingApi, resetRoutingApi } from "./routing-api";
-import { initializeMessageDelivery, resetMessageDelivery } from "./message-delivery";
-import { LogLevel, RoutingAgentService, createClientId } from "../types";
+import {
+  initializeMessageDelivery,
+  resetMessageDelivery,
+  getMessageDelivery,
+} from "./message-delivery";
+import { initializeNotificationService, resetNotificationService } from "./notifications";
+import { LogLevel, RoutingAgentService, RejectionRecord, createClientId } from "../types";
 
 // Mock WebSocket for client registration
 function createMockWebSocket(): WebSocket {
@@ -35,6 +40,13 @@ vi.mock("keytar", () => ({
     setPassword: vi.fn(),
     getPassword: vi.fn(),
     deletePassword: vi.fn(),
+  },
+}));
+
+// Mock Electron's Notification
+vi.mock("electron", () => ({
+  Notification: {
+    isSupported: vi.fn(() => true),
   },
 }));
 
@@ -132,6 +144,7 @@ describe("RoutingAgent", () => {
     initializeToolGenerator();
     initializeRoutingApi();
     initializeMessageDelivery();
+    initializeNotificationService();
     routingAgent = initializeRoutingAgent();
   });
 
@@ -142,6 +155,7 @@ describe("RoutingAgent", () => {
     resetToolGenerator();
     resetClientRegistry();
     resetCredentialManager();
+    resetNotificationService();
     resetLogger();
   });
 
@@ -545,6 +559,789 @@ describe("RoutingAgent", () => {
 
       const sentMessage = JSON.parse(mockSend.mock.calls[0][0]);
       expect(sentMessage.payload.metadata.inputMethod).toBe("voice");
+    });
+  });
+
+  describe("rejection handling", () => {
+    beforeEach(() => {
+      // Register test clients
+      const registry = getClientRegistry();
+      registry.register(
+        createClientId("client-1"),
+        { name: "notebook", description: "A notebook for notes" },
+        createMockWebSocket()
+      );
+      registry.register(
+        createClientId("client-2"),
+        { name: "calendar", description: "A calendar app for scheduling" },
+        createMockWebSocket()
+      );
+      registry.register(
+        createClientId("client-3"),
+        { name: "tasks", description: "A task manager" },
+        createMockWebSocket()
+      );
+    });
+
+    /**
+     * Helper to simulate a rejection response from a client.
+     * This triggers the MessageDeliveryService to emit a response:reject event,
+     * which the RoutingAgent listens to.
+     */
+    function simulateRejection(messageId: string, clientName: string, reason: string): void {
+      const messageDelivery = getMessageDelivery();
+      const registry = getClientRegistry();
+      const client = registry.getClient(clientName);
+
+      if (!client) {
+        throw new Error(`Client ${clientName} not found`);
+      }
+
+      // Create a properly formatted rejection response
+      const responseMessage = JSON.stringify({
+        type: "response",
+        payload: {
+          messageId,
+          type: "reject",
+          payload: { reason },
+        },
+      });
+
+      // Process the response through the message delivery service
+      messageDelivery.handleResponse(Buffer.from(responseMessage), {
+        connectionId: client.id,
+      });
+    }
+
+    it("records rejection and triggers re-routing to a different client", async () => {
+      // First route to notebook
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_notebook", "Test message")])
+      );
+
+      const notebookSend = vi.fn();
+      const registry = getClientRegistry();
+      const notebookClient = registry.getClient("notebook");
+      if (notebookClient) {
+        notebookClient.connection.send = notebookSend;
+      }
+
+      await routingAgent.routeMessage({
+        message: "Remember this for me",
+        source: "text",
+      });
+
+      // Get the message ID from the sent message
+      const sentMessage = JSON.parse(notebookSend.mock.calls[0][0]);
+      const messageId = sentMessage.payload.id;
+
+      // Set up mock for re-routing to calendar
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_calendar", "Test message")])
+      );
+
+      const calendarSend = vi.fn();
+      const calendarClient = registry.getClient("calendar");
+      if (calendarClient) {
+        calendarClient.connection.send = calendarSend;
+      }
+
+      // Set up success handler to verify re-route
+      const successHandler = vi.fn();
+      routingAgent.on("routing:success", successHandler);
+
+      // Simulate rejection from notebook
+      simulateRejection(messageId, "notebook", "I cannot handle this request");
+
+      // Wait for async re-routing to complete
+      await vi.waitFor(() => {
+        expect(calendarSend).toHaveBeenCalled();
+      });
+
+      // Verify re-routing success event was emitted with isReRoute=true
+      expect(successHandler).toHaveBeenCalledWith(
+        expect.any(String), // new messageId
+        "calendar", // new client
+        true // isReRoute
+      );
+
+      routingAgent.off("routing:success", successHandler);
+    });
+
+    it("excludes rejected clients from re-routing options", async () => {
+      // First route to notebook
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_notebook", "Test message")])
+      );
+
+      const notebookSend = vi.fn();
+      const registry = getClientRegistry();
+      const notebookClient = registry.getClient("notebook");
+      if (notebookClient) {
+        notebookClient.connection.send = notebookSend;
+      }
+
+      await routingAgent.routeMessage({
+        message: "Remember this",
+        source: "text",
+      });
+
+      const sentMessage = JSON.parse(notebookSend.mock.calls[0][0]);
+      const messageId = sentMessage.payload.id;
+
+      // Set up mock for re-routing - capture the API call to verify exclusions
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_calendar", "Test message")])
+      );
+
+      // Simulate rejection
+      simulateRejection(messageId, "notebook", "Cannot handle");
+
+      // Wait for re-routing API call
+      await vi.waitFor(() => {
+        expect(mockCreate).toHaveBeenCalledTimes(2);
+      });
+
+      // Verify the re-routing API call included rejection context
+      const reRoutingCall = mockCreate.mock.calls[1][0];
+      expect(reRoutingCall.messages[0].content).toContain("notebook");
+      expect(reRoutingCall.messages[0].content).toContain("Cannot handle");
+    });
+
+    it("enforces maximum rejection limit (MAX_REJECTIONS = 3)", async () => {
+      // First route to notebook
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_notebook", "Test message")])
+      );
+
+      const notebookSend = vi.fn();
+      const registry = getClientRegistry();
+      const notebookClient = registry.getClient("notebook");
+      if (notebookClient) {
+        notebookClient.connection.send = notebookSend;
+      }
+
+      await routingAgent.routeMessage({
+        message: "Remember this",
+        source: "text",
+      });
+
+      let currentMessageId = JSON.parse(notebookSend.mock.calls[0][0]).payload.id;
+
+      // Set up handlers
+      const rejectedHandler = vi.fn();
+      routingAgent.on("routing:rejected", rejectedHandler);
+
+      // First rejection -> re-route to calendar
+      const calendarSend = vi.fn();
+      const calendarClient = registry.getClient("calendar");
+      if (calendarClient) {
+        calendarClient.connection.send = calendarSend;
+      }
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_calendar", "Test message")])
+      );
+
+      simulateRejection(currentMessageId, "notebook", "Rejection 1");
+
+      await vi.waitFor(() => {
+        expect(calendarSend).toHaveBeenCalled();
+      });
+      currentMessageId = JSON.parse(calendarSend.mock.calls[0][0]).payload.id;
+
+      // Second rejection -> re-route to tasks
+      const tasksSend = vi.fn();
+      const tasksClient = registry.getClient("tasks");
+      if (tasksClient) {
+        tasksClient.connection.send = tasksSend;
+      }
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_tasks", "Test message")])
+      );
+
+      simulateRejection(currentMessageId, "calendar", "Rejection 2");
+
+      await vi.waitFor(() => {
+        expect(tasksSend).toHaveBeenCalled();
+      });
+      currentMessageId = JSON.parse(tasksSend.mock.calls[0][0]).payload.id;
+
+      // Third rejection -> should trigger all-clients-rejected (MAX_REJECTIONS = 3)
+      simulateRejection(currentMessageId, "tasks", "Rejection 3");
+
+      // Wait for routing:rejected event
+      await vi.waitFor(() => {
+        expect(rejectedHandler).toHaveBeenCalled();
+      });
+
+      // Verify routing:rejected was called with all 3 rejections
+      expect(rejectedHandler).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          expect.objectContaining({ clientName: "notebook", reason: "Rejection 1" }),
+          expect.objectContaining({ clientName: "calendar", reason: "Rejection 2" }),
+          expect.objectContaining({ clientName: "tasks", reason: "Rejection 3" }),
+        ])
+      );
+
+      routingAgent.off("routing:rejected", rejectedHandler);
+    });
+
+    it("triggers all-clients-rejected when no more clients available", async () => {
+      // Unregister all but one client
+      const registry = getClientRegistry();
+      registry.unregister("calendar", "unregister");
+      registry.unregister("tasks", "unregister");
+
+      // Route to notebook (only client)
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_notebook", "Test message")])
+      );
+
+      const notebookSend = vi.fn();
+      const notebookClient = registry.getClient("notebook");
+      if (notebookClient) {
+        notebookClient.connection.send = notebookSend;
+      }
+
+      await routingAgent.routeMessage({
+        message: "Test",
+        source: "text",
+      });
+
+      const messageId = JSON.parse(notebookSend.mock.calls[0][0]).payload.id;
+
+      const rejectedHandler = vi.fn();
+      routingAgent.on("routing:rejected", rejectedHandler);
+
+      // Single rejection should trigger all-clients-rejected since only 1 client exists
+      simulateRejection(messageId, "notebook", "Cannot handle");
+
+      await vi.waitFor(() => {
+        expect(rejectedHandler).toHaveBeenCalled();
+      });
+
+      expect(rejectedHandler).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          expect.objectContaining({ clientName: "notebook", reason: "Cannot handle" }),
+        ])
+      );
+
+      routingAgent.off("routing:rejected", rejectedHandler);
+    });
+
+    it("cleans up rejection history after all clients reject", async () => {
+      // Register only one client to quickly reach all-rejected state
+      const registry = getClientRegistry();
+      registry.unregister("calendar", "unregister");
+      registry.unregister("tasks", "unregister");
+
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_notebook", "Test message")])
+      );
+
+      const notebookSend = vi.fn();
+      const notebookClient = registry.getClient("notebook");
+      if (notebookClient) {
+        notebookClient.connection.send = notebookSend;
+      }
+
+      await routingAgent.routeMessage({
+        message: "Test",
+        source: "text",
+      });
+
+      const messageId = JSON.parse(notebookSend.mock.calls[0][0]).payload.id;
+
+      const rejectedHandler = vi.fn();
+      routingAgent.on("routing:rejected", rejectedHandler);
+
+      // Reject - should trigger cleanup
+      simulateRejection(messageId, "notebook", "Cannot handle");
+
+      await vi.waitFor(() => {
+        expect(rejectedHandler).toHaveBeenCalled();
+      });
+
+      // Try to simulate another rejection for the same message - should be ignored
+      // because history was cleaned up
+      mockCreate.mockClear();
+      simulateRejection(messageId, "notebook", "Second rejection");
+
+      // No re-routing should be attempted since history is gone
+      // Wait a bit and verify no new API calls
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(mockCreate).not.toHaveBeenCalled();
+
+      routingAgent.off("routing:rejected", rejectedHandler);
+    });
+
+    it("cleans up rejection history after successful re-route", async () => {
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_notebook", "Test message")])
+      );
+
+      const notebookSend = vi.fn();
+      const registry = getClientRegistry();
+      const notebookClient = registry.getClient("notebook");
+      if (notebookClient) {
+        notebookClient.connection.send = notebookSend;
+      }
+
+      await routingAgent.routeMessage({
+        message: "Test",
+        source: "text",
+      });
+
+      const originalMessageId = JSON.parse(notebookSend.mock.calls[0][0]).payload.id;
+
+      // Set up successful re-route to calendar
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_calendar", "Test message")])
+      );
+
+      const calendarSend = vi.fn();
+      const calendarClient = registry.getClient("calendar");
+      if (calendarClient) {
+        calendarClient.connection.send = calendarSend;
+      }
+
+      // Reject from notebook
+      simulateRejection(originalMessageId, "notebook", "Cannot handle");
+
+      await vi.waitFor(() => {
+        expect(calendarSend).toHaveBeenCalled();
+      });
+
+      // The old message ID history should be removed
+      // Try to reject from the OLD message ID - should be ignored
+      mockCreate.mockClear();
+      simulateRejection(originalMessageId, "notebook", "Late rejection");
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      // No new routing calls since the original message ID's history was removed
+      expect(mockCreate).not.toHaveBeenCalled();
+    });
+
+    it("emits routing:success event on successful routing", async () => {
+      // Clear any prior mock state and set up fresh mock
+      mockCreate.mockReset();
+      mockCreate.mockResolvedValue(
+        createMockResponse([createToolUseBlock("route_to_notebook", "Test message")])
+      );
+
+      const successHandler = vi.fn();
+      routingAgent.on("routing:success", successHandler);
+
+      await routingAgent.routeMessage({
+        message: "Remember this",
+        source: "text",
+      });
+
+      expect(successHandler).toHaveBeenCalledWith(
+        expect.any(String), // messageId
+        "notebook", // clientName
+        false // isReRoute
+      );
+
+      routingAgent.off("routing:success", successHandler);
+    });
+
+    it("emits routing:failed event when LLM routing fails", async () => {
+      mockCreate.mockRejectedValue(new Error("API error"));
+
+      const failedHandler = vi.fn();
+      routingAgent.on("routing:failed", failedHandler);
+
+      await routingAgent.routeMessage({
+        message: "Test message",
+        source: "text",
+      });
+
+      expect(failedHandler).toHaveBeenCalledWith(
+        expect.any(String), // messageId
+        expect.stringContaining("API") // error message
+      );
+
+      routingAgent.off("routing:failed", failedHandler);
+    });
+
+    it("emits routing:success for direct routing", async () => {
+      const successHandler = vi.fn();
+      routingAgent.on("routing:success", successHandler);
+
+      await routingAgent.routeMessage({
+        message: "notebook: Remember this",
+        source: "text",
+      });
+
+      expect(successHandler).toHaveBeenCalledWith(
+        expect.any(String), // messageId
+        "notebook", // clientName
+        false // isReRoute (direct routing is not a re-route)
+      );
+
+      routingAgent.off("routing:success", successHandler);
+    });
+
+    it("emits routing:failed when re-routing API call fails", async () => {
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_notebook", "Test message")])
+      );
+
+      const notebookSend = vi.fn();
+      const registry = getClientRegistry();
+      const notebookClient = registry.getClient("notebook");
+      if (notebookClient) {
+        notebookClient.connection.send = notebookSend;
+      }
+
+      await routingAgent.routeMessage({
+        message: "Test",
+        source: "text",
+      });
+
+      const messageId = JSON.parse(notebookSend.mock.calls[0][0]).payload.id;
+
+      // Set up re-routing to fail
+      mockCreate.mockRejectedValueOnce(new Error("Re-routing API failed"));
+
+      const failedHandler = vi.fn();
+      routingAgent.on("routing:failed", failedHandler);
+
+      simulateRejection(messageId, "notebook", "Cannot handle");
+
+      await vi.waitFor(() => {
+        expect(failedHandler).toHaveBeenCalled();
+      });
+
+      expect(failedHandler).toHaveBeenCalledWith(messageId, expect.stringContaining("API"));
+
+      routingAgent.off("routing:failed", failedHandler);
+    });
+  });
+
+  describe("routing events", () => {
+    beforeEach(() => {
+      const registry = getClientRegistry();
+      registry.register(
+        createClientId("client-1"),
+        { name: "notebook", description: "A notebook for notes" },
+        createMockWebSocket()
+      );
+    });
+
+    it("allows subscribing to routing:success events", async () => {
+      mockCreate.mockResolvedValue(
+        createMockResponse([createToolUseBlock("route_to_notebook", "Test")])
+      );
+
+      const handler = vi.fn();
+      routingAgent.on("routing:success", handler);
+
+      await routingAgent.routeMessage({
+        message: "Test",
+        source: "text",
+      });
+
+      expect(handler).toHaveBeenCalled();
+      routingAgent.off("routing:success", handler);
+    });
+
+    it("allows unsubscribing from events", async () => {
+      mockCreate.mockResolvedValue(
+        createMockResponse([createToolUseBlock("route_to_notebook", "Test")])
+      );
+
+      const handler = vi.fn();
+      routingAgent.on("routing:success", handler);
+      routingAgent.off("routing:success", handler);
+
+      await routingAgent.routeMessage({
+        message: "Test",
+        source: "text",
+      });
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it("emits routing:failed when all deliveries fail", async () => {
+      // Make the socket closed so delivery fails
+      const registry = getClientRegistry();
+      registry.unregister("notebook", "unregister");
+
+      const closedSocket = createMockWebSocket();
+      (closedSocket as unknown as { readyState: number }).readyState = WebSocket.CLOSED;
+
+      registry.register(
+        createClientId("client-broken"),
+        { name: "broken", description: "A broken client" },
+        closedSocket
+      );
+
+      mockCreate.mockResolvedValue(
+        createMockResponse([createToolUseBlock("route_to_broken", "Test")])
+      );
+
+      const failedHandler = vi.fn();
+      routingAgent.on("routing:failed", failedHandler);
+
+      await routingAgent.routeMessage({
+        message: "Test",
+        source: "text",
+      });
+
+      expect(failedHandler).toHaveBeenCalledWith("unknown", "All message deliveries failed");
+
+      routingAgent.off("routing:failed", failedHandler);
+    });
+
+    it("supports routing:rejected event subscription", () => {
+      const handler = vi.fn();
+      routingAgent.on("routing:rejected", handler);
+      // Just verify we can subscribe without error
+      expect(() => routingAgent.off("routing:rejected", handler)).not.toThrow();
+    });
+
+    it("supports typed event handlers", () => {
+      // Test that TypeScript type inference works for event handlers
+      const successHandler = (messageId: string, clientName: string, isReRoute: boolean) => {
+        expect(typeof messageId).toBe("string");
+        expect(typeof clientName).toBe("string");
+        expect(typeof isReRoute).toBe("boolean");
+      };
+
+      const rejectedHandler = (messageId: string, rejections: RejectionRecord[]) => {
+        expect(typeof messageId).toBe("string");
+        expect(Array.isArray(rejections)).toBe(true);
+      };
+
+      const failedHandler = (messageId: string, error: string) => {
+        expect(typeof messageId).toBe("string");
+        expect(typeof error).toBe("string");
+      };
+
+      // These should compile without error
+      routingAgent.on("routing:success", successHandler);
+      routingAgent.on("routing:rejected", rejectedHandler);
+      routingAgent.on("routing:failed", failedHandler);
+
+      routingAgent.off("routing:success", successHandler);
+      routingAgent.off("routing:rejected", rejectedHandler);
+      routingAgent.off("routing:failed", failedHandler);
+    });
+  });
+
+  describe("rejection history cleanup", () => {
+    beforeEach(() => {
+      const registry = getClientRegistry();
+      registry.register(
+        createClientId("client-1"),
+        { name: "notebook", description: "A notebook for notes" },
+        createMockWebSocket()
+      );
+      registry.register(
+        createClientId("client-2"),
+        { name: "calendar", description: "A calendar app" },
+        createMockWebSocket()
+      );
+    });
+
+    it("cleans up stale rejection history entries after TTL expires", async () => {
+      // This test verifies that the cleanup interval properly removes stale entries.
+      // We use fake timers and carefully manage the MessageDelivery timeout to avoid interference.
+      vi.useFakeTimers();
+
+      // Reset services with fake timers active so cleanup interval uses fake timers
+      resetRoutingAgent();
+      resetMessageDelivery();
+
+      // Re-initialize services with fake timers
+      initializeMessageDelivery();
+      routingAgent = initializeRoutingAgent();
+
+      try {
+        // Route a message to create a rejection history entry
+        mockCreate.mockResolvedValueOnce(
+          createMockResponse([createToolUseBlock("route_to_notebook", "Test message")])
+        );
+
+        const notebookSend = vi.fn();
+        const registry = getClientRegistry();
+        const notebookClient = registry.getClient("notebook");
+        if (notebookClient) {
+          notebookClient.connection.send = notebookSend;
+        }
+
+        await routingAgent.routeMessage({
+          message: "Test message",
+          source: "text",
+        });
+
+        const messageId = JSON.parse(notebookSend.mock.calls[0][0]).payload.id;
+
+        // Immediately send an ack response to cancel the message delivery timeout timer
+        // This prevents the MessageDeliveryService from emitting a timeout rejection
+        const messageDelivery = getMessageDelivery();
+        const ackResponse = JSON.stringify({
+          type: "response",
+          payload: {
+            messageId,
+            type: "ack",
+            payload: {},
+          },
+        });
+        messageDelivery.handleResponse(Buffer.from(ackResponse), {
+          connectionId: notebookClient!.id,
+        });
+
+        // Clear mock call history
+        mockCreate.mockClear();
+
+        // Advance time past the TTL (5 minutes) + cleanup interval (1 minute)
+        // This triggers the cleanup interval which removes stale entries
+        await vi.advanceTimersByTimeAsync(6 * 60 * 1000); // 6 minutes
+
+        // Now try to simulate a rejection for the old message
+        // It should be ignored because the history was cleaned up by the TTL cleanup
+        const rejectResponse = JSON.stringify({
+          type: "response",
+          payload: {
+            messageId,
+            type: "reject",
+            payload: { reason: "Late rejection after cleanup" },
+          },
+        });
+
+        messageDelivery.handleResponse(Buffer.from(rejectResponse), {
+          connectionId: notebookClient!.id,
+        });
+
+        // Give any potential async operations time to complete
+        await vi.advanceTimersByTimeAsync(100);
+
+        // No re-routing should be triggered because the history was cleaned up
+        expect(mockCreate).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("does not clean up recent rejection history entries", async () => {
+      // Use fake timers
+      vi.useFakeTimers();
+
+      try {
+        // Route a message
+        mockCreate.mockResolvedValueOnce(
+          createMockResponse([createToolUseBlock("route_to_notebook", "Test message")])
+        );
+
+        const notebookSend = vi.fn();
+        const registry = getClientRegistry();
+        const notebookClient = registry.getClient("notebook");
+        if (notebookClient) {
+          notebookClient.connection.send = notebookSend;
+        }
+
+        await routingAgent.routeMessage({
+          message: "Test message",
+          source: "text",
+        });
+
+        const messageId = JSON.parse(notebookSend.mock.calls[0][0]).payload.id;
+
+        // Advance time but not past TTL (only 2 minutes, TTL is 5 minutes)
+        vi.advanceTimersByTime(2 * 60 * 1000);
+
+        // Set up re-routing mock
+        mockCreate.mockResolvedValueOnce(
+          createMockResponse([createToolUseBlock("route_to_calendar", "Test message")])
+        );
+
+        const calendarSend = vi.fn();
+        const calendarClient = registry.getClient("calendar");
+        if (calendarClient) {
+          calendarClient.connection.send = calendarSend;
+        }
+
+        // Simulate rejection - should still work because history is recent
+        const messageDelivery = getMessageDelivery();
+        const responseMessage = JSON.stringify({
+          type: "response",
+          payload: {
+            messageId,
+            type: "reject",
+            payload: { reason: "Cannot handle" },
+          },
+        });
+
+        messageDelivery.handleResponse(Buffer.from(responseMessage), {
+          connectionId: notebookClient!.id,
+        });
+
+        // Wait for async re-routing
+        await vi.advanceTimersByTimeAsync(100);
+
+        // Re-routing should have been triggered
+        expect(mockCreate).toHaveBeenCalled();
+        expect(calendarSend).toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("cleans up resources on reset", async () => {
+      // Route a message to create history
+      mockCreate.mockResolvedValueOnce(
+        createMockResponse([createToolUseBlock("route_to_notebook", "Test message")])
+      );
+
+      const notebookSend = vi.fn();
+      const registry = getClientRegistry();
+      const notebookClient = registry.getClient("notebook");
+      if (notebookClient) {
+        notebookClient.connection.send = notebookSend;
+      }
+
+      await routingAgent.routeMessage({
+        message: "Test message",
+        source: "text",
+      });
+
+      const messageId = JSON.parse(notebookSend.mock.calls[0][0]).payload.id;
+
+      // Reset the routing agent (this calls cleanup)
+      resetRoutingAgent();
+
+      // Re-initialize for subsequent tests
+      routingAgent = initializeRoutingAgent();
+
+      // Try to simulate rejection for the old message ID
+      mockCreate.mockClear();
+
+      const messageDelivery = getMessageDelivery();
+      const responseMessage = JSON.stringify({
+        type: "response",
+        payload: {
+          messageId,
+          type: "reject",
+          payload: { reason: "After reset" },
+        },
+      });
+
+      // Get fresh client reference after re-initialization
+      const freshNotebookClient = registry.getClient("notebook");
+      if (freshNotebookClient) {
+        messageDelivery.handleResponse(Buffer.from(responseMessage), {
+          connectionId: freshNotebookClient.id,
+        });
+      }
+
+      // No re-routing should happen because history was cleared on reset
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(mockCreate).not.toHaveBeenCalled();
     });
   });
 });
