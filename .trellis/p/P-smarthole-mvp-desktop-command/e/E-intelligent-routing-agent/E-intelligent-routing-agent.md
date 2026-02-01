@@ -31,10 +31,15 @@ affectedFiles:
     name resolution
   src/services/routing-api.test.ts: Created comprehensive test suite for routing
     API - initialization, message routing, error handling, retry logic
-  src/services/index.ts: Added exports for tool-generator and routing-api modules
+  src/services/index.ts: Added exports for tool-generator and routing-api modules;
+    Added export for direct-routing module
   src/types/routing.test.ts: "Added comprehensive tests for new type guards:
     isDeliveryInfo (12 tests), isRoutingOutcome (17 tests across 3 variant
     groups), isDirectRouteResult (12 tests)"
+  src/services/direct-routing.ts: Created new service with tryDirectRoute()
+    function for direct routing pattern detection
+  src/services/direct-routing.test.ts: Added 38 comprehensive tests covering all
+    pattern matching scenarios and edge cases
 log: []
 schema: v1.0
 childrenIds:

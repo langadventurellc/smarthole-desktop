@@ -21,3 +21,4 @@ export * from "./credential-manager";
 export * from "./stt-service";
 export * from "./tool-generator";
 export * from "./routing-api";
+export * from "./direct-routing";

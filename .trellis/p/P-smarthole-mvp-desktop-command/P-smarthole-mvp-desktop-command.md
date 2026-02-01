@@ -248,7 +248,8 @@ affectedFiles:
     input-state service module; Added export for audio-capture service; Added
     export for config-manager module; Added export for config-manager module;
     Added export for credential-manager module.; Updated to export the new
-    stt-service module; Added exports for tool-generator and routing-api modules
+    stt-service module; Added exports for tool-generator and routing-api
+    modules; Added export for direct-routing module
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -668,6 +669,10 @@ affectedFiles:
   src/types/routing.test.ts: "Added comprehensive tests for new type guards:
     isDeliveryInfo (12 tests), isRoutingOutcome (17 tests across 3 variant
     groups), isDirectRouteResult (12 tests)"
+  src/services/direct-routing.ts: Created new service with tryDirectRoute()
+    function for direct routing pattern detection
+  src/services/direct-routing.test.ts: Added 38 comprehensive tests covering all
+    pattern matching scenarios and edge cases
 log: []
 schema: v1.0
 childrenIds:
