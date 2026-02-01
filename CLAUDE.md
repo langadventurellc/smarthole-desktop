@@ -93,6 +93,7 @@ src/
 - [STT Service](docs/stt-service.md) - speech-to-text service, Groq Whisper backend, backend abstraction
 - [Routing API](docs/routing-api.md) - Anthropic Claude routing, tool generation, message routing decisions
 - [Routing Agent](docs/routing-agent.md) - Message routing orchestration, direct routing, LLM routing
+- [Release Setup](docs/release-setup.md) - macOS code signing, notarization, GitHub Actions release workflow
 - [Living Spec](docs/smarthole-living-spec.md) - product vision and requirements
 
 ## IMPORTANT RULES ABOUT SPAWN SUBAGENT TASKS
