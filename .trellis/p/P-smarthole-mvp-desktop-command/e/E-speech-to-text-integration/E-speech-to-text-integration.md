@@ -1,7 +1,7 @@
 ---
 id: E-speech-to-text-integration
 title: Speech-to-Text Integration
-status: in-progress
+status: done
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
@@ -54,7 +54,8 @@ affectedFiles:
   src/preload/preload.ts: Added onSttTranscribing, onSttResult, onSttError event
     listeners to electronAPI
   src/types/ipc.test.ts: Added test for STT channels and updated channel count from 41 to 44
-log: []
+log:
+  - "Auto-completed: All child features are complete"
 schema: v1.0
 childrenIds:
   - F-local-whisper-backend

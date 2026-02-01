@@ -1,7 +1,7 @@
 ---
 id: F-local-whisper-backend
 title: Local Whisper Backend
-status: open
+status: wont-do
 priority: high
 parent: E-speech-to-text-integration
 prerequisites:
