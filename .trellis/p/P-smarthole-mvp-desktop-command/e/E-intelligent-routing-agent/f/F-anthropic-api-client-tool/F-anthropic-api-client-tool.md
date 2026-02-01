@@ -1,14 +1,25 @@
 ---
 id: F-anthropic-api-client-tool
 title: Anthropic API Client & Tool Generation
-status: open
+status: in-progress
 priority: high
 parent: E-intelligent-routing-agent
 prerequisites: []
-affectedFiles: {}
+affectedFiles:
+  package.json: Added @anthropic-ai/sdk dependency (^0.72.1)
+  package-lock.json: Updated with @anthropic-ai/sdk and its dependencies
+  src/types/errors.ts: Added ROUTING_API_KEY_MISSING, ROUTING_REQUEST_FAILED,
+    ROUTING_RATE_LIMITED, and ROUTING_NO_CLIENTS error codes
+  src/types/routing.ts: Created new file with RoutingTool, RoutingDecision,
+    RoutingError, RoutingResult, RoutingRequestParams, RoutingApiService,
+    ToolGeneratorService interfaces and type guards
+  src/types/index.ts: Added export for routing module
+  src/utils/error-messages.ts: Added user-facing messages for routing error codes
 log: []
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-implement-routing-api-and
+  - T-install-anthropic-sdk-and
 created: 2026-02-01T01:55:46.991Z
 updated: 2026-02-01T01:55:46.991Z
 ---

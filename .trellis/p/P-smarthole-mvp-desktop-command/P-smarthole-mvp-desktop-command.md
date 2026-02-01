@@ -18,7 +18,7 @@ affectedFiles:
     type export from preload module; Added export for errors.ts to barrel
     export; Added export for client-registry types; Added export for input types
     module; Added export for audio types module; Added export for the new stt.ts
-    module
+    module; Added export for routing module
   src/types/common.test.ts: Created comprehensive unit tests for all types and
     functions (37 tests) including type-level constraint verification
   src/types/config.ts: "Created configuration type definitions including LogLevel,
@@ -121,7 +121,8 @@ affectedFiles:
     and onConfigChanged unsubscribe functionality
   src/types/errors.ts: Created ErrorCode enum with all error codes, ErrorSeverity
     type, ERROR_SEVERITIES constant, and type guards (isErrorSeverity,
-    isErrorCode)
+    isErrorCode); Added ROUTING_API_KEY_MISSING, ROUTING_REQUEST_FAILED,
+    ROUTING_RATE_LIMITED, and ROUTING_NO_CLIENTS error codes
   src/utils/errors.ts: "Created AppError base class with toJSON/fromJSON methods,
     SerializedAppError interface, and subclasses: ConfigurationError,
     NetworkError, IpcError, ServiceError"
@@ -134,7 +135,7 @@ affectedFiles:
   src/utils/error-messages.ts: Created ERROR_MESSAGES constant mapping all
     ErrorCode values to user-friendly messages, getUserMessage() and
     getUserMessageSafe() helper functions, and re-exported isErrorCode type
-    guard
+    guard; Added user-facing messages for routing error codes
   src/utils/error-messages.test.ts: Created comprehensive test suite with 26 tests
     covering message completeness, quality (no jargon, actionable, concise),
     getUserMessage, getUserMessageSafe, and isErrorCode
@@ -154,7 +155,8 @@ affectedFiles:
     dev dependencies; Added pino and pino-pretty dependencies; Added @types/ws
     as a dev dependency (ws was already installed); Added uiohook-napi
     dependency (via npm install); Added electron-store ^11.0.2 as dependency
-    (via npm install); Added keytar dependency.; Added groq-sdk dependency
+    (via npm install); Added keytar dependency.; Added groq-sdk dependency;
+    Added @anthropic-ai/sdk dependency (^0.72.1)
   src/utils/error-recovery.ts: Created error recovery utilities with
     retryWithBackoff(), withFallback(), withFallbackSync(),
     getRecoveryStrategy(), and isRetryable() functions
@@ -255,7 +257,8 @@ affectedFiles:
     null/undefined handling), and Logger Privacy Integration tests.
   package-lock.json: Updated with new dependencies; Updated with electron-store
     and its dependencies; Updated lockfile with keytar and its dependencies.;
-    Updated with groq-sdk and its dependencies
+    Updated with groq-sdk and its dependencies; Updated with @anthropic-ai/sdk
+    and its dependencies
   src/ipc/log-handler.ts: Created new module with createLogMessageHandler() and
     processLogMessage() functions for handling renderer log messages with
     payload validation and context enrichment
@@ -645,6 +648,9 @@ affectedFiles:
   src/ipc/stt-handler.test.ts: Created test suite with 10 tests covering all broadcast functions
   src/preload/preload.ts: Added onSttTranscribing, onSttResult, onSttError event
     listeners to electronAPI
+  src/types/routing.ts: Created new file with RoutingTool, RoutingDecision,
+    RoutingError, RoutingResult, RoutingRequestParams, RoutingApiService,
+    ToolGeneratorService interfaces and type guards
 log: []
 schema: v1.0
 childrenIds:

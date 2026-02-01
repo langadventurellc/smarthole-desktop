@@ -1,0 +1,158 @@
+---
+id: T-implement-routing-api-and
+title: Implement routing API and tool generator services
+status: open
+priority: high
+parent: F-anthropic-api-client-tool
+prerequisites:
+  - T-install-anthropic-sdk-and
+affectedFiles: {}
+log: []
+schema: v1.0
+childrenIds: []
+created: 2026-02-01T02:03:49.902Z
+updated: 2026-02-01T02:03:49.902Z
+---
+
+# Implement Routing API and Tool Generator Services
+
+## Purpose
+
+Create the core services that wrap the Anthropic SDK and generate dynamic tools from the client registry. These services enable the intelligent routing system to use Claude Haiku for message routing decisions.
+
+## Scope
+
+### 1. Tool Generator Service (`src/services/tool-generator.ts`)
+
+Create a service that generates Claude tool definitions from registered clients:
+
+**Core Functionality:**
+
+- Generate tools from `ClientRegistry.getAllClients()`
+- Tool naming: `route_to_{sanitized_name}` where name is sanitized:
+  - Replace non-alphanumeric with underscores
+  - Ensure starts with letter (prepend `client_` if needed)
+  - Handle collisions with numeric suffix (unlikely given name validation)
+- Use client `description` as tool description
+- Each tool has `message` (required) and `reason` (optional) parameters
+
+**Caching Strategy:**
+
+- Cache generated tools to avoid regeneration on every request
+- Subscribe to registry `registered`/`unregistered` events
+- Invalidate cache on client changes (lazy regeneration on next request)
+- Maintain reverse mapping of tool name → client name
+
+**Interface:**
+
+```typescript
+interface ToolGeneratorService {
+  generateTools(): RoutingTool[];
+  generateToolsExcluding(clientNames: string[]): RoutingTool[];
+  resolveClientName(toolName: string): string | undefined;
+}
+```
+
+**Singleton Pattern:**
+
+- `initializeToolGenerator()` - Creates instance, subscribes to registry events
+- `getToolGenerator()` - Returns instance, throws if not initialized
+- `resetToolGenerator()` - Cleanup for tests
+
+### 2. Routing API Service (`src/services/routing-api.ts`)
+
+Create a service that invokes Claude Haiku for routing decisions:
+
+**Core Functionality:**
+
+- Retrieve API key from `CredentialManager` using `anthropic-api-key`
+- Create Anthropic client with the API key
+- Configure for Claude Haiku model (`claude-3-haiku-20240307`)
+- Parse tool use responses into `RoutingDecision[]`
+
+**Error Handling:**
+
+- Wrap API errors with meaningful context
+- Detect rate limit errors (429) and mark as retryable
+- Detect auth errors (401) with clear message about API key
+- Handle network failures gracefully
+
+**Retry Logic:**
+
+- Implement exponential backoff for rate limit errors
+- Start with 1 second delay, double each retry
+- Maximum 3 retries before failing
+- Only retry on rate limit (429), not on other errors
+
+**Interface:**
+
+```typescript
+interface RoutingApiService {
+  routeMessage(params: {
+    userMessage: string;
+    tools: RoutingTool[];
+    systemPrompt: string;
+    excludeClients?: string[];
+    rejectionContext?: string;
+  }): Promise<RoutingResult>;
+}
+```
+
+**Singleton Pattern:**
+
+- `initializeRoutingApi()` - Creates instance, verifies API key exists
+- `getRoutingApi()` - Returns instance, throws if not initialized
+- `resetRoutingApi()` - Cleanup for tests
+
+### 3. Service Exports
+
+Update `src/services/index.ts` to export both services.
+
+## Implementation Notes
+
+**Tool Generator Considerations:**
+
+- Client names are already validated (alphanumeric + hyphen/underscore, starts with letter)
+- But tool names cannot have hyphens, so replace with underscores
+- Cache invalidation is event-driven, not polling-based
+
+**Routing API Considerations:**
+
+- The Anthropic SDK handles most complexity internally
+- Need to parse `tool_use` content blocks from response
+- A single response may include multiple tool calls (multi-routing)
+- If response has no tool use, return empty decisions array
+
+**Logging:**
+
+- Log at debug level for routine operations
+- Log at info level for successful routing decisions
+- Log at error level for failures
+- Use child loggers with component names
+
+## Files to Create/Modify
+
+- `src/services/tool-generator.ts` - New file
+- `src/services/routing-api.ts` - New file
+- `src/services/index.ts` - Add exports
+
+## Testing Notes
+
+Both services should be testable with mocked dependencies:
+
+- Tool generator: Mock `getClientRegistry()`
+- Routing API: Mock Anthropic SDK and `getCredentialManager()`
+
+## Acceptance Criteria
+
+- [ ] Tool generator creates properly formatted tool definitions
+- [ ] Tool names are sanitized to valid function names (underscores, no hyphens)
+- [ ] Tool descriptions use client descriptions
+- [ ] Tool cache invalidates on client registry changes
+- [ ] Routing API retrieves API key from credential manager
+- [ ] Routing API invokes Claude Haiku with tools
+- [ ] API errors wrapped with meaningful context
+- [ ] Rate limit errors trigger exponential backoff retry (max 3 attempts)
+- [ ] Both services follow singleton pattern (initialize/get/reset)
+- [ ] Services exported from `src/services/index.ts`
+- [ ] `mise run quality` passes

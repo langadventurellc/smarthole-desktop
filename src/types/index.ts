@@ -20,6 +20,7 @@ export * from "./messages";
 export * from "./guards";
 export * from "./client-registry";
 export * from "./stt";
+export * from "./routing";
 
 // NOTE: ElectronAPI is NOT exported here to avoid bundling preload into main.
 // Import directly from "../preload/main" if needed in renderer code.

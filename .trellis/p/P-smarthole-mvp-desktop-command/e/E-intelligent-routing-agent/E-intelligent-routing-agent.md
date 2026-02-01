@@ -1,16 +1,30 @@
 ---
 id: E-intelligent-routing-agent
 title: Intelligent Routing Agent
-status: open
+status: in-progress
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
   - E-foundation-core-infrastructure
   - E-plugin-client-system
-affectedFiles: {}
+affectedFiles:
+  package.json: Added @anthropic-ai/sdk dependency (^0.72.1)
+  package-lock.json: Updated with @anthropic-ai/sdk and its dependencies
+  src/types/errors.ts: Added ROUTING_API_KEY_MISSING, ROUTING_REQUEST_FAILED,
+    ROUTING_RATE_LIMITED, and ROUTING_NO_CLIENTS error codes
+  src/types/routing.ts: Created new file with RoutingTool, RoutingDecision,
+    RoutingError, RoutingResult, RoutingRequestParams, RoutingApiService,
+    ToolGeneratorService interfaces and type guards
+  src/types/index.ts: Added export for routing module
+  src/utils/error-messages.ts: Added user-facing messages for routing error codes
 log: []
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - F-anthropic-api-client-tool
+  - F-rejection-handling-fallback
+  - F-routing-agent-core-logic
+  - F-routing-ipc-input-pipeline
+  - F-test-harness-plugin
 created: 2026-01-29T01:45:26.388Z
 updated: 2026-01-29T01:45:26.388Z
 ---

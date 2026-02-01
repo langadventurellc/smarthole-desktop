@@ -94,6 +94,22 @@ export enum ErrorCode {
 
   /** LLM response was invalid or malformed */
   LLM_RESPONSE_INVALID = "LLM_RESPONSE_INVALID",
+
+  // -------------------------------------------------------------------------
+  // Routing errors - for intelligent message routing
+  // -------------------------------------------------------------------------
+
+  /** API key not found in credential manager */
+  ROUTING_API_KEY_MISSING = "ROUTING_API_KEY_MISSING",
+
+  /** API request to Claude failed */
+  ROUTING_REQUEST_FAILED = "ROUTING_REQUEST_FAILED",
+
+  /** Hit rate limit (429), should trigger retry */
+  ROUTING_RATE_LIMITED = "ROUTING_RATE_LIMITED",
+
+  /** No clients available for routing */
+  ROUTING_NO_CLIENTS = "ROUTING_NO_CLIENTS",
 }
 
 // ============================================================================
