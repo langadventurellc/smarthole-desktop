@@ -245,6 +245,7 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
 
   /**
    * Route a message using the LLM routing API.
+   * If LLM routing fails, attempts direct routing as fallback.
    */
   private async routeViaLlm(
     message: string,
@@ -279,23 +280,27 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
         errorCode: routingResult.error.code,
         errorMessage: routingResult.error.message,
       });
-      this.emitter.emit("routing:failed", "unknown", routingResult.error.message);
-      return {
-        type: "routing_failed",
-        error: routingResult.error.message,
-        fallbackAttempted: false,
-      };
+
+      // Attempt fallback to direct routing
+      return this.attemptDirectRoutingFallback(
+        message,
+        source,
+        metadata,
+        `LLM routing failed: ${routingResult.error.message}`
+      );
     }
 
-    // If no routing decisions were made, return failure
+    // If no routing decisions were made, attempt fallback
     if (routingResult.decisions.length === 0) {
       this.logger.warn("LLM returned no routing decisions");
-      this.emitter.emit("routing:failed", "unknown", "No routing decisions were made");
-      return {
-        type: "routing_failed",
-        error: "No routing decisions were made by the routing agent",
-        fallbackAttempted: false,
-      };
+
+      // Attempt fallback to direct routing
+      return this.attemptDirectRoutingFallback(
+        message,
+        source,
+        metadata,
+        "No routing decisions were made by the routing agent"
+      );
     }
 
     // Deliver messages to each client
@@ -349,14 +354,14 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
       }
     }
 
-    // If all deliveries failed, return failure
+    // If all deliveries failed, attempt fallback
     if (deliveries.length === 0) {
-      this.emitter.emit("routing:failed", "unknown", "All message deliveries failed");
-      return {
-        type: "routing_failed",
-        error: "All message deliveries failed",
-        fallbackAttempted: false,
-      };
+      return this.attemptDirectRoutingFallback(
+        message,
+        source,
+        metadata,
+        "All message deliveries failed"
+      );
     }
 
     this.logger.info("LLM routing completed", {
@@ -368,6 +373,102 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
     return {
       type: "routed",
       deliveries,
+    };
+  }
+
+  /**
+   * Attempt direct routing as a fallback when LLM routing fails.
+   * Shows user notification if fallback also fails.
+   */
+  private attemptDirectRoutingFallback(
+    message: string,
+    source: InputMethod,
+    metadata: Record<string, unknown> | undefined,
+    originalError: string
+  ): RoutingOutcome {
+    this.logger.info("Attempting direct routing fallback", {
+      reason: originalError,
+      source,
+    });
+
+    // Get list of available client names for direct routing check
+    const clients = this.registry.getAllClients();
+    const clientNames = clients.map((c) => c.name);
+
+    // Try direct routing pattern matching
+    const directResult = tryDirectRoute(message, clientNames);
+
+    if (directResult) {
+      this.logger.info("Direct routing fallback found match", {
+        clientName: directResult.clientName,
+        source,
+      });
+
+      // Attempt to deliver via direct routing
+      const routedMessage = this.createRoutedMessage(directResult.message, source, true);
+
+      // Store routing context for potential rejection handling
+      this.rejectionHistory.set(routedMessage.id, {
+        messageId: routedMessage.id,
+        originalMessage: message,
+        source,
+        metadata,
+        rejections: [],
+        createdAt: createTimestamp(),
+      });
+
+      const result = this.messageDelivery.sendToClient(directResult.clientName, routedMessage);
+
+      if (result.success) {
+        const deliveryInfo: DeliveryInfo = {
+          clientName: directResult.clientName,
+          messageId: routedMessage.id,
+          directRouted: true,
+        };
+
+        this.logger.info("Direct routing fallback delivery succeeded", {
+          clientName: directResult.clientName,
+          messageId: routedMessage.id,
+          source,
+        });
+
+        // Emit success event
+        this.emitter.emit("routing:success", routedMessage.id, directResult.clientName, false);
+
+        return {
+          type: "routed",
+          deliveries: [deliveryInfo],
+        };
+      }
+
+      // Direct routing delivery failed
+      this.logger.error("Direct routing fallback delivery failed", {
+        clientName: directResult.clientName,
+        messageId: routedMessage.id,
+        error: result.error,
+      });
+
+      // Clean up rejection history since delivery failed
+      this.rejectionHistory.delete(routedMessage.id);
+    }
+
+    // No direct route found or delivery failed - notify user and emit failure event
+    this.logger.warn("Routing completely failed, notifying user", {
+      originalError,
+      fallbackAttempted: true,
+    });
+
+    this.notificationService.showWarning(
+      "Routing unavailable",
+      "Unable to determine the best plugin for your message. Please try again or use direct routing (e.g., 'notebook: your message')."
+    );
+
+    this.emitter.emit("routing:failed", "unknown", originalError);
+
+    return {
+      type: "routing_failed",
+      error: originalError,
+      fallbackAttempted: true,
     };
   }
 
