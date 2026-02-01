@@ -116,7 +116,7 @@ function createMockResponse(content: unknown[]): unknown {
     type: "message",
     role: "assistant",
     content,
-    model: "claude-3-haiku-20240307",
+    model: "claude-haiku-4-5",
     stop_reason: "end_turn",
     stop_sequence: null,
     usage: { input_tokens: 100, output_tokens: 50 },

@@ -86,7 +86,7 @@ export interface LlmConfig {
   provider: LlmProvider;
   /** API key for the LLM provider (stored securely in keychain) */
   apiKey?: string;
-  /** Model identifier (e.g., "claude-3-haiku-20240307") */
+  /** Model identifier (e.g., "claude-haiku-4-5") */
   model: string;
 }
 
@@ -175,7 +175,7 @@ export const DEFAULT_CONFIG: Readonly<AppConfig> = {
   },
   llm: {
     provider: "anthropic",
-    model: "claude-3-haiku-20240307",
+    model: "claude-haiku-4-5",
   },
   logLevel: LogLevel.INFO,
   logMessageContent: false,

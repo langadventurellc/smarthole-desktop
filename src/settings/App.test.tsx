@@ -15,7 +15,7 @@ const mockConfig: AppConfig = {
   },
   llm: {
     provider: "anthropic",
-    model: "claude-3-haiku-20240307",
+    model: "claude-haiku-4-5",
   },
   logLevel: "info",
   logMessageContent: false,
@@ -369,7 +369,7 @@ describe("Settings App", () => {
 
       const modelSelect = screen.getByLabelText("Model");
       expect(modelSelect).toBeInTheDocument();
-      expect(modelSelect).toHaveValue("claude-3-haiku-20240307");
+      expect(modelSelect).toHaveValue("claude-haiku-4-5");
     });
   });
 

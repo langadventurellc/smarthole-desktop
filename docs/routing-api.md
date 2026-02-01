@@ -1,10 +1,12 @@
 # Routing API
 
-Intelligent message routing using Claude Haiku to determine which registered clients should handle user requests.
+Intelligent message routing using Claude 4.5 Haiku to determine which registered clients should handle user requests.
 
 ## Overview
 
-The routing system uses Claude Haiku with tool calling to analyze user messages and route them to appropriate clients. Tools are dynamically generated from the client registry, and routing decisions include both the target client and the transformed message.
+The routing system uses Claude 4.5 Haiku (via the `claude-haiku-4-5` model alias) with tool calling to analyze user messages and route them to appropriate clients. Tools are dynamically generated from the client registry, and routing decisions include both the target client and the transformed message.
+
+> **Note**: The routing API uses Claude model aliases (e.g., `claude-haiku-4-5`) which automatically point to the latest model snapshots, ensuring you always use the most up-to-date version without code changes.
 
 > **Note**: This document covers the low-level routing API components. For the high-level orchestration layer that combines direct routing, LLM routing, and message delivery, see [Routing Agent](routing-agent.md).
 
@@ -16,7 +18,7 @@ User Message
      v
 +----------------+     +------------------+
 | RoutingApi     |---->| Anthropic SDK    |
-|                |     | (Claude Haiku)   |
+|                |     | (Claude 4.5)     |
 +----------------+     +------------------+
      |                        |
      v                        v
@@ -90,7 +92,7 @@ Each generated tool has:
 
 ### RoutingApi
 
-Wraps the Anthropic SDK to invoke Claude Haiku for routing decisions.
+Wraps the Anthropic SDK to invoke Claude 4.5 Haiku for routing decisions.
 
 #### Initialization
 

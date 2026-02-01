@@ -172,7 +172,7 @@ describe("DEFAULT_CONFIG", () => {
 
   it("should have the correct LLM configuration", () => {
     expect(DEFAULT_CONFIG.llm.provider).toBe("anthropic");
-    expect(DEFAULT_CONFIG.llm.model).toBe("claude-3-haiku-20240307");
+    expect(DEFAULT_CONFIG.llm.model).toBe("claude-haiku-4-5");
     expect(DEFAULT_CONFIG.llm.apiKey).toBeUndefined();
   });
 
@@ -228,17 +228,17 @@ describe("Type interfaces", () => {
     it("should allow valid configurations", () => {
       const config: LlmConfig = {
         provider: "anthropic",
-        model: "claude-3-haiku-20240307",
+        model: "claude-haiku-4-5",
         apiKey: "sk-ant-test",
       };
       expect(config.provider).toBe("anthropic");
-      expect(config.model).toBe("claude-3-haiku-20240307");
+      expect(config.model).toBe("claude-haiku-4-5");
     });
 
     it("should allow configuration without API key", () => {
       const config: LlmConfig = {
         provider: "anthropic",
-        model: "claude-3-haiku-20240307",
+        model: "claude-haiku-4-5",
       };
       expect(config.apiKey).toBeUndefined();
     });
@@ -287,11 +287,11 @@ describe("Type interfaces", () => {
           voiceInput: "Alt+Space",
         },
         llm: {
-          model: "claude-3-opus-20240229",
+          model: "claude-opus-4-5",
         },
       };
       expect(partial.hotkey?.voiceInput).toBe("Alt+Space");
-      expect(partial.llm?.model).toBe("claude-3-opus-20240229");
+      expect(partial.llm?.model).toBe("claude-opus-4-5");
     });
 
     it("should allow empty partial config", () => {
