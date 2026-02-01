@@ -79,6 +79,10 @@ smarthole-desktop/
 └── package.json
 ```
 
+## Building Releases
+
+For signed, notarized macOS builds for distribution, see [docs/release-setup.md](docs/release-setup.md).
+
 ## Technology Stack
 
 - **Electron** - Cross-platform desktop framework
