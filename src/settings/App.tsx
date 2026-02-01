@@ -33,7 +33,7 @@ const VOICE_MODE_OPTIONS = [
 ];
 
 const STT_BACKEND_OPTIONS = [
-  { value: "cloud", label: "Cloud (OpenAI Whisper API)" },
+  { value: "cloud", label: "Cloud (Groq Whisper API)" },
   { value: "local", label: "Local (Self-hosted Whisper)" },
 ];
 

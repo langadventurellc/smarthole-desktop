@@ -69,7 +69,10 @@ affectedFiles:
     payload/response maps; Added 4 new permission IPC channels
     (PERMISSION_CHECK_MICROPHONE, PERMISSION_REQUEST_MICROPHONE,
     PERMISSION_CHECK_ACCESSIBILITY, PERMISSION_OPEN_ACCESSIBILITY_SETTINGS) with
-    corresponding payload/response types in IpcPayloadMap and IpcResponseMap
+    corresponding payload/response types in IpcPayloadMap and IpcResponseMap;
+    Added STT IPC channels (STT_TRANSCRIBING, STT_RESULT, STT_ERROR),
+    SttTranscribingPayload interface, re-exported TranscriptionReadyEvent and
+    TranscriptionErrorEvent, added entries to IpcPayloadMap
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -85,7 +88,8 @@ affectedFiles:
     for audio capture channels, updated channel count from 26 to 32; Added test
     for credential channels and updated channel count from 32 to 35.; Updated
     channel count to 36 and added DIALOG_OPEN channel test; Updated channel
-    count assertion from 36 to 40
+    count assertion from 36 to 40; Added test for STT channels and updated
+    channel count from 41 to 44
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -224,7 +228,8 @@ affectedFiles:
     imports, onboardingState tracking, checkSetupIncomplete() function,
     initializeNormalOperation() function, and modified startup flow to detect
     first-run and show onboarding window. Integrated setupIncomplete state into
-    tray menu building."
+    tray menu building.; Wired STT pipeline to audioReady event and added
+    transcriptionReady listener for downstream routing"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -393,9 +398,11 @@ affectedFiles:
     interface, InputStateChangedEvent, InputModeChangedEvent, and
     InputStateEvents interface"
   src/services/input-state.ts: Created InputStateService with singleton pattern,
-    validated state machine, EventEmitter for events, mode tracking
+    validated state machine, EventEmitter for events, mode tracking; Added IDLE
+    -> PROCESSING valid transition for STT pipeline use case
   src/services/input-state.test.ts: Added unit tests for state machine
-    transitions, event emission, mode changes, and getStateInfo
+    transitions, event emission, mode changes, and getStateInfo; Updated tests
+    to reflect new valid IDLE -> PROCESSING transition
   src/ipc/hotkey-handler.ts: Created new IPC handler with
     broadcastHotkeyActivated, broadcastHotkeyReleased, and
     wireHotkeyManagerToIpc functions
@@ -607,7 +614,9 @@ affectedFiles:
     firstRunCompleted
   src/types/stt.ts: Created new file with SttCloudProvider type, SttResult
     interface, ISttBackend interface, SttService interface, and type guards
-    (isSttBackendType, isSttCloudProvider, isSttResult)
+    (isSttBackendType, isSttCloudProvider, isSttResult); Added
+    SttPipelineErrorCode, TranscriptionReadyEvent, TranscriptionErrorEvent,
+    SttPipelineEvents types and type guards
   src/services/stt-backends/groq-backend.ts: Created Groq Whisper API backend
     implementation with ISttBackend interface, error handling, timeout
     configuration, and privacy-aware logging
@@ -624,6 +633,18 @@ affectedFiles:
   src/services/stt-service.test.ts: Created comprehensive unit tests covering
     singleton initialization, backend selection (cloud vs local), transcription
     delegation, getActiveBackend, isReady, and SttServiceError class
+  src/services/stt-pipeline.ts: Created new STT pipeline service with
+    audio-to-transcription orchestration, error handling, and event emission;
+    Wired STT pipeline to emit IPC events via broadcast functions
+  src/services/stt-pipeline.test.ts: Created comprehensive test suite with 19
+    tests covering all scenarios; Added BrowserWindow mock to electron mock for
+    IPC integration
+  src/ipc/stt-handler.ts: Created new STT IPC handler with
+    broadcastSttTranscribing, broadcastSttResult, and broadcastSttError
+    functions
+  src/ipc/stt-handler.test.ts: Created test suite with 10 tests covering all broadcast functions
+  src/preload/preload.ts: Added onSttTranscribing, onSttResult, onSttError event
+    listeners to electronAPI
 log: []
 schema: v1.0
 childrenIds:

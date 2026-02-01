@@ -25,3 +25,10 @@ export {
   resetOnboardingWindow,
   type OnboardingWindowService,
 } from "./onboarding-window";
+
+export {
+  initializeBackgroundWindow,
+  getBackgroundWindow,
+  resetBackgroundWindow,
+  type BackgroundWindowService,
+} from "./background-window";

@@ -1,15 +1,41 @@
 ---
 id: F-stt-pipeline-integration
 title: STT Pipeline Integration
-status: open
+status: done
 priority: high
 parent: E-speech-to-text-integration
 prerequisites:
   - F-stt-service-core-cloud
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/stt.ts: Added SttPipelineErrorCode, TranscriptionReadyEvent,
+    TranscriptionErrorEvent, SttPipelineEvents types and type guards
+  src/services/stt-pipeline.ts: Created new STT pipeline service with
+    audio-to-transcription orchestration, error handling, and event emission;
+    Wired STT pipeline to emit IPC events via broadcast functions
+  src/services/stt-pipeline.test.ts: Created comprehensive test suite with 19
+    tests covering all scenarios; Added BrowserWindow mock to electron mock for
+    IPC integration
+  src/main.ts: Wired STT pipeline to audioReady event and added transcriptionReady
+    listener for downstream routing
+  src/services/input-state.ts: Added IDLE -> PROCESSING valid transition for STT pipeline use case
+  src/services/input-state.test.ts: Updated tests to reflect new valid IDLE -> PROCESSING transition
+  src/types/ipc.ts: Added STT IPC channels (STT_TRANSCRIBING, STT_RESULT,
+    STT_ERROR), SttTranscribingPayload interface, re-exported
+    TranscriptionReadyEvent and TranscriptionErrorEvent, added entries to
+    IpcPayloadMap
+  src/ipc/stt-handler.ts: Created new STT IPC handler with
+    broadcastSttTranscribing, broadcastSttResult, and broadcastSttError
+    functions
+  src/ipc/stt-handler.test.ts: Created test suite with 10 tests covering all broadcast functions
+  src/preload/preload.ts: Added onSttTranscribing, onSttResult, onSttError event
+    listeners to electronAPI
+  src/types/ipc.test.ts: Added test for STT channels and updated channel count from 41 to 44
+log:
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-add-stt-ipc-events-for
+  - T-create-stt-pipeline-service
 created: 2026-01-31T19:15:43.919Z
 updated: 2026-01-31T19:15:43.919Z
 ---

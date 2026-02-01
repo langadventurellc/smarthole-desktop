@@ -1,7 +1,7 @@
 ---
 id: E-speech-to-text-integration
 title: Speech-to-Text Integration
-status: in-progress
+status: done
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
@@ -10,7 +10,9 @@ prerequisites:
 affectedFiles:
   src/types/stt.ts: Created new file with SttCloudProvider type, SttResult
     interface, ISttBackend interface, SttService interface, and type guards
-    (isSttBackendType, isSttCloudProvider, isSttResult)
+    (isSttBackendType, isSttCloudProvider, isSttResult); Added
+    SttPipelineErrorCode, TranscriptionReadyEvent, TranscriptionErrorEvent,
+    SttPipelineEvents types and type guards
   src/types/index.ts: Added export for the new stt.ts module
   src/services/stt-backends/groq-backend.ts: Created Groq Whisper API backend
     implementation with ISttBackend interface, error handling, timeout
@@ -31,7 +33,29 @@ affectedFiles:
     singleton initialization, backend selection (cloud vs local), transcription
     delegation, getActiveBackend, isReady, and SttServiceError class
   src/services/index.ts: Updated to export the new stt-service module
-log: []
+  src/services/stt-pipeline.ts: Created new STT pipeline service with
+    audio-to-transcription orchestration, error handling, and event emission;
+    Wired STT pipeline to emit IPC events via broadcast functions
+  src/services/stt-pipeline.test.ts: Created comprehensive test suite with 19
+    tests covering all scenarios; Added BrowserWindow mock to electron mock for
+    IPC integration
+  src/main.ts: Wired STT pipeline to audioReady event and added transcriptionReady
+    listener for downstream routing
+  src/services/input-state.ts: Added IDLE -> PROCESSING valid transition for STT pipeline use case
+  src/services/input-state.test.ts: Updated tests to reflect new valid IDLE -> PROCESSING transition
+  src/types/ipc.ts: Added STT IPC channels (STT_TRANSCRIBING, STT_RESULT,
+    STT_ERROR), SttTranscribingPayload interface, re-exported
+    TranscriptionReadyEvent and TranscriptionErrorEvent, added entries to
+    IpcPayloadMap
+  src/ipc/stt-handler.ts: Created new STT IPC handler with
+    broadcastSttTranscribing, broadcastSttResult, and broadcastSttError
+    functions
+  src/ipc/stt-handler.test.ts: Created test suite with 10 tests covering all broadcast functions
+  src/preload/preload.ts: Added onSttTranscribing, onSttResult, onSttError event
+    listeners to electronAPI
+  src/types/ipc.test.ts: Added test for STT channels and updated channel count from 41 to 44
+log:
+  - "Auto-completed: All child features are complete"
 schema: v1.0
 childrenIds:
   - F-local-whisper-backend

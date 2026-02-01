@@ -30,8 +30,19 @@ The voice recording service provides:
 The service uses a split architecture:
 
 1. **Main process (`AudioCaptureService`)**: Coordinates recording state, checks permissions, emits events
-2. **Renderer process (`audio-capture.ts`)**: Actually captures audio using Web Audio API
-3. **IPC bridge**: Signals start/stop commands to renderer, receives audio data back
+2. **Background window (`src/background/`)**: Hidden BrowserWindow that stays alive to receive audio IPC events
+3. **Renderer audio module (`src/audio/`)**: Captures audio using Web Audio API in the background window
+4. **IPC bridge**: Broadcasts start/stop commands to all windows, receives audio data back
+
+### Background Window
+
+Since SmartHole runs as a tray app with no persistent visible windows, a hidden background window provides the renderer context needed for Web Audio API-based capture. The background window:
+
+- Is created at app startup (`initializeBackgroundWindow()`)
+- Stays hidden (`show: false`, `skipTaskbar: true`)
+- Listens for `audio:start` and `audio:stop` IPC events via preload
+- Uses `src/audio/audio-capture.ts` to record and encode audio
+- Sends captured audio back via `electronAPI.sendAudioData()`
 
 ## Services
 
@@ -89,16 +100,39 @@ const mode = audioCapture.getMode();
 | `stopped`   | Recording ended, waiting for audio data |
 | `error`     | An error occurred during capture        |
 
+### Background Window Manager (Main Process)
+
+Location: `src/windows/background-window.ts`
+
+Manages the hidden window lifecycle for audio capture.
+
+**Initialization:**
+
+```typescript
+import { initializeBackgroundWindow, getBackgroundWindow } from "./windows/background-window";
+
+// Inside app.whenReady(), before audio capture
+const backgroundWindow = initializeBackgroundWindow();
+
+// Check if ready (window loaded)
+if (backgroundWindow.isReady()) {
+  // Safe to start recording
+}
+
+// Wait for window to be ready
+await backgroundWindow.waitForReady();
+```
+
 ### Renderer Audio Capture Module
 
-Location: `src/renderer/audio-capture.ts`
+Location: `src/audio/audio-capture.ts`
 
 Captures microphone audio using Web Audio API and encodes to WAV format.
 
 **Functions:**
 
 ```typescript
-import * as audioCapture from "./renderer/audio-capture";
+import * as audioCapture from "./audio";
 
 // Check browser support
 if (audioCapture.isSupported()) {
@@ -315,12 +349,18 @@ The default configuration produces audio suitable for Whisper STT:
 Complete setup in `main.ts`:
 
 ```typescript
+import { initializeBackgroundWindow } from "./windows/background-window";
 import { initializeAudioCapture, getAudioCapture } from "./services/audio-capture";
 import {
   registerAudioHandlers,
   wireAudioCaptureToIpc,
   wireAudioCaptureToHotkey,
+  broadcastAudioStart,
+  broadcastAudioStop,
 } from "./ipc/audio-handler";
+
+// Initialize background window FIRST (needed for audio capture)
+const backgroundWindow = initializeBackgroundWindow();
 
 // Initialize the audio capture service
 const audioCapture = initializeAudioCapture();
@@ -340,6 +380,8 @@ audioCapture.on("audioReady", (event) => {
   console.log("Audio ready:", event.result.audio.durationMs, "ms");
 });
 ```
+
+**Important:** The background window must be initialized before audio capture to ensure there's a renderer to receive IPC events. Tray menu handlers must call `broadcastAudioStart()` and `broadcastAudioStop()` after calling the audio capture service methods.
 
 ## Error Handling
 

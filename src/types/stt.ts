@@ -138,6 +138,168 @@ export function isSttCloudProvider(value: unknown): value is SttCloudProvider {
   return typeof value === "string" && STT_CLOUD_PROVIDER_VALUES.has(value);
 }
 
+// ============================================================================
+// STT Pipeline Types
+// ============================================================================
+
+/**
+ * Error codes specific to the STT pipeline.
+ * Used for classifying errors during transcription processing.
+ */
+export type SttPipelineErrorCode =
+  | "NO_API_KEY"
+  | "NETWORK_ERROR"
+  | "RATE_LIMIT"
+  | "EMPTY_RESULT"
+  | "INVALID_AUDIO"
+  | "TRANSCRIPTION_FAILED";
+
+/**
+ * Event emitted when transcription completes successfully.
+ * Contains the transcribed text and metadata about the processing.
+ */
+export interface TranscriptionReadyEvent {
+  text: string;
+  /** Confidence score (0-1) if provided by the backend */
+  confidence?: number;
+  inputMethod: "voice";
+  audioMetadata: {
+    durationMs: number;
+    startedAt: string;
+    stoppedAt: string;
+  };
+  sttMetadata: {
+    backendUsed: SttBackendType;
+    processingTimeMs: number;
+  };
+}
+
+/**
+ * Event emitted when transcription fails.
+ * Contains error details for logging and user feedback.
+ */
+export interface TranscriptionErrorEvent {
+  code: SttPipelineErrorCode;
+  message: string;
+  cause?: Error;
+}
+
+/**
+ * Events emitted by the STT pipeline service.
+ */
+export interface SttPipelineEvents {
+  /** Emitted when transcription completes successfully */
+  transcriptionReady: (event: TranscriptionReadyEvent) => void;
+  /** Emitted when transcription fails */
+  transcriptionError: (event: TranscriptionErrorEvent) => void;
+}
+
+// ============================================================================
+// STT Pipeline Type Guards
+// ============================================================================
+
+/**
+ * Valid STT pipeline error code values for runtime validation.
+ */
+const STT_PIPELINE_ERROR_CODE_VALUES: ReadonlySet<string> = new Set([
+  "NO_API_KEY",
+  "NETWORK_ERROR",
+  "RATE_LIMIT",
+  "EMPTY_RESULT",
+  "INVALID_AUDIO",
+  "TRANSCRIPTION_FAILED",
+]);
+
+export function isSttPipelineErrorCode(value: unknown): value is SttPipelineErrorCode {
+  return typeof value === "string" && STT_PIPELINE_ERROR_CODE_VALUES.has(value);
+}
+
+/**
+ * Checks if a value is a valid TranscriptionReadyEvent.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid transcription ready event
+ */
+export function isTranscriptionReadyEvent(value: unknown): value is TranscriptionReadyEvent {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // text must be a string
+  if (typeof obj.text !== "string") {
+    return false;
+  }
+
+  // confidence is optional but must be a number between 0-1 if present
+  if (obj.confidence !== undefined) {
+    if (typeof obj.confidence !== "number" || obj.confidence < 0 || obj.confidence > 1) {
+      return false;
+    }
+  }
+
+  // inputMethod must be "voice"
+  if (obj.inputMethod !== "voice") {
+    return false;
+  }
+
+  // audioMetadata must be present and valid
+  if (typeof obj.audioMetadata !== "object" || obj.audioMetadata === null) {
+    return false;
+  }
+  const audioMeta = obj.audioMetadata as Record<string, unknown>;
+  if (
+    typeof audioMeta.durationMs !== "number" ||
+    typeof audioMeta.startedAt !== "string" ||
+    typeof audioMeta.stoppedAt !== "string"
+  ) {
+    return false;
+  }
+
+  // sttMetadata must be present and valid
+  if (typeof obj.sttMetadata !== "object" || obj.sttMetadata === null) {
+    return false;
+  }
+  const sttMeta = obj.sttMetadata as Record<string, unknown>;
+  if (!isSttBackend(sttMeta.backendUsed) || typeof sttMeta.processingTimeMs !== "number") {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Checks if a value is a valid TranscriptionErrorEvent.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid transcription error event
+ */
+export function isTranscriptionErrorEvent(value: unknown): value is TranscriptionErrorEvent {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // code must be a valid error code
+  if (!isSttPipelineErrorCode(obj.code)) {
+    return false;
+  }
+
+  // message must be a string
+  if (typeof obj.message !== "string") {
+    return false;
+  }
+
+  // cause is optional but must be an Error if present
+  if (obj.cause !== undefined && !(obj.cause instanceof Error)) {
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * Checks if a value is a valid SttResult.
  *

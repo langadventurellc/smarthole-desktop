@@ -107,8 +107,14 @@ describe("IPC_CHANNELS", () => {
       expect(IPC_CHANNELS.DIALOG_OPEN).toBe("dialog:open");
     });
 
-    it("should have exactly 41 channels", () => {
-      expect(Object.keys(IPC_CHANNELS)).toHaveLength(41);
+    it("should have all expected STT channels", () => {
+      expect(IPC_CHANNELS.STT_TRANSCRIBING).toBe("stt:transcribing");
+      expect(IPC_CHANNELS.STT_RESULT).toBe("stt:result");
+      expect(IPC_CHANNELS.STT_ERROR).toBe("stt:error");
+    });
+
+    it("should have exactly 44 channels", () => {
+      expect(Object.keys(IPC_CHANNELS)).toHaveLength(44);
     });
 
     it("should follow the domain:action naming convention", () => {

@@ -23,9 +23,15 @@ import {
 /**
  * Map of valid state transitions.
  * Key is the current state, value is the set of valid next states.
+ *
+ * IDLE -> RECORDING: User starts voice input
+ * IDLE -> PROCESSING: STT pipeline processing audio after capture completed
+ * RECORDING -> PROCESSING: Recording stopped, audio being processed
+ * RECORDING -> IDLE: Recording cancelled
+ * PROCESSING -> IDLE: Processing completed (success or error)
  */
 const VALID_TRANSITIONS: Record<InputState, Set<InputState>> = {
-  [InputState.IDLE]: new Set([InputState.RECORDING]),
+  [InputState.IDLE]: new Set([InputState.RECORDING, InputState.PROCESSING]),
   [InputState.RECORDING]: new Set([InputState.PROCESSING, InputState.IDLE]),
   [InputState.PROCESSING]: new Set([InputState.IDLE]),
 };

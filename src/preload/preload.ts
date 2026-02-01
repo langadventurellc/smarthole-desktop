@@ -37,6 +37,9 @@ import type {
   PermissionRequestMicrophoneResponse,
   PermissionCheckAccessibilityResponse,
   PermissionOpenAccessibilitySettingsResponse,
+  SttTranscribingPayload,
+  TranscriptionReadyEvent,
+  TranscriptionErrorEvent,
 } from "../types";
 import { IPC_CHANNELS } from "../types";
 import type { LogLevel, AppConfig } from "../types";
@@ -635,6 +638,67 @@ const electronAPI = {
    */
   closeOnboardingWindow: (): void => {
     ipcRenderer.send(IPC_CHANNELS.ONBOARDING_CLOSE);
+  },
+
+  // ============================================
+  // STT (Speech-to-Text) Events
+  // ============================================
+
+  /**
+   * Listen for STT transcription start events.
+   * Called when the STT pipeline begins processing audio.
+   *
+   * @param callback - Function called with the transcribing payload
+   * @returns Unsubscribe function to stop listening
+   */
+  onSttTranscribing: (callback: (payload: SttTranscribingPayload) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, payload: SttTranscribingPayload): void => {
+      callback(payload);
+    };
+    ipcRenderer.on(IPC_CHANNELS.STT_TRANSCRIBING, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.STT_TRANSCRIBING, handler);
+    };
+  },
+
+  /**
+   * Listen for STT transcription result events.
+   * Called when transcription completes successfully.
+   *
+   * @param callback - Function called with the transcription result
+   * @returns Unsubscribe function to stop listening
+   */
+  onSttResult: (callback: (result: TranscriptionReadyEvent) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, result: TranscriptionReadyEvent): void => {
+      callback(result);
+    };
+    ipcRenderer.on(IPC_CHANNELS.STT_RESULT, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.STT_RESULT, handler);
+    };
+  },
+
+  /**
+   * Listen for STT transcription error events.
+   * Called when transcription fails.
+   *
+   * @param callback - Function called with the error details
+   * @returns Unsubscribe function to stop listening
+   */
+  onSttError: (callback: (error: TranscriptionErrorEvent) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, error: TranscriptionErrorEvent): void => {
+      callback(error);
+    };
+    ipcRenderer.on(IPC_CHANNELS.STT_ERROR, handler);
+
+    // Return unsubscribe function
+    return (): void => {
+      ipcRenderer.removeListener(IPC_CHANNELS.STT_ERROR, handler);
+    };
   },
 };
 
