@@ -144,6 +144,10 @@ class RoutingAgentServiceImpl implements IRoutingAgentService {
     const clientCount = this.registry.getClientCount();
     if (clientCount === 0) {
       this.logger.info("No clients registered, cannot route message");
+      this.notificationService.showWarning(
+        "No plugins connected",
+        "No plugins are currently connected. Please start a plugin and try again."
+      );
       return {
         type: "no_clients",
         message: "No plugins are currently connected. Please start a plugin and try again.",
