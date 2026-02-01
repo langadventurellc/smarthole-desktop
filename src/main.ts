@@ -824,14 +824,15 @@ app.whenReady().then(async () => {
   const messageLogger = logger.child({ component: "MessageDeliveryIPC" });
   registerMessageDeliveryHandlers(ipcMain, () => wsState.messageDelivery, messageLogger);
 
-  // Initialize routing services (RoutingApi and ToolGenerator are dependencies of RoutingAgent)
+  // Initialize routing services (ToolGenerator -> RoutingApi -> RoutingAgent)
   // Must be initialized BEFORE event handlers that use getRoutingAgent() are wired up
+  // Order matters: RoutingApi depends on ToolGenerator, RoutingAgent depends on both
   try {
-    initializeRoutingApi();
-    logger.info("Routing API service initialized");
-
     initializeToolGenerator();
     logger.info("Tool generator service initialized");
+
+    initializeRoutingApi();
+    logger.info("Routing API service initialized");
 
     routingState.routingAgent = initializeRoutingAgent();
     logger.info("Routing agent service initialized");
