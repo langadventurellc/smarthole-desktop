@@ -55,6 +55,10 @@ const config: ForgeConfig = {
           name: "onboarding_window",
           config: "vite.onboarding-renderer.config.ts",
         },
+        {
+          name: "background_window",
+          config: "vite.background-renderer.config.ts",
+        },
       ],
     }),
     new FusesPlugin({

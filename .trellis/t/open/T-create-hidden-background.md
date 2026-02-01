@@ -1,7 +1,7 @@
 ---
 id: T-create-hidden-background
 title: Create Hidden Background Window for Audio Capture
-status: open
+status: in-progress
 priority: high
 parent: none
 prerequisites: []
