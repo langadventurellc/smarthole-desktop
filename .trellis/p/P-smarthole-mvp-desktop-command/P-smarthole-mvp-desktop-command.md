@@ -249,7 +249,8 @@ affectedFiles:
     export for config-manager module; Added export for config-manager module;
     Added export for credential-manager module.; Updated to export the new
     stt-service module; Added exports for tool-generator and routing-api
-    modules; Added export for direct-routing module
+    modules; Added export for direct-routing module; Added export for
+    routing-agent module
   src/services/logger.test.ts: Created comprehensive unit tests (30 tests) for
     logger configuration, level filtering, and child loggers; Added 51 new tests
     for sanitizeLogData (sensitive pattern detection, non-sensitive data
@@ -673,6 +674,12 @@ affectedFiles:
     function for direct routing pattern detection
   src/services/direct-routing.test.ts: Added 38 comprehensive tests covering all
     pattern matching scenarios and edge cases
+  src/services/routing-agent.ts: Created new RoutingAgent service with singleton
+    pattern, system prompt, direct routing integration, LLM routing integration,
+    and message delivery
+  src/services/routing-agent.test.ts: Added 19 comprehensive tests for
+    initialization, no clients scenario, direct routing, LLM routing, error
+    handling, message metadata, and source handling
 log: []
 schema: v1.0
 childrenIds:

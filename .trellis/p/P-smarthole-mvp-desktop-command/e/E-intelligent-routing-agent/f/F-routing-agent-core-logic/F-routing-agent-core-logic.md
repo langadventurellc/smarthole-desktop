@@ -1,7 +1,7 @@
 ---
 id: F-routing-agent-core-logic
 title: Routing Agent Core Logic
-status: in-progress
+status: done
 priority: high
 parent: E-intelligent-routing-agent
 prerequisites:
@@ -17,13 +17,20 @@ affectedFiles:
     function for direct routing pattern detection
   src/services/direct-routing.test.ts: Added 38 comprehensive tests covering all
     pattern matching scenarios and edge cases
-  src/services/index.ts: Added export for direct-routing module
-log: []
+  src/services/index.ts: Added export for direct-routing module; Added export for routing-agent module
+  src/services/routing-agent.ts: Created new RoutingAgent service with singleton
+    pattern, system prompt, direct routing integration, LLM routing integration,
+    and message delivery
+  src/services/routing-agent.test.ts: Added 19 comprehensive tests for
+    initialization, no clients scenario, direct routing, LLM routing, error
+    handling, message metadata, and source handling
+log:
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
+  - T-add-routing-agent-types-and
   - T-implement-direct-routing
   - T-implement-routing-agent
-  - T-add-routing-agent-types-and
 created: 2026-02-01T01:56:15.123Z
 updated: 2026-02-01T01:56:15.123Z
 ---
