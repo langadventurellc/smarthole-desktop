@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify tag
+        run: |
+          if [[ ! $(git describe --exact-match --tags HEAD 2>/dev/null) ]]; then
+            echo "Error: This workflow must be run on a tagged commit"
+            echo "Create a tag first: git tag v1.0.0 && git push origin v1.0.0"
+            exit 1
+          fi
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=$(git describe --exact-match --tags HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Import certificate
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import certificate
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/certificate.p12
+          security import $RUNNER_TEMP/certificate.p12 -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+
+          # Set key partition list
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Add to search list
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
+
+      - name: Build and notarize
+        env:
+          APPLE_IDENTITY: ${{ secrets.APPLE_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: mise run build
+
+      - name: Find DMG
+        id: dmg
+        run: |
+          DMG_PATH=$(find out/make -name "*.dmg" | head -1)
+          if [[ -z "$DMG_PATH" ]]; then
+            echo "Error: No DMG file found in out/make"
+            exit 1
+          fi
+          echo "DMG_PATH=$DMG_PATH" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: SmartHole ${{ steps.version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          files: ${{ steps.dmg.outputs.DMG_PATH }}
+          generate_release_notes: true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          security delete-keychain $RUNNER_TEMP/build.keychain || true
+          rm -f $RUNNER_TEMP/certificate.p12 || true

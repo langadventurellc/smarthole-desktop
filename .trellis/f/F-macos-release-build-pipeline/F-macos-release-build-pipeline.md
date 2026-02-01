@@ -13,12 +13,14 @@ affectedFiles:
     env var and entitlements via optionsForFile. Added osxNotarize configuration
     that requires all three env vars (APPLE_ID, APPLE_ID_PASSWORD,
     APPLE_TEAM_ID) to be present before activating
+  .github/workflows/release.yml: Created new GitHub Actions workflow for macOS
+    release builds with code signing, notarization, and GitHub Release creation
 log: []
 schema: v1.0
 childrenIds:
-  - T-add-code-signing-and
   - T-create-github-actions-release
   - T-create-release-setup
+  - T-add-code-signing-and
 created: 2026-02-01T17:08:44.563Z
 updated: 2026-02-01T17:08:44.563Z
 ---

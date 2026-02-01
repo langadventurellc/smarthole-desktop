@@ -1,13 +1,48 @@
 ---
 id: T-create-github-actions-release
 title: Create GitHub Actions release workflow
-status: open
+status: done
 priority: high
 parent: F-macos-release-build-pipeline
 prerequisites:
   - T-add-code-signing-and
-affectedFiles: {}
-log: []
+affectedFiles:
+  .github/workflows/release.yml: Created new GitHub Actions workflow for macOS
+    release builds with code signing, notarization, and GitHub Release creation
+log:
+  - |-
+    Starting implementation. Verified:
+    - .github/workflows directory exists with ci.yml as reference
+    - forge.config.ts has signing/notarization configured
+    - src/entitlements.plist exists
+    - mise.toml has build task defined
+  - >-
+    Created GitHub Actions release workflow at .github/workflows/release.yml
+    that:
+
+    1. Is manually triggered via workflow_dispatch
+
+    2. Verifies running on a tagged commit with clear error message if not
+
+    3. Sets up mise and installs npm dependencies
+
+    4. Imports Apple certificate from secrets into a temporary keychain with
+    secure random password
+
+    5. Builds and notarizes the app using mise run build with all required Apple
+    credentials
+
+    6. Creates a GitHub Release with the DMG attached using
+    softprops/action-gh-release@v2
+
+    7. Cleans up the temporary keychain even on failure using `if: always()`
+    condition
+
+
+    The workflow follows the existing CI workflow patterns for consistency and
+    requires six GitHub secrets to be configured: APPLE_IDENTITY,
+    APPLE_CERTIFICATE_BASE64, APPLE_CERTIFICATE_PASSWORD, APPLE_ID,
+    APPLE_ID_PASSWORD, and APPLE_TEAM_ID.
 schema: v1.0
 childrenIds: []
 created: 2026-02-01T17:21:42.487Z
