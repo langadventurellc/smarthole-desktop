@@ -326,12 +326,18 @@ audioCapture.on("audioReady", (event) => {
   sttPipeline.processAudio(event.result);
 });
 
-// Listen for transcription results
-sttPipeline.on("transcriptionReady", (event) => {
-  // Route to downstream consumers (e.g., routing agent)
-  logger.info("Transcription complete", {
-    processingTimeMs: event.sttMetadata.processingTimeMs,
-    audioDurationMs: event.audioMetadata.durationMs,
+// Listen for transcription results (routed automatically to RoutingAgent)
+sttPipeline.on("transcriptionReady", async (event) => {
+  // Transcriptions are automatically routed through RoutingAgentService
+  await getRoutingAgent().routeMessage({
+    message: event.text,
+    source: "voice",
+    metadata: {
+      audioDurationMs: event.audioMetadata.durationMs,
+      confidence: event.confidence,
+      sttBackend: event.sttMetadata.backendUsed,
+      sttProcessingTimeMs: event.sttMetadata.processingTimeMs,
+    },
   });
 });
 ```
@@ -387,6 +393,19 @@ Tests cover:
 - **credential-manager**: OS keychain storage for API key
 - **config-manager**: Backend selection configuration
 - **logger**: Structured logging with privacy redaction
+
+## Routing Integration
+
+Transcribed text is automatically routed to plugins through the `RoutingAgentService`:
+
+1. Audio recording completes and triggers STT transcription
+2. `transcriptionReady` event fires with `TranscriptionReadyEvent`
+3. `main.ts` handler calls `getRoutingAgent().routeMessage()` with `source: "voice"`
+4. Voice-specific metadata included: `audioDurationMs`, `confidence`, `sttBackend`, `sttProcessingTimeMs`
+5. Routing outcome handled (success, no clients, or failure)
+6. User notifications shown for error cases
+
+See [Routing Agent](routing-agent.md) for full routing flow details.
 
 ## Future Extensibility
 
