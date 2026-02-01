@@ -1,15 +1,36 @@
 ---
 id: F-routing-agent-core-logic
 title: Routing Agent Core Logic
-status: open
+status: done
 priority: high
 parent: E-intelligent-routing-agent
 prerequisites:
   - F-anthropic-api-client-tool
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/routing.ts: Added DeliveryInfo interface, RoutingOutcome discriminated
+    union, RoutingAgentService interface, DirectRouteResult interface, and type
+    guards (isDeliveryInfo, isRoutingOutcome, isDirectRouteResult)
+  src/types/routing.test.ts: "Added comprehensive tests for new type guards:
+    isDeliveryInfo (12 tests), isRoutingOutcome (17 tests across 3 variant
+    groups), isDirectRouteResult (12 tests)"
+  src/services/direct-routing.ts: Created new service with tryDirectRoute()
+    function for direct routing pattern detection
+  src/services/direct-routing.test.ts: Added 38 comprehensive tests covering all
+    pattern matching scenarios and edge cases
+  src/services/index.ts: Added export for direct-routing module; Added export for routing-agent module
+  src/services/routing-agent.ts: Created new RoutingAgent service with singleton
+    pattern, system prompt, direct routing integration, LLM routing integration,
+    and message delivery
+  src/services/routing-agent.test.ts: Added 19 comprehensive tests for
+    initialization, no clients scenario, direct routing, LLM routing, error
+    handling, message metadata, and source handling
+log:
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-add-routing-agent-types-and
+  - T-implement-direct-routing
+  - T-implement-routing-agent
 created: 2026-02-01T01:56:15.123Z
 updated: 2026-02-01T01:56:15.123Z
 ---

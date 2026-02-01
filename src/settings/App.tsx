@@ -385,9 +385,9 @@ export function App(): React.ReactNode {
                 description="The Claude model to use for command routing."
                 value={config.llm.model}
                 options={[
-                  { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku (fastest)" },
-                  { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" },
-                  { value: "claude-3-opus-20240229", label: "Claude 3 Opus (most capable)" },
+                  { value: "claude-haiku-4-5", label: "Claude 4.5 Haiku (fastest)" },
+                  { value: "claude-sonnet-4-5", label: "Claude 4.5 Sonnet" },
+                  { value: "claude-opus-4-5", label: "Claude 4.5 Opus (most capable)" },
                 ]}
                 onChange={(value) => updateNestedConfig("llm", "model", value)}
               />

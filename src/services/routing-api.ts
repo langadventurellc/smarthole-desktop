@@ -24,8 +24,8 @@ import {
 // Constants
 // ============================================================================
 
-/** Claude Haiku model identifier */
-const CLAUDE_HAIKU_MODEL = "claude-3-haiku-20240307";
+/** Claude 4.5 Haiku model alias (points to latest snapshot) */
+const CLAUDE_HAIKU_MODEL = "claude-haiku-4-5";
 
 /** Credential key for the Anthropic API key */
 const API_KEY_CREDENTIAL = "anthropic-api-key";

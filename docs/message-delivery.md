@@ -2,6 +2,8 @@
 
 Routes messages from the LLM to registered plugin clients via WebSocket connections. Provides fire-and-forget delivery with status tracking for debugging.
 
+> **Note**: This is a low-level delivery service. The [Routing Agent](routing-agent.md) orchestrates the full routing flow including direct routing detection, LLM-based routing decisions, and message delivery.
+
 ## Initialization
 
 ```typescript
