@@ -103,8 +103,13 @@ import {
   createAccessibilitySettingsHandler,
 } from "./ipc/permission-handler";
 import { registerOnboardingHandlers } from "./ipc/onboarding-handler";
+import { createRoutingSubmitHandler, createRoutingStatusHandler } from "./ipc/routing-handlers";
 import { initializeSttPipeline, getSttPipeline, SttPipelineService } from "./services/stt-pipeline";
 import { initializeSttService } from "./services/stt-service";
+import { initializeRoutingApi } from "./services/routing-api";
+import { initializeToolGenerator } from "./services/tool-generator";
+import { initializeRoutingAgent, getRoutingAgent } from "./services/routing-agent";
+import { RoutingAgentService } from "./types";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -214,6 +219,15 @@ const backgroundState: {
   backgroundWindow: BackgroundWindowService | null;
 } = {
   backgroundWindow: null,
+};
+
+/**
+ * Mutable state for routing agent.
+ */
+const routingState: {
+  routingAgent: RoutingAgentService | null;
+} = {
+  routingAgent: null,
 };
 
 /**
@@ -810,6 +824,26 @@ app.whenReady().then(async () => {
   const messageLogger = logger.child({ component: "MessageDeliveryIPC" });
   registerMessageDeliveryHandlers(ipcMain, () => wsState.messageDelivery, messageLogger);
 
+  // Initialize routing services (ToolGenerator -> RoutingApi -> RoutingAgent)
+  // Must be initialized BEFORE event handlers that use getRoutingAgent() are wired up
+  // Order matters: RoutingApi depends on ToolGenerator, RoutingAgent depends on both
+  try {
+    initializeToolGenerator();
+    logger.info("Tool generator service initialized");
+
+    initializeRoutingApi();
+    logger.info("Routing API service initialized");
+
+    routingState.routingAgent = initializeRoutingAgent();
+    logger.info("Routing agent service initialized");
+  } catch (error) {
+    // Routing services may fail to initialize if API key is not configured
+    // This is not fatal - the app can still run, but routing will fail at runtime
+    logger.warn("Routing services initialization failed (API key may not be configured)", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   // Initialize hotkey manager and input state services
   const hotkeyLogger = logger.child({ component: "HotkeyIPC" });
   const inputStateLogger = logger.child({ component: "InputStateIPC" });
@@ -890,12 +924,39 @@ app.whenReady().then(async () => {
   // Wire text input popup to hotkey manager
   wireTextInputToHotkey(inputState.hotkeyManager, () => getTextInputPopup(), textInputLogger);
 
-  // Wire popup submitted event to downstream processing
+  // Wire popup submitted event to routing agent
   popupState.textInput.on("submitted", (payload) => {
-    logger.info("Text input ready for processing", {
+    logger.info("Text input submitted, routing message", {
       textLength: payload.text.length,
     });
-    // TODO: Route to message processing in future task
+
+    // Route the message asynchronously (fire and forget pattern with internal error handling)
+    (async () => {
+      try {
+        const routingAgent = getRoutingAgent();
+        const outcome = await routingAgent.routeMessage({
+          message: payload.text,
+          source: "text",
+        });
+
+        if (outcome.type === "no_clients") {
+          // User notification already handled by routing agent
+          logger.info("No clients available for text routing");
+        } else if (outcome.type === "routing_failed") {
+          // User notification already handled by routing agent
+          logger.warn("Text routing failed", { error: outcome.error });
+        } else {
+          logger.info("Text message routed successfully", {
+            deliveryCount: outcome.deliveries.length,
+          });
+        }
+      } catch (error) {
+        // This catches errors from getRoutingAgent() if routing services weren't initialized
+        logger.error("Failed to route text message", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    })();
   });
 
   // Initialize background window for audio capture (before audio service)
@@ -951,15 +1012,63 @@ app.whenReady().then(async () => {
       });
   });
 
-  // Wire STT pipeline transcription ready event for downstream routing
+  // Wire STT pipeline transcription ready event to routing agent
   sttPipelineState.sttPipeline.on("transcriptionReady", (event) => {
-    logger.info("Transcription ready for routing", {
+    logger.info("Transcription complete, routing voice message", {
       textLength: event.text.length,
       backend: event.sttMetadata.backendUsed,
       processingTimeMs: event.sttMetadata.processingTimeMs,
     });
-    // TODO: Route to message processing in future task
+
+    // Route the message asynchronously (fire and forget pattern with internal error handling)
+    (async () => {
+      try {
+        const routingAgent = getRoutingAgent();
+        const outcome = await routingAgent.routeMessage({
+          message: event.text,
+          source: "voice",
+          metadata: {
+            audioDurationMs: event.audioMetadata.durationMs,
+            confidence: event.confidence,
+            sttBackend: event.sttMetadata.backendUsed,
+            sttProcessingTimeMs: event.sttMetadata.processingTimeMs,
+          },
+        });
+
+        if (outcome.type === "no_clients") {
+          // User notification already handled by routing agent
+          logger.info("No clients available for voice routing");
+        } else if (outcome.type === "routing_failed") {
+          // User notification already handled by routing agent
+          logger.warn("Voice routing failed", { error: outcome.error });
+        } else {
+          logger.info("Voice message routed successfully", {
+            deliveryCount: outcome.deliveries.length,
+          });
+        }
+      } catch (error) {
+        // This catches errors from getRoutingAgent() if routing services weren't initialized
+        logger.error("Failed to route voice message", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    })();
   });
+
+  // Register routing IPC handlers
+  const routingLogger = logger.child({ component: "RoutingIPC" });
+  ipcMain.handle(
+    IPC_CHANNELS.ROUTING_SUBMIT_MESSAGE,
+    createRoutingSubmitHandler(() => getRoutingAgent(), routingLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.ROUTING_GET_STATUS,
+    createRoutingStatusHandler(
+      () => getClientRegistry(),
+      () => getCredentialManager(),
+      routingLogger
+    )
+  );
 
   // Register error handlers
   registerProcessErrorHandlers({

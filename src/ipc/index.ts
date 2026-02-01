@@ -23,3 +23,4 @@ export * from "./config-handler";
 export * from "./dialog-handler";
 export * from "./permission-handler";
 export * from "./onboarding-handler";
+export * from "./routing-handlers";

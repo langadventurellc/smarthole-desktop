@@ -113,8 +113,13 @@ describe("IPC_CHANNELS", () => {
       expect(IPC_CHANNELS.STT_ERROR).toBe("stt:error");
     });
 
-    it("should have exactly 44 channels", () => {
-      expect(Object.keys(IPC_CHANNELS)).toHaveLength(44);
+    it("should have all expected routing channels", () => {
+      expect(IPC_CHANNELS.ROUTING_SUBMIT_MESSAGE).toBe("routing:submitMessage");
+      expect(IPC_CHANNELS.ROUTING_GET_STATUS).toBe("routing:getStatus");
+    });
+
+    it("should have exactly 46 channels", () => {
+      expect(Object.keys(IPC_CHANNELS)).toHaveLength(46);
     });
 
     it("should follow the domain:action naming convention", () => {

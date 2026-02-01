@@ -62,6 +62,60 @@ app.whenReady().then(async () => {
 });
 ```
 
+## Input Pipeline Integration
+
+The routing agent is wired into the application's input pipeline in `main.ts`. Both text and voice inputs automatically flow through the routing system:
+
+**Text Input (from Text Input Popup):**
+
+```
+User types → Popup submits → popupState.textInput 'submitted' event → RoutingAgent.routeMessage()
+```
+
+**Voice Input (from STT Pipeline):**
+
+```
+User speaks → Audio captured → STT transcribes → sttPipeline 'transcriptionReady' event → RoutingAgent.routeMessage()
+```
+
+Voice inputs include additional metadata:
+
+- `audioDurationMs` - Length of the audio recording
+- `confidence` - STT confidence score (if available)
+- `sttBackend` - Which STT backend was used (e.g., "groq-whisper")
+- `sttProcessingTimeMs` - How long transcription took
+
+## IPC Access
+
+Renderer processes can submit messages and query status via IPC:
+
+| Channel                 | Direction     | Payload                       | Response                       |
+| ----------------------- | ------------- | ----------------------------- | ------------------------------ |
+| `routing:submitMessage` | Renderer→Main | `RoutingSubmitMessagePayload` | `RoutingSubmitMessageResponse` |
+| `routing:getStatus`     | Renderer→Main | (none)                        | `RoutingStatusResponse`        |
+
+### IPC Types
+
+```typescript
+interface RoutingSubmitMessagePayload {
+  message: string;
+  source: "text" | "voice";
+  metadata?: Record<string, unknown>;
+}
+
+interface RoutingSubmitMessageResponse {
+  success: boolean;
+  outcomeType: "routed" | "no_clients" | "routing_failed";
+  deliveryCount?: number;
+  error?: string;
+}
+
+interface RoutingStatusResponse {
+  available: boolean; // API key configured
+  clientCount: number; // Connected plugins
+}
+```
+
 ## Usage
 
 ```typescript
@@ -312,6 +366,7 @@ resetRoutingAgent();
 mise run test src/services/routing-agent.test.ts
 mise run test src/services/direct-routing.test.ts
 mise run test src/types/routing.test.ts
+mise run test src/ipc/routing-handlers.test.ts
 ```
 
 ## Related Documentation

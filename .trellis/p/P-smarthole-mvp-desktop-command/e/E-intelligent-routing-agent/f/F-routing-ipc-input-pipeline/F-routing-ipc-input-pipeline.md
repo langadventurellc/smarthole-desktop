@@ -1,15 +1,41 @@
 ---
 id: F-routing-ipc-input-pipeline
 title: Routing IPC & Input Pipeline Integration
-status: open
+status: done
 priority: high
 parent: E-intelligent-routing-agent
 prerequisites:
   - F-rejection-handling-fallback
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/ipc.ts: Added ROUTING_SUBMIT_MESSAGE and ROUTING_GET_STATUS channels,
+    routing IPC types (RoutingSubmitMessagePayload,
+    RoutingSubmitMessageResponse, RoutingStatusResponse, RoutingInputSource,
+    RoutingOutcomeType), type guard isRoutingSubmitMessagePayload, and entries
+    in IpcPayloadMap and IpcResponseMap
+  src/ipc/routing-handlers.ts: Created new file with createRoutingSubmitHandler
+    and createRoutingStatusHandler factory functions for IPC handlers
+  src/ipc/index.ts: Added export for routing-handlers module
+  src/main.ts: Added imports for routing services and handlers, added routingState
+    mutable state, initialized RoutingApi, ToolGenerator, and RoutingAgent
+    services, registered routing IPC handlers; Updated
+    popupState.textInput.on('submitted') handler to route messages through
+    RoutingAgentService instead of logging a TODO comment. Added async IIFE
+    pattern with try-catch for proper error handling when routing services
+    aren't initialized.; Replaced TODO comment in transcriptionReady event
+    handler with actual routing logic that calls
+    RoutingAgentService.routeMessage() with voice source and voice-specific
+    metadata
+  src/ipc/routing-handlers.test.ts: Created new test file with 16 unit tests
+    covering success cases, error handling, validation, and edge cases for both
+    handlers
+  src/types/ipc.test.ts: Updated channel count test to 46 and added test for routing channels
+log:
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-implement-routing-ipc-handlers
+  - T-wire-stt-pipeline-to-routing
+  - T-wire-text-input-popup-to
 created: 2026-02-01T01:57:40.172Z
 updated: 2026-02-01T01:57:40.172Z
 ---

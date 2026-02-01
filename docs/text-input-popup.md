@@ -181,10 +181,14 @@ registerTextInputHandlers(ipcMain, getTextInputPopup, logger);
 // Wire to hotkey manager
 wireTextInputToHotkey(hotkeyManager, getTextInputPopup, logger);
 
-// Listen for submitted text
-popup.on("submitted", (payload) => {
-  console.log("User submitted:", payload.text);
-  // Route to message delivery, AI processing, etc.
+// Listen for submitted text (handled automatically by routing agent)
+popup.on("submitted", async (payload) => {
+  // Text is automatically routed through RoutingAgentService
+  // See docs/routing-agent.md for routing flow details
+  const outcome = await getRoutingAgent().routeMessage({
+    message: payload.text,
+    source: "text",
+  });
 });
 ```
 
@@ -194,3 +198,15 @@ popup.on("submitted", (payload) => {
 | ------ | -------------------------------- |
 | Enter  | Submit text (if non-empty)       |
 | Escape | Dismiss popup without submitting |
+
+## Routing Integration
+
+When text is submitted, it is automatically routed through the `RoutingAgentService`:
+
+1. User presses Enter with non-empty text
+2. `submitted` event fires with `TextInputSubmitPayload`
+3. `main.ts` handler calls `getRoutingAgent().routeMessage()` with `source: "text"`
+4. Routing outcome handled (success, no clients, or failure)
+5. User notifications shown for error cases
+
+See [Routing Agent](routing-agent.md) for full routing flow details.

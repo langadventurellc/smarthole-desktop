@@ -1,7 +1,7 @@
 ---
 id: E-intelligent-routing-agent
 title: Intelligent Routing Agent
-status: in-progress
+status: done
 priority: high
 parent: P-smarthole-mvp-desktop-command
 prerequisites:
@@ -66,7 +66,30 @@ affectedFiles:
     WebSocket client, registration handling, message echo functionality,
     exponential backoff reconnection, graceful shutdown, and CLI flag support
   mise.toml: Added test-plugin task to run the test harness plugin
-log: []
+  src/types/ipc.ts: Added ROUTING_SUBMIT_MESSAGE and ROUTING_GET_STATUS channels,
+    routing IPC types (RoutingSubmitMessagePayload,
+    RoutingSubmitMessageResponse, RoutingStatusResponse, RoutingInputSource,
+    RoutingOutcomeType), type guard isRoutingSubmitMessagePayload, and entries
+    in IpcPayloadMap and IpcResponseMap
+  src/ipc/routing-handlers.ts: Created new file with createRoutingSubmitHandler
+    and createRoutingStatusHandler factory functions for IPC handlers
+  src/ipc/index.ts: Added export for routing-handlers module
+  src/main.ts: Added imports for routing services and handlers, added routingState
+    mutable state, initialized RoutingApi, ToolGenerator, and RoutingAgent
+    services, registered routing IPC handlers; Updated
+    popupState.textInput.on('submitted') handler to route messages through
+    RoutingAgentService instead of logging a TODO comment. Added async IIFE
+    pattern with try-catch for proper error handling when routing services
+    aren't initialized.; Replaced TODO comment in transcriptionReady event
+    handler with actual routing logic that calls
+    RoutingAgentService.routeMessage() with voice source and voice-specific
+    metadata
+  src/ipc/routing-handlers.test.ts: Created new test file with 16 unit tests
+    covering success cases, error handling, validation, and edge cases for both
+    handlers
+  src/types/ipc.test.ts: Updated channel count test to 46 and added test for routing channels
+log:
+  - "Auto-completed: All child features are complete"
 schema: v1.0
 childrenIds:
   - F-anthropic-api-client-tool
