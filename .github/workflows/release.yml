@@ -33,12 +33,12 @@ jobs:
           APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         run: |
-          # Create temporary keychain
+          # Create temporary keychain with empty password for simpler CI access
           KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
-          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+          KEYCHAIN_PASSWORD=""
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security set-keychain-settings -t 3600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
           # Import certificate with explicit codesign access
@@ -55,8 +55,11 @@ jobs:
           security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
 
           # Verify certificate was imported correctly
-          echo "Verifying certificate import..."
+          echo "=== Keychain search list ==="
+          security list-keychain -d user
+          echo "=== Available signing identities ==="
           security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning
 
       - name: Build and notarize
         env:
