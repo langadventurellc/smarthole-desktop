@@ -240,7 +240,10 @@ affectedFiles:
     transcriptionReady listener for downstream routing; Added imports for
     routing services and handlers, added routingState mutable state, initialized
     RoutingApi, ToolGenerator, and RoutingAgent services, registered routing IPC
-    handlers"
+    handlers; Updated popupState.textInput.on('submitted') handler to route
+    messages through RoutingAgentService instead of logging a TODO comment.
+    Added async IIFE pattern with try-catch for proper error handling when
+    routing services aren't initialized."
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added

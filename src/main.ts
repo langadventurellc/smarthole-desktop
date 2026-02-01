@@ -904,12 +904,39 @@ app.whenReady().then(async () => {
   // Wire text input popup to hotkey manager
   wireTextInputToHotkey(inputState.hotkeyManager, () => getTextInputPopup(), textInputLogger);
 
-  // Wire popup submitted event to downstream processing
+  // Wire popup submitted event to routing agent
   popupState.textInput.on("submitted", (payload) => {
-    logger.info("Text input ready for processing", {
+    logger.info("Text input submitted, routing message", {
       textLength: payload.text.length,
     });
-    // TODO: Route to message processing in future task
+
+    // Route the message asynchronously (fire and forget pattern with internal error handling)
+    (async () => {
+      try {
+        const routingAgent = getRoutingAgent();
+        const outcome = await routingAgent.routeMessage({
+          message: payload.text,
+          source: "text",
+        });
+
+        if (outcome.type === "no_clients") {
+          // User notification already handled by routing agent
+          logger.info("No clients available for text routing");
+        } else if (outcome.type === "routing_failed") {
+          // User notification already handled by routing agent
+          logger.warn("Text routing failed", { error: outcome.error });
+        } else {
+          logger.info("Text message routed successfully", {
+            deliveryCount: outcome.deliveries.length,
+          });
+        }
+      } catch (error) {
+        // This catches errors from getRoutingAgent() if routing services weren't initialized
+        logger.error("Failed to route text message", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    })();
   });
 
   // Initialize background window for audio capture (before audio service)

@@ -17,7 +17,11 @@ affectedFiles:
   src/ipc/index.ts: Added export for routing-handlers module
   src/main.ts: Added imports for routing services and handlers, added routingState
     mutable state, initialized RoutingApi, ToolGenerator, and RoutingAgent
-    services, registered routing IPC handlers
+    services, registered routing IPC handlers; Updated
+    popupState.textInput.on('submitted') handler to route messages through
+    RoutingAgentService instead of logging a TODO comment. Added async IIFE
+    pattern with try-catch for proper error handling when routing services
+    aren't initialized.
   src/ipc/routing-handlers.test.ts: Created new test file with 16 unit tests
     covering success cases, error handling, validation, and edge cases for both
     handlers
@@ -25,9 +29,9 @@ affectedFiles:
 log: []
 schema: v1.0
 childrenIds:
-  - T-implement-routing-ipc-handlers
   - T-wire-stt-pipeline-to-routing
   - T-wire-text-input-popup-to
+  - T-implement-routing-ipc-handlers
 created: 2026-02-01T01:57:40.172Z
 updated: 2026-02-01T01:57:40.172Z
 ---

@@ -1,13 +1,34 @@
 ---
 id: T-wire-text-input-popup-to
 title: Wire text input popup to routing service
-status: open
+status: done
 priority: high
 parent: F-routing-ipc-input-pipeline
 prerequisites:
   - T-implement-routing-ipc-handlers
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/main.ts: Updated popupState.textInput.on('submitted') handler to route
+    messages through RoutingAgentService instead of logging a TODO comment.
+    Added async IIFE pattern with try-catch for proper error handling when
+    routing services aren't initialized.
+log:
+  - >-
+    Wired the text input popup's submit flow to the routing service. Replaced
+    the TODO comment in main.ts with an asynchronous handler that:
+
+    1. Gets the routing agent via getRoutingAgent()
+
+    2. Calls routeMessage() with the submitted text and source="text"
+
+    3. Logs appropriate messages for each routing outcome type (routed,
+    no_clients, routing_failed)
+
+    4. Catches and logs errors if the routing agent wasn't initialized (e.g.,
+    missing API key)
+
+
+    The routing agent handles user notifications internally for all error cases,
+    so no additional notification code was needed.
 schema: v1.0
 childrenIds: []
 created: 2026-02-01T05:17:29.945Z
