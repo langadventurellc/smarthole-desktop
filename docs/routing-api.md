@@ -6,6 +6,8 @@ Intelligent message routing using Claude Haiku to determine which registered cli
 
 The routing system uses Claude Haiku with tool calling to analyze user messages and route them to appropriate clients. Tools are dynamically generated from the client registry, and routing decisions include both the target client and the transformed message.
 
+> **Note**: This document covers the low-level routing API components. For the high-level orchestration layer that combines direct routing, LLM routing, and message delivery, see [Routing Agent](routing-agent.md).
+
 ## Architecture
 
 ```
