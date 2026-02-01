@@ -1,14 +1,27 @@
 ---
 id: T-create-release-setup
 title: Create release setup documentation
-status: open
+status: done
 priority: medium
 parent: F-macos-release-build-pipeline
 prerequisites:
   - T-add-code-signing-and
   - T-create-github-actions-release
-affectedFiles: {}
-log: []
+affectedFiles:
+  docs/release-setup.md: Created comprehensive release setup documentation
+    covering prerequisites, certificate export, base64 encoding, app-specific
+    passwords, Team ID, signing identity, GitHub secrets configuration, release
+    workflow instructions, local builds, and troubleshooting
+log:
+  - "Created comprehensive release setup documentation at docs/release-setup.md
+    that guides users through the complete process of setting up macOS code
+    signing and notarization for GitHub Actions releases. The documentation
+    covers all 10 required sections: prerequisites, exporting Developer ID
+    certificates, base64 encoding, generating app-specific passwords, finding
+    Team ID and signing identity, configuring GitHub secrets, creating releases
+    with tags and workflows, local signed builds, and troubleshooting common
+    issues. All commands are copy-pasteable and the document links to official
+    Apple documentation for further reference."
 schema: v1.0
 childrenIds: []
 created: 2026-02-01T17:22:04.584Z

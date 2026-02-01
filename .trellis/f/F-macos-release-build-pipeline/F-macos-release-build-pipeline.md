@@ -1,7 +1,7 @@
 ---
 id: F-macos-release-build-pipeline
 title: macOS Release Build Pipeline
-status: in-progress
+status: done
 priority: high
 parent: none
 prerequisites: []
@@ -15,12 +15,17 @@ affectedFiles:
     APPLE_TEAM_ID) to be present before activating
   .github/workflows/release.yml: Created new GitHub Actions workflow for macOS
     release builds with code signing, notarization, and GitHub Release creation
-log: []
+  docs/release-setup.md: Created comprehensive release setup documentation
+    covering prerequisites, certificate export, base64 encoding, app-specific
+    passwords, Team ID, signing identity, GitHub secrets configuration, release
+    workflow instructions, local builds, and troubleshooting
+log:
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
 childrenIds:
+  - T-add-code-signing-and
   - T-create-github-actions-release
   - T-create-release-setup
-  - T-add-code-signing-and
 created: 2026-02-01T17:08:44.563Z
 updated: 2026-02-01T17:08:44.563Z
 ---
