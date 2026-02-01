@@ -824,6 +824,25 @@ app.whenReady().then(async () => {
   const messageLogger = logger.child({ component: "MessageDeliveryIPC" });
   registerMessageDeliveryHandlers(ipcMain, () => wsState.messageDelivery, messageLogger);
 
+  // Initialize routing services (RoutingApi and ToolGenerator are dependencies of RoutingAgent)
+  // Must be initialized BEFORE event handlers that use getRoutingAgent() are wired up
+  try {
+    initializeRoutingApi();
+    logger.info("Routing API service initialized");
+
+    initializeToolGenerator();
+    logger.info("Tool generator service initialized");
+
+    routingState.routingAgent = initializeRoutingAgent();
+    logger.info("Routing agent service initialized");
+  } catch (error) {
+    // Routing services may fail to initialize if API key is not configured
+    // This is not fatal - the app can still run, but routing will fail at runtime
+    logger.warn("Routing services initialization failed (API key may not be configured)", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   // Initialize hotkey manager and input state services
   const hotkeyLogger = logger.child({ component: "HotkeyIPC" });
   const inputStateLogger = logger.child({ component: "InputStateIPC" });
@@ -1034,24 +1053,6 @@ app.whenReady().then(async () => {
       }
     })();
   });
-
-  // Initialize routing services (RoutingApi and ToolGenerator are dependencies of RoutingAgent)
-  try {
-    initializeRoutingApi();
-    logger.info("Routing API service initialized");
-
-    initializeToolGenerator();
-    logger.info("Tool generator service initialized");
-
-    routingState.routingAgent = initializeRoutingAgent();
-    logger.info("Routing agent service initialized");
-  } catch (error) {
-    // Routing services may fail to initialize if API key is not configured
-    // This is not fatal - the app can still run, but routing will fail at runtime
-    logger.warn("Routing services initialization failed (API key may not be configured)", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
 
   // Register routing IPC handlers
   const routingLogger = logger.child({ component: "RoutingIPC" });
