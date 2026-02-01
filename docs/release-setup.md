@@ -10,6 +10,40 @@ Before you begin, ensure you have:
 - **Developer ID Application certificate** (not just a development certificate)
 - **Admin access to the GitHub repository** (for configuring secrets)
 
+## Create a Developer ID Certificate
+
+If you don't already have a Developer ID Application certificate, follow these steps to create one.
+
+### 1. Create a Certificate Signing Request (CSR)
+
+1. Open **Keychain Access** on your Mac (Applications > Utilities > Keychain Access)
+2. From the menu bar, select **Keychain Access** > **Certificate Assistant** > **Request a Certificate From a Certificate Authority...**
+3. Fill in the form:
+   - **User Email Address**: Your Apple Developer account email
+   - **Common Name**: Your name (e.g., "John Doe")
+   - **CA Email Address**: Leave blank
+   - **Request is**: Select **Saved to disk**
+4. Click **Continue** and save the `.certSigningRequest` file
+
+### 2. Create the Certificate on Apple Developer Portal
+
+1. Go to [developer.apple.com/account/resources/certificates](https://developer.apple.com/account/resources/certificates)
+2. Click the **+** button to create a new certificate
+3. Under **Software**, select **Developer ID Application**
+4. Click **Continue**
+5. Upload the `.certSigningRequest` file you created in step 1
+6. Click **Continue**
+7. Click **Download** to download the certificate (`.cer` file)
+
+### 3. Install the Certificate in Keychain
+
+1. Locate the downloaded `.cer` file (usually in Downloads)
+2. **Double-click** the `.cer` file
+3. Keychain Access will open and install the certificate in your **login** keychain
+4. You should now see **"Developer ID Application: [Your Name] ([Team ID])"** in the **My Certificates** category
+
+> **Note**: The certificate must be paired with the private key that was created when you generated the CSR. This happens automatically if you created the CSR on the same Mac.
+
 ## Export Developer ID Certificate
 
 Export your signing certificate as a `.p12` file for use in CI:
@@ -18,8 +52,8 @@ Export your signing certificate as a `.p12` file for use in CI:
 2. Select **login** keychain in the sidebar
 3. Select **My Certificates** category
 4. Find **"Developer ID Application: [Your Name] ([Team ID])"**
-   - If you don't see this certificate, create one at [developer.apple.com/account/resources/certificates](https://developer.apple.com/account/resources/certificates)
-   - Choose "Developer ID Application" when creating a new certificate
+   - The certificate should have a disclosure triangle (▶) showing a private key underneath
+   - If you don't see the private key, the certificate won't work for signing
 5. Right-click the certificate and select **Export**
 6. Choose format: **Personal Information Exchange (.p12)**
 7. Save the file and set a strong password
@@ -161,9 +195,23 @@ security find-identity -v -p codesigning
 
 If no "Developer ID Application" certificate is listed:
 
-1. Check that you've downloaded and installed the certificate from [developer.apple.com](https://developer.apple.com/account/resources/certificates)
-2. Ensure you have both the certificate and its private key (shown as an expandable item in Keychain Access)
-3. Verify it's in the **login** keychain, not System or other keychains
+1. **Certificate not installed**: Download the `.cer` file from [developer.apple.com/account/resources/certificates](https://developer.apple.com/account/resources/certificates) and double-click it to install
+2. **Missing private key**: The certificate must be paired with a private key (shown as an expandable triangle ▶ in Keychain Access). If you don't see the private key:
+   - You need to create the CSR and certificate on the same Mac
+   - Or import a `.p12` file that was exported from the original Mac
+3. **Wrong keychain**: Verify the certificate is in the **login** keychain, not System or other keychains
+
+### "Unable to export" or No .p12 Option
+
+When exporting, if you don't see the .p12 format option or get an export error:
+
+1. Make sure you're clicking on the **certificate** (not the private key underneath it)
+2. The certificate must have a private key attached (disclosure triangle ▶)
+3. If the private key is missing, you'll need to recreate the certificate:
+   - Create a new CSR on this Mac (Keychain Access > Certificate Assistant > Request a Certificate...)
+   - Revoke the old certificate on developer.apple.com
+   - Create a new Developer ID Application certificate with the new CSR
+   - Download and install the new certificate
 
 ### Notarization Fails
 
