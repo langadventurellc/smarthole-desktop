@@ -650,7 +650,10 @@ affectedFiles:
     listeners to electronAPI
   src/types/routing.ts: Created new file with RoutingTool, RoutingDecision,
     RoutingError, RoutingResult, RoutingRequestParams, RoutingApiService,
-    ToolGeneratorService interfaces and type guards
+    ToolGeneratorService interfaces and type guards; Added DeliveryInfo
+    interface, RoutingOutcome discriminated union, RoutingAgentService
+    interface, DirectRouteResult interface, and type guards (isDeliveryInfo,
+    isRoutingOutcome, isDirectRouteResult)
   src/services/tool-generator.ts: Created new file implementing
     ToolGeneratorService - generates tools from ClientRegistry, caches with
     event-driven invalidation, maintains tool name to client name mapping
@@ -662,6 +665,9 @@ affectedFiles:
     name resolution
   src/services/routing-api.test.ts: Created comprehensive test suite for routing
     API - initialization, message routing, error handling, retry logic
+  src/types/routing.test.ts: "Added comprehensive tests for new type guards:
+    isDeliveryInfo (12 tests), isRoutingOutcome (17 tests across 3 variant
+    groups), isDirectRouteResult (12 tests)"
 log: []
 schema: v1.0
 childrenIds:

@@ -14,7 +14,10 @@ affectedFiles:
     ROUTING_RATE_LIMITED, and ROUTING_NO_CLIENTS error codes
   src/types/routing.ts: Created new file with RoutingTool, RoutingDecision,
     RoutingError, RoutingResult, RoutingRequestParams, RoutingApiService,
-    ToolGeneratorService interfaces and type guards
+    ToolGeneratorService interfaces and type guards; Added DeliveryInfo
+    interface, RoutingOutcome discriminated union, RoutingAgentService
+    interface, DirectRouteResult interface, and type guards (isDeliveryInfo,
+    isRoutingOutcome, isDirectRouteResult)
   src/types/index.ts: Added export for routing module
   src/utils/error-messages.ts: Added user-facing messages for routing error codes
   src/services/tool-generator.ts: Created new file implementing
@@ -29,6 +32,9 @@ affectedFiles:
   src/services/routing-api.test.ts: Created comprehensive test suite for routing
     API - initialization, message routing, error handling, retry logic
   src/services/index.ts: Added exports for tool-generator and routing-api modules
+  src/types/routing.test.ts: "Added comprehensive tests for new type guards:
+    isDeliveryInfo (12 tests), isRoutingOutcome (17 tests across 3 variant
+    groups), isDirectRouteResult (12 tests)"
 log: []
 schema: v1.0
 childrenIds:
