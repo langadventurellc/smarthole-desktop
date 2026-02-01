@@ -1,8 +1,53 @@
 import { ErrorCode, isErrorCode } from "./errors";
+import { ISOTimestamp } from "./common";
+import { InputMethod } from "./messages";
 
 // ============================================================================
 // Routing Agent Types
 // ============================================================================
+
+/**
+ * Record of a single client rejection for a message.
+ */
+export interface RejectionRecord {
+  /** Name of the client that rejected the message */
+  clientName: string;
+  /** Reason provided by the client for rejection */
+  reason: string;
+  /** When the rejection occurred */
+  rejectedAt: ISOTimestamp;
+}
+
+/**
+ * History of routing attempts and rejections for a single message.
+ * Used to track re-routing context and prevent routing to clients that already rejected.
+ */
+export interface RejectionHistory {
+  /** The unique message ID being tracked */
+  messageId: string;
+  /** The original user message text */
+  originalMessage: string;
+  /** How the message was input (voice or text) */
+  source: InputMethod;
+  /** Optional additional metadata from the original routing request */
+  metadata?: Record<string, unknown>;
+  /** List of all rejections received for this message */
+  rejections: RejectionRecord[];
+  /** When this history entry was created */
+  createdAt: ISOTimestamp;
+}
+
+/**
+ * Events emitted by the RoutingAgentService for observability.
+ */
+export interface RoutingAgentEvents {
+  /** Emitted when a message is successfully routed (initial or re-route) */
+  "routing:success": (messageId: string, clientName: string, isReRoute: boolean) => void;
+  /** Emitted when all available clients have rejected a message */
+  "routing:rejected": (messageId: string, rejections: RejectionRecord[]) => void;
+  /** Emitted when the routing system fails (API error, no clients, etc.) */
+  "routing:failed": (messageId: string, error: string) => void;
+}
 
 /**
  * Information about a message delivery to a client.
@@ -50,6 +95,22 @@ export interface RoutingAgentService {
     source: "text" | "voice";
     metadata?: Record<string, unknown>;
   }): Promise<RoutingOutcome>;
+
+  /**
+   * Subscribe to routing events.
+   *
+   * @param event - The event type to listen for
+   * @param listener - The callback function
+   */
+  on<K extends keyof RoutingAgentEvents>(event: K, listener: RoutingAgentEvents[K]): void;
+
+  /**
+   * Unsubscribe from routing events.
+   *
+   * @param event - The event type to stop listening for
+   * @param listener - The callback function to remove
+   */
+  off<K extends keyof RoutingAgentEvents>(event: K, listener: RoutingAgentEvents[K]): void;
 }
 
 /**

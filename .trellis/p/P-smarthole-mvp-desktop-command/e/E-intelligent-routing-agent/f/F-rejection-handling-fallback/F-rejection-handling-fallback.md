@@ -1,15 +1,35 @@
 ---
 id: F-rejection-handling-fallback
 title: Rejection Handling & Fallback System
-status: open
+status: done
 priority: medium
 parent: E-intelligent-routing-agent
 prerequisites:
   - F-routing-agent-core-logic
-affectedFiles: {}
-log: []
+affectedFiles:
+  src/types/routing.ts: Added RejectionRecord, RejectionHistory, and
+    RoutingAgentEvents interfaces. Extended RoutingAgentService interface with
+    on() and off() event subscription methods.
+  src/services/routing-agent.ts: Extended RoutingAgentServiceImpl with rejection
+    history tracking, re-routing logic, event emission, and cleanup
+    functionality. Added NotificationService dependency. Implemented
+    handleRejection(), reRouteMessage(), handleAllClientsRejected(),
+    cleanupStaleHistory(), cleanup(), on(), and off() methods.; Added
+    attemptDirectRoutingFallback() method. Modified routeViaLlm() to call
+    fallback on LLM failures. Fallback attempts direct routing pattern matching
+    and shows user notification on complete failure.
+  src/services/routing-agent.test.ts: Added tests for rejection handling and
+    routing events. Added NotificationService initialization. Added tests for
+    event subscription/unsubscription and typed event handlers.; Added
+    comprehensive test suite 'API failure fallback to direct routing' with 11
+    tests covering fallback behavior, event emission, and edge cases. Updated
+    existing test to reflect new fallback behavior.
+log:
+  - "Auto-completed: All child tasks are complete"
 schema: v1.0
-childrenIds: []
+childrenIds:
+  - T-add-api-failure-fallback-to
+  - T-add-rejection-history
 created: 2026-02-01T01:56:42.544Z
 updated: 2026-02-01T01:56:42.544Z
 ---
