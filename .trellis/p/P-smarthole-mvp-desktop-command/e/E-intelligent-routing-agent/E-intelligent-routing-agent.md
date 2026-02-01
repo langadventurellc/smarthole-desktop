@@ -70,6 +70,45 @@ Implement the LLM-powered routing system that analyzes user input and determines
 - Notify user if routing completely fails
 - Log all routing decisions and failures
 
+### 7. Test Harness Plugin
+
+A standalone test plugin that mirrors how real plugins work, providing:
+
+- **MVP Validation**: A working plugin to demonstrate the complete flow (input capture → STT → routing → plugin delivery → response)
+- **Debugging Tool**: Simple echo functionality useful for troubleshooting the system
+
+**Implementation Approach: External Script**
+
+Create a standalone Node.js script at `scripts/test-harness-plugin.ts` that:
+
+- Connects to the WebSocket server at `ws://127.0.0.1:9473`
+- Registers as a plugin with name `test-harness` and a descriptive routing hint
+- Echoes received messages back via notification responses
+- Logs all activity to console for visibility
+- Handles reconnection if the server restarts
+
+This approach mirrors how real plugins work (external process, WebSocket connection) making it valuable for:
+
+- Testing the actual WebSocket communication path
+- Validating the registration protocol
+- Demonstrating message delivery and response handling
+- Serving as reference implementation for plugin developers
+
+**Plugin Behavior:**
+
+1. On startup: Connect and register with description like "A test plugin that echoes messages back. Use for debugging and testing the routing system."
+2. On message received: Log to console, send `ack` response, send `notification` response with echoed text
+3. On disconnect: Attempt reconnection with backoff
+4. On SIGINT: Graceful shutdown
+
+**Mise Task:**
+
+```toml
+[tasks.test-plugin]
+run = "npx tsx scripts/test-harness-plugin.ts"
+description = "Run the test harness plugin"
+```
+
 ## Technical Considerations
 
 - Use `@anthropic-ai/sdk` for Claude API
@@ -104,7 +143,7 @@ These questions from the project requirements should be addressed during impleme
 
 ## Estimated Scale
 
-4-5 features covering API integration, tool generation, routing logic, direct routing, and rejection handling
+5-6 features covering API integration, tool generation, routing logic, direct routing, rejection handling, and test harness plugin
 
 ## User Stories
 
@@ -112,6 +151,8 @@ These questions from the project requirements should be addressed during impleme
 - As a user, I can directly address a plugin by name (e.g., "calendar: add meeting tomorrow")
 - As a user, if a plugin rejects my message, SmartHole tries another appropriate plugin
 - As a user, I'm notified if no plugin can handle my message
+- As a developer, I can run a test harness plugin to validate the system end-to-end
+- As a developer, I can use the test harness as a reference for building my own plugins
 
 ## Non-Functional Requirements
 
@@ -137,3 +178,7 @@ These questions from the project requirements should be addressed during impleme
 13. [ ] API failures fall back to direct routing or notify user
 14. [ ] All routing decisions logged with reasoning
 15. [ ] API rate limits handled gracefully with backoff and user feedback
+16. [ ] Test harness plugin script created at `scripts/test-harness-plugin.ts`
+17. [ ] Test harness connects, registers, and echoes messages
+18. [ ] Test harness includes reconnection logic
+19. [ ] Mise task added for running test harness plugin
