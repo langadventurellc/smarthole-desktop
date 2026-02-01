@@ -10,6 +10,27 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     name: "SmartHole",
+    osxSign: {
+      identity: process.env.APPLE_IDENTITY,
+      optionsForFile: (filePath: string) => {
+        // GPU and Renderer helpers should use osx-sign defaults (more restrictive)
+        // Main app and Plugin helper need our custom entitlements for native modules and audio
+        if (filePath.includes("(GPU).app") || filePath.includes("(Renderer).app")) {
+          return {};
+        }
+        return {
+          entitlements: "src/entitlements.plist",
+        };
+      },
+    },
+    osxNotarize:
+      process.env.APPLE_ID && process.env.APPLE_ID_PASSWORD && process.env.APPLE_TEAM_ID
+        ? {
+            appleId: process.env.APPLE_ID,
+            appleIdPassword: process.env.APPLE_ID_PASSWORD,
+            teamId: process.env.APPLE_TEAM_ID,
+          }
+        : undefined,
   },
   rebuildConfig: {},
   makers: [
