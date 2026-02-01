@@ -66,6 +66,21 @@ affectedFiles:
     WebSocket client, registration handling, message echo functionality,
     exponential backoff reconnection, graceful shutdown, and CLI flag support
   mise.toml: Added test-plugin task to run the test harness plugin
+  src/types/ipc.ts: Added ROUTING_SUBMIT_MESSAGE and ROUTING_GET_STATUS channels,
+    routing IPC types (RoutingSubmitMessagePayload,
+    RoutingSubmitMessageResponse, RoutingStatusResponse, RoutingInputSource,
+    RoutingOutcomeType), type guard isRoutingSubmitMessagePayload, and entries
+    in IpcPayloadMap and IpcResponseMap
+  src/ipc/routing-handlers.ts: Created new file with createRoutingSubmitHandler
+    and createRoutingStatusHandler factory functions for IPC handlers
+  src/ipc/index.ts: Added export for routing-handlers module
+  src/main.ts: Added imports for routing services and handlers, added routingState
+    mutable state, initialized RoutingApi, ToolGenerator, and RoutingAgent
+    services, registered routing IPC handlers
+  src/ipc/routing-handlers.test.ts: Created new test file with 16 unit tests
+    covering success cases, error handling, validation, and edge cases for both
+    handlers
+  src/types/ipc.test.ts: Updated channel count test to 46 and added test for routing channels
 log: []
 schema: v1.0
 childrenIds:

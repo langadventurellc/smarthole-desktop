@@ -72,7 +72,12 @@ affectedFiles:
     corresponding payload/response types in IpcPayloadMap and IpcResponseMap;
     Added STT IPC channels (STT_TRANSCRIBING, STT_RESULT, STT_ERROR),
     SttTranscribingPayload interface, re-exported TranscriptionReadyEvent and
-    TranscriptionErrorEvent, added entries to IpcPayloadMap
+    TranscriptionErrorEvent, added entries to IpcPayloadMap; Added
+    ROUTING_SUBMIT_MESSAGE and ROUTING_GET_STATUS channels, routing IPC types
+    (RoutingSubmitMessagePayload, RoutingSubmitMessageResponse,
+    RoutingStatusResponse, RoutingInputSource, RoutingOutcomeType), type guard
+    isRoutingSubmitMessagePayload, and entries in IpcPayloadMap and
+    IpcResponseMap
   src/types/ipc.test.ts: Created 86 unit tests covering IPC channel values, all
     type guards, interface structures, type maps, and type-level constraints
     using @ts-expect-error; Updated tests to include new WebSocket channels,
@@ -89,7 +94,8 @@ affectedFiles:
     for credential channels and updated channel count from 32 to 35.; Updated
     channel count to 36 and added DIALOG_OPEN channel test; Updated channel
     count assertion from 36 to 40; Added test for STT channels and updated
-    channel count from 41 to 44
+    channel count from 41 to 44; Updated channel count test to 46 and added test
+    for routing channels
   src/types/guards.ts: Created type guards and validation utilities module with
     generic helpers (isObject, isOneOf, isString, isNonEmptyStringRaw, isNumber,
     isBoolean, isArray, isArrayOf, isOptional), validation result types
@@ -231,7 +237,10 @@ affectedFiles:
     initializeNormalOperation() function, and modified startup flow to detect
     first-run and show onboarding window. Integrated setupIncomplete state into
     tray menu building.; Wired STT pipeline to audioReady event and added
-    transcriptionReady listener for downstream routing"
+    transcriptionReady listener for downstream routing; Added imports for
+    routing services and handlers, added routingState mutable state, initialized
+    RoutingApi, ToolGenerator, and RoutingAgent services, registered routing IPC
+    handlers"
   src/services/logger.ts: Created main logger implementation with Logger
     interface, LoggerConfig, initializeLogger(), getLogger(), createLogger(),
     file transport with rotation, and child logger support; Added
@@ -269,7 +278,7 @@ affectedFiles:
     client-status-handler module; Added exports for hotkey-handler and
     input-state-handler modules; Added export for text-input-handler module;
     Added export for audio-handler; Exported dialog handler; Added export for
-    permission-handler module
+    permission-handler module; Added export for routing-handlers module
   src/ipc/log-handler.test.ts: Created comprehensive unit tests (32 tests)
     covering handler creation, payload validation, log level mapping, context
     enrichment, and edge cases
@@ -699,6 +708,11 @@ affectedFiles:
     WebSocket client, registration handling, message echo functionality,
     exponential backoff reconnection, graceful shutdown, and CLI flag support
   mise.toml: Added test-plugin task to run the test harness plugin
+  src/ipc/routing-handlers.ts: Created new file with createRoutingSubmitHandler
+    and createRoutingStatusHandler factory functions for IPC handlers
+  src/ipc/routing-handlers.test.ts: Created new test file with 16 unit tests
+    covering success cases, error handling, validation, and edge cases for both
+    handlers
 log: []
 schema: v1.0
 childrenIds:

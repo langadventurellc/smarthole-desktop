@@ -103,8 +103,13 @@ import {
   createAccessibilitySettingsHandler,
 } from "./ipc/permission-handler";
 import { registerOnboardingHandlers } from "./ipc/onboarding-handler";
+import { createRoutingSubmitHandler, createRoutingStatusHandler } from "./ipc/routing-handlers";
 import { initializeSttPipeline, getSttPipeline, SttPipelineService } from "./services/stt-pipeline";
 import { initializeSttService } from "./services/stt-service";
+import { initializeRoutingApi } from "./services/routing-api";
+import { initializeToolGenerator } from "./services/tool-generator";
+import { initializeRoutingAgent, getRoutingAgent } from "./services/routing-agent";
+import { RoutingAgentService } from "./types";
 
 // Module-level variables (initialized in app.whenReady())
 let logger: Logger;
@@ -214,6 +219,15 @@ const backgroundState: {
   backgroundWindow: BackgroundWindowService | null;
 } = {
   backgroundWindow: null,
+};
+
+/**
+ * Mutable state for routing agent.
+ */
+const routingState: {
+  routingAgent: RoutingAgentService | null;
+} = {
+  routingAgent: null,
 };
 
 /**
@@ -960,6 +974,39 @@ app.whenReady().then(async () => {
     });
     // TODO: Route to message processing in future task
   });
+
+  // Initialize routing services (RoutingApi and ToolGenerator are dependencies of RoutingAgent)
+  try {
+    initializeRoutingApi();
+    logger.info("Routing API service initialized");
+
+    initializeToolGenerator();
+    logger.info("Tool generator service initialized");
+
+    routingState.routingAgent = initializeRoutingAgent();
+    logger.info("Routing agent service initialized");
+  } catch (error) {
+    // Routing services may fail to initialize if API key is not configured
+    // This is not fatal - the app can still run, but routing will fail at runtime
+    logger.warn("Routing services initialization failed (API key may not be configured)", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  // Register routing IPC handlers
+  const routingLogger = logger.child({ component: "RoutingIPC" });
+  ipcMain.handle(
+    IPC_CHANNELS.ROUTING_SUBMIT_MESSAGE,
+    createRoutingSubmitHandler(() => getRoutingAgent(), routingLogger)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.ROUTING_GET_STATUS,
+    createRoutingStatusHandler(
+      () => getClientRegistry(),
+      () => getCredentialManager(),
+      routingLogger
+    )
+  );
 
   // Register error handlers
   registerProcessErrorHandlers({

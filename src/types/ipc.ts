@@ -110,6 +110,10 @@ export const IPC_CHANNELS = {
   STT_TRANSCRIBING: "stt:transcribing", // Main -> Renderer: STT processing started
   STT_RESULT: "stt:result", // Main -> Renderer: Transcription complete
   STT_ERROR: "stt:error", // Main -> Renderer: Transcription failed
+
+  // Routing channels
+  ROUTING_SUBMIT_MESSAGE: "routing:submitMessage", // Submit message for routing
+  ROUTING_GET_STATUS: "routing:getStatus", // Get routing service status
 } as const;
 
 /**
@@ -479,6 +483,61 @@ export interface SttTranscribingPayload {
   audioId: string;
 }
 
+// ============================================================================
+// Routing IPC Types
+// ============================================================================
+
+/**
+ * Input source for routing.
+ * Indicates how the user input the message.
+ */
+export type RoutingInputSource = "text" | "voice";
+
+/**
+ * Outcome type for routing operations.
+ * Maps to the RoutingOutcome discriminated union types.
+ */
+export type RoutingOutcomeType = "routed" | "no_clients" | "routing_failed";
+
+/**
+ * Payload for routing:submitMessage IPC channel.
+ * Contains the message to route and metadata about how it was input.
+ */
+export interface RoutingSubmitMessagePayload {
+  /** The message text to route */
+  message: string;
+  /** Input source: 'text' or 'voice' */
+  source: RoutingInputSource;
+  /** Optional metadata about the input */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Response for routing:submitMessage IPC channel.
+ * Reports the outcome of the routing operation.
+ */
+export interface RoutingSubmitMessageResponse {
+  /** Whether routing succeeded */
+  success: boolean;
+  /** Routing outcome type */
+  outcomeType: RoutingOutcomeType;
+  /** Number of clients the message was delivered to (if routed) */
+  deliveryCount?: number;
+  /** Error message if routing failed */
+  error?: string;
+}
+
+/**
+ * Response for routing:getStatus IPC channel.
+ * Reports the current status of the routing service.
+ */
+export interface RoutingStatusResponse {
+  /** Whether the routing service is available (API key configured) */
+  available: boolean;
+  /** Number of connected clients that can receive messages */
+  clientCount: number;
+}
+
 /**
  * Payload for audio:start IPC channel.
  * Triggers recording start with optional configuration override.
@@ -553,6 +612,8 @@ export interface IpcPayloadMap {
   [IPC_CHANNELS.STT_TRANSCRIBING]: SttTranscribingPayload;
   [IPC_CHANNELS.STT_RESULT]: TranscriptionReadyEvent;
   [IPC_CHANNELS.STT_ERROR]: TranscriptionErrorEvent;
+  [IPC_CHANNELS.ROUTING_SUBMIT_MESSAGE]: RoutingSubmitMessagePayload;
+  [IPC_CHANNELS.ROUTING_GET_STATUS]: void; // No payload needed
 }
 
 /**
@@ -583,6 +644,8 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.PERMISSION_REQUEST_MICROPHONE]: PermissionRequestMicrophoneResponse;
   [IPC_CHANNELS.PERMISSION_CHECK_ACCESSIBILITY]: PermissionCheckAccessibilityResponse;
   [IPC_CHANNELS.PERMISSION_OPEN_ACCESSIBILITY_SETTINGS]: PermissionOpenAccessibilitySettingsResponse;
+  [IPC_CHANNELS.ROUTING_SUBMIT_MESSAGE]: RoutingSubmitMessageResponse;
+  [IPC_CHANNELS.ROUTING_GET_STATUS]: RoutingStatusResponse;
 }
 
 // ============================================================================
@@ -862,6 +925,54 @@ export function isTextInputSubmitPayload(value: unknown): value is TextInputSubm
 
   // Required fields: text and timestamp must be strings
   return typeof obj.text === "string" && typeof obj.timestamp === "string";
+}
+
+/**
+ * Valid routing input source values for runtime validation.
+ */
+const ROUTING_INPUT_SOURCE_VALUES: ReadonlySet<string> = new Set(["text", "voice"]);
+
+/**
+ * Checks if a value is a valid RoutingInputSource.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid routing input source
+ */
+export function isRoutingInputSource(value: unknown): value is RoutingInputSource {
+  return typeof value === "string" && ROUTING_INPUT_SOURCE_VALUES.has(value);
+}
+
+/**
+ * Checks if a value is a valid RoutingSubmitMessagePayload.
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid routing submit message payload
+ */
+export function isRoutingSubmitMessagePayload(
+  value: unknown
+): value is RoutingSubmitMessagePayload {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // Required: message must be a non-empty string
+  if (typeof obj.message !== "string" || obj.message.length === 0) {
+    return false;
+  }
+
+  // Required: source must be a valid RoutingInputSource
+  if (!isRoutingInputSource(obj.source)) {
+    return false;
+  }
+
+  // Optional: metadata must be an object if present
+  if (obj.metadata !== undefined && (typeof obj.metadata !== "object" || obj.metadata === null)) {
+    return false;
+  }
+
+  return true;
 }
 
 // ============================================================================
