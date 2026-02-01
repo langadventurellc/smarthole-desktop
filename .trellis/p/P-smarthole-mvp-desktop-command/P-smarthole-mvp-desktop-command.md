@@ -695,6 +695,10 @@ affectedFiles:
     comprehensive test suite 'API failure fallback to direct routing' with 11
     tests covering fallback behavior, event emission, and edge cases. Updated
     existing test to reflect new fallback behavior.
+  scripts/test-harness-plugin.ts: Created new test harness plugin script with
+    WebSocket client, registration handling, message echo functionality,
+    exponential backoff reconnection, graceful shutdown, and CLI flag support
+  mise.toml: Added test-plugin task to run the test harness plugin
 log: []
 schema: v1.0
 childrenIds:

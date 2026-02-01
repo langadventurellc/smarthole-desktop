@@ -12,7 +12,9 @@ export default tseslint.config(
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        projectService: {
+          allowDefaultProject: ["scripts/*.ts"],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -31,6 +33,12 @@ export default tseslint.config(
     rules: {
       "no-console": "off",
       "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  {
+    files: ["scripts/**/*.ts"],
+    rules: {
+      "no-console": "off",
     },
   },
   eslintConfigPrettier

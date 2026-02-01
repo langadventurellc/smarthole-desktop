@@ -2,6 +2,8 @@
 
 Plugin clients register with SmartHole to provide routing descriptions for the LLM routing agent.
 
+> **Reference Implementation**: See `scripts/test-harness-plugin.ts` for a complete working example of a WebSocket plugin client. Run with `mise run test-plugin`.
+
 ## Initialization
 
 ```typescript

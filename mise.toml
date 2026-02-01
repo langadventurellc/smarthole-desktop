@@ -47,3 +47,7 @@ run = "vitest"
 [tasks.smoke-test]
 description = "Verify the application builds and starts without errors"
 run = "node scripts/smoke-test.js"
+
+[tasks.test-plugin]
+description = "Run the test harness plugin"
+run = "npx tsx scripts/test-harness-plugin.ts"

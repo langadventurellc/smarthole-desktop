@@ -11,14 +11,15 @@ Electron 40+, React 19, TypeScript 5.9+, Vite 7, Vitest, ESLint 9 + Prettier
 Use `mise` for all development tasks:
 
 ```bash
-mise run dev        # Start dev mode
-mise run build      # Build for distribution
-mise run test       # Run tests
-mise run smoke-test # Run smoke tests
-mise run quality    # All quality checks (lint + format + type-check)
-mise run lint       # ESLint only
-mise run format     # Prettier only
-mise run type-check # TypeScript only
+mise run dev         # Start dev mode
+mise run build       # Build for distribution
+mise run test        # Run tests
+mise run smoke-test  # Run smoke tests
+mise run quality     # All quality checks (lint + format + type-check)
+mise run lint        # ESLint only
+mise run format      # Prettier only
+mise run type-check  # TypeScript only
+mise run test-plugin # Run test harness plugin (WebSocket client for testing)
 ```
 
 For pretty-printed logs in dev: `mise run dev 2>&1 | npx pino-pretty`
