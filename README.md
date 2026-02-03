@@ -1,6 +1,10 @@
 # SmartHole Desktop
 
-A cross-platform desktop application that runs in the system tray for Windows and macOS.
+A cross-platform desktop application that runs in the system tray for Windows and macOS. SmartHole captures voice and text input, then uses an LLM to intelligently route commands to connected client plugins.
+
+## Building a Client Plugin
+
+Want to build a plugin that receives commands from SmartHole? See the **[Client Developer Guide](client-docs/README.md)** for the complete WebSocket protocol, examples in multiple languages, and best practices.
 
 ## Prerequisites
 
